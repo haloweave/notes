@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Huggnote2 — Custom Holiday Songs",
+  title: "Huggnote — Custom Holiday Songs",
   description: "Turn your memories into a custom holiday song. Delivered as a magical, interactive experience with snow, hearts, and music.",
 };
 

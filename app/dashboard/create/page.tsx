@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ const formSchema = z.object({
 
 export default function CreatePage() {
     const { data: session } = useSession();
+    const router = useRouter();
     const [generatedPrompt, setGeneratedPrompt] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -221,9 +223,17 @@ export default function CreatePage() {
                     <h1 className="text-3xl font-bold text-gray-900">Create New Song</h1>
                     <p className="text-gray-500 mt-1">Tell us your story and we'll craft a masterpiece.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1 rounded-full text-sm text-emerald-600 font-medium">
-                    <Coins01Icon className="h-4 w-4" />
-                    <span>{credits} Credits</span>
+                <div className="flex items-center gap-4">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => router.push('/dashboard')}
+                    >
+                        View All Your Songs
+                    </Button>
+                    <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1 rounded-full text-sm text-emerald-600 font-medium">
+                        <Coins01Icon className="h-4 w-4" />
+                        <span>{credits} Credits</span>
+                    </div>
                 </div>
             </header>
 
@@ -477,7 +487,7 @@ export default function CreatePage() {
                                     ) : (
                                         <>
                                             <SparklesIcon className="h-6 w-6" />
-                                            Generate Prompt
+                                            Generate Music
                                         </>
                                     )}
                                 </Button>
