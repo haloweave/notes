@@ -5,8 +5,9 @@ import { useSession } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Add01Icon, MusicNote01Icon, Coins01Icon, Download01Icon, Loading01Icon } from 'hugeicons-react';
+import { Add01Icon, MusicNote01Icon, Coins01Icon, Loading01Icon } from 'hugeicons-react';
 import { type MusicGeneration } from '@/lib/db/schema';
+import { SongCard } from '@/components/dashboard/song-card';
 
 export default function DashboardPage() {
     const { data: session, isPending } = useSession();
@@ -151,43 +152,7 @@ export default function DashboardPage() {
                 {history.length > 0 ? (
                     <div className="grid gap-6">
                         {history.map((item: MusicGeneration) => (
-                            <Card key={item.id} className="overflow-hidden">
-                                <CardContent className="p-6">
-                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                        <div className="flex-1 space-y-2">
-                                            <p className="font-semibold text-gray-900 line-clamp-2">
-                                                {item.generatedPrompt || 'No prompt'}
-                                            </p>
-                                            <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
-                                                    item.status === 'failed' ? 'bg-destructive/10 text-destructive' :
-                                                        'bg-gray-100 text-gray-700'
-                                                    }`}>
-                                                    {item.status?.toUpperCase() || 'UNKNOWN'}
-                                                </span>
-                                                <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                                            </div>
-                                        </div>
-
-                                        {item.status === 'completed' &&
-                                            (item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2) && (
-                                                <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-                                                    <audio
-                                                        controls
-                                                        src={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2 || undefined}
-                                                        className="h-10 w-full md:w-64"
-                                                    />
-                                                    <Button variant="link" size="sm" asChild className="h-auto p-0 text-primary">
-                                                        <a href={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2 || undefined} download>
-                                                            <Download01Icon className="mr-1 h-3 w-3" />
-                                                            Download
-                                                        </a>
-                                                    </Button>
-                                                </div>
-                                            )}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <SongCard key={item.id} item={item} />
                         ))}
                     </div>
                 ) : (
