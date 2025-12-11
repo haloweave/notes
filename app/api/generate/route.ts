@@ -23,6 +23,31 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Check authentication and credits BEFORE calling expensive API
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        let userRecord: typeof user.$inferSelect | undefined;
+
+        if (session?.user) {
+            userRecord = await db.query.user.findFirst({
+                where: eq(user.id, session.user.id),
+            });
+
+            if (!userRecord || userRecord.credits < 1) {
+                console.log('[GENERATE] Insufficient credits for user:', session.user.id);
+                return NextResponse.json(
+                    { success: false, message: 'Insufficient credits. Please purchase more credits to generate music.' },
+                    { status: 402 }
+                );
+            }
+
+            console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email}) with ${userRecord.credits} credits`);
+        } else {
+            console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
+        }
+
         console.log('[GENERATE] Calling MusicGPT API...');
         const musicGptResponse = await fetch('https://api.musicgpt.com/api/public/v1/MusicAI', {
             method: 'POST',
@@ -47,27 +72,6 @@ export async function POST(request: NextRequest) {
         }
 
         // Save to database
-        const session = await auth.api.getSession({
-            headers: await headers()
-        });
-
-        if (session?.user) {
-            const userRecord = await db.query.user.findFirst({
-                where: eq(user.id, session.user.id),
-            });
-
-            if (!userRecord || userRecord.credits < 1) {
-                console.log('[GENERATE] Insufficient credits for user:', session.user.id);
-                return NextResponse.json(
-                    { success: false, message: 'Insufficient credits. Please purchase more credits to generate music.' },
-                    { status: 402 }
-                );
-            }
-
-            console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email}) with ${userRecord.credits} credits`);
-        } else {
-            console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
-        }
 
         try {
             await db.insert(musicGenerations).values({
