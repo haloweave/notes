@@ -23,7 +23,7 @@ export default function LandingPage() {
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
             <a href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}>Login</a>
-            <a className="btn btn-primary btn-mindblowing" href="#pricing"><span className="btn-text-content">Start Your Gift</span></a>
+            <a className="btn btn-primary btn-mindblowing" href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}><span className="btn-text-content">Start Your Gift</span></a>
           </nav>
         </div>
       </header>
@@ -39,7 +39,7 @@ export default function LandingPage() {
                 Turn your memories into a custom holiday song. Delivered as a magical, interactive experience with snow, hearts, and music.
               </p>
               <div className="hero-cta">
-                <a className="btn btn-primary" href="#pricing">
+                <a className="btn btn-primary" href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}>
                   Start Your Gift
                 </a>
                 <a className="btn btn-secondary" href="#examples">Listen to Examples</a>
