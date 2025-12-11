@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { musicGenerations } from '@/lib/db/schema';
 import { randomUUID } from 'crypto';
 
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+
 export async function POST(request: NextRequest) {
     console.log('[GENERATE] Music generation request received');
     try {
@@ -43,10 +46,21 @@ export async function POST(request: NextRequest) {
         }
 
         // Save to database
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        if (session?.user) {
+            console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email})`);
+        } else {
+            console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
+        }
+
         try {
             await db.insert(musicGenerations).values({
                 id: randomUUID(),
                 taskId: data.task_id,
+                userId: session?.user?.id,
                 generatedPrompt: body.prompt,
                 conversionId1: data.conversion_id_1,
                 conversionId2: data.conversion_id_2,
@@ -55,7 +69,7 @@ export async function POST(request: NextRequest) {
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
-            console.log('[GENERATE] ✅ Saved to database');
+            console.log(`[GENERATE] ✅ Successfully saved generation record. Task ID: ${data.task_id}, User ID: ${session?.user?.id || 'null'}`);
         } catch (dbError) {
             console.error('[GENERATE] ⚠️ Failed to save to database:', dbError);
             // Don't fail the request if DB save fails

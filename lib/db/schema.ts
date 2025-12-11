@@ -47,6 +47,9 @@ export const musicGenerations = pgTable('music_generations', {
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
     completedAt: timestamp('completed_at'),
+
+    // User relation
+    userId: text('user_id').references(() => user.id),
 });
 
 export type MusicGeneration = typeof musicGenerations.$inferSelect;
@@ -129,6 +132,14 @@ export const verification = pgTable(
 export const userRelations = relations(user, ({ many }) => ({
     sessions: many(session),
     accounts: many(account),
+    musicGenerations: many(musicGenerations),
+}));
+
+export const musicGenerationsRelations = relations(musicGenerations, ({ one }) => ({
+    user: one(user, {
+        fields: [musicGenerations.userId],
+        references: [user.id],
+    }),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

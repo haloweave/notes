@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 
@@ -26,6 +26,59 @@ export default function GeneratePage() {
     const [status, setStatus] = useState('');
     const [taskId, setTaskId] = useState('');
     const [audioUrl, setAudioUrl] = useState('');
+    const [history, setHistory] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (session) {
+            fetchHistory();
+        }
+    }, [session]);
+
+    const fetchHistory = async () => {
+        try {
+            const response = await fetch('/api/history');
+            const data = await response.json();
+            if (data.success) {
+                setHistory(data.history);
+                // Check if any items are still in progress and trigger status checks for them
+                const inProgressItems = data.history.filter((item: any) =>
+                    item.status === 'pending' || item.status === 'in_progress'
+                );
+
+                if (inProgressItems.length > 0) {
+                    // Poll for each pending item
+                    inProgressItems.forEach((item: any) => {
+                        // Only poll if we aren't already polling this specific ID in the main view
+                        if (item.taskId !== taskId) {
+                            checkHistoryItemStatus(item.taskId);
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch history:', error);
+        }
+    };
+
+    const checkHistoryItemStatus = async (id: string) => {
+        try {
+            const response = await fetch(`/api/status/${id}`);
+            const data = await response.json();
+
+            const status = data.status || data.state;
+            const audioUrl = data.audio_url || data.audioUrl;
+
+            if (status === 'COMPLETED' || status === 'complete' || status === 'failed' || status === 'error') {
+                // Refresh history to update UI with final status
+                fetchHistory();
+            } else {
+                // If still pending, check again in 5 seconds
+                setTimeout(() => checkHistoryItemStatus(id), 5000);
+            }
+        } catch (err) {
+            console.error('Error checking history item status:', err);
+        }
+    };
 
     // Redirect to login if not authenticated
     if (!isPending && !session) {
@@ -76,6 +129,7 @@ export default function GeneratePage() {
     const startMusicGeneration = async (prompt: string) => {
         console.log('[FRONTEND] Starting music generation with prompt:', prompt);
         setStatus('Generating your music...');
+        setError(''); // Clear any previous errors
 
         try {
             const response = await fetch('/api/generate', {
@@ -105,6 +159,7 @@ export default function GeneratePage() {
                 setTaskId(taskId);
                 const eta = data.eta ? `~${Math.ceil(data.eta / 60)} minutes` : 'a few minutes';
                 setStatus(`Music generation started. ETA: ${eta}. Please wait...`);
+                fetchHistory(); // Show the new pending item in history immediately
                 pollStatus(taskId);
             } else {
                 setError(data.message || data.detail || 'Failed to start music generation');
@@ -148,6 +203,7 @@ export default function GeneratePage() {
                     setAudioUrl(audioUrl);
                     setStatus('Music generated successfully!');
                     setLoading(false);
+                    fetchHistory(); // Refresh history on completion
                 } else if (status === 'error' || status === 'failed') {
                     console.error('[FRONTEND] Music generation failed:', data);
                     setError(data.error || data.message || 'Music generation failed');
@@ -176,6 +232,14 @@ export default function GeneratePage() {
             </div>
         );
     }
+
+    const handleRetry = () => {
+        if (generatedPrompt) {
+            startMusicGeneration(generatedPrompt);
+        } else {
+            generatePrompt();
+        }
+    };
 
     return (
         <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '40px 20px' }}>
@@ -311,25 +375,53 @@ export default function GeneratePage() {
                     </button>
                 </div>
 
-                {/* Status */}
-                {status && (
-                    <div style={{ background: 'white', padding: '20px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                        <p style={{ color: '#6366f1', fontWeight: '600' }}>{status}</p>
-                        {taskId && <p style={{ color: '#999', fontSize: '14px', marginTop: '8px' }}>Task ID: {taskId}</p>}
+                {/* Current Generation Card */}
+                {(loading || status || error || (taskId && !audioUrl)) && (
+                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: error ? '4px solid #ef4444' : '4px solid #6366f1' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>Current Generation</h3>
+
+                        {error ? (
+                            <div>
+                                <p style={{ color: '#ef4444', marginBottom: '16px' }}>{error}</p>
+                                <button
+                                    onClick={handleRetry}
+                                    style={{
+                                        padding: '8px 16px',
+                                        background: '#ef4444',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '6px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        fontSize: '14px'
+                                    }}
+                                >
+                                    Retry Generation
+                                </button>
+                            </div>
+                        ) : (
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                    {loading && <div className="spinner" style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderTop: '2px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />}
+                                    <p style={{ color: '#6366f1', fontWeight: '600' }}>{status || 'Processing...'}</p>
+                                </div>
+                                {taskId && <p style={{ color: '#666', fontSize: '14px' }}>Task ID: {taskId}</p>}
+                                <style jsx>{`
+                                    @keyframes spin {
+                                        0% { transform: rotate(0deg); }
+                                        100% { transform: rotate(360deg); }
+                                    }
+                                `}</style>
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {/* Error */}
-                {error && (
-                    <div style={{ background: '#fee', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid #fcc' }}>
-                        <p style={{ color: '#c00', fontWeight: '600' }}>Error: {error}</p>
-                    </div>
-                )}
-
-                {/* Audio Player */}
+                {/* Audio Player (Success State) */}
                 {audioUrl && (
-                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #22c55e', marginBottom: '24px' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>Your Generated Music</h3>
+                        <p style={{ color: '#22c55e', fontWeight: '600', marginBottom: '16px' }}>Generation Successful!</p>
                         <audio controls style={{ width: '100%' }} src={audioUrl}>
                             Your browser does not support the audio element.
                         </audio>
@@ -352,6 +444,76 @@ export default function GeneratePage() {
                         </a>
                     </div>
                 )}
+
+                {/* History Section */}
+                <div style={{ marginTop: '40px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#000' }}>Your Music History</h2>
+                    {history.length > 0 ? (
+                        <div style={{ display: 'grid', gap: '16px' }}>
+                            {history.map((item) => (
+                                <div key={item.id} style={{
+                                    background: 'white',
+                                    padding: '20px',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    gap: '12px'
+                                }}>
+                                    <div style={{ flex: 1, minWidth: '200px' }}>
+                                        <p style={{ fontWeight: '600', color: '#171717', marginBottom: '4px' }}>
+                                            {item.generatedPrompt || 'No prompt'}
+                                        </p>
+                                        <div style={{ display: 'flex', gap: '12px', fontSize: '14px', color: '#666' }}>
+                                            <span>
+                                                {new Date(item.createdAt).toLocaleDateString()}
+                                            </span>
+                                            <span style={{
+                                                textTransform: 'capitalize',
+                                                color: item.status === 'completed' ? '#16a34a' :
+                                                    item.status === 'failed' ? '#dc2626' : '#ea580c'
+                                            }}>
+                                                ● {item.status}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {item.status === 'completed' && (
+                                        // Prefer WAV if available, otherwise fallback to MP3
+                                        (item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2) && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                                <audio
+                                                    controls
+                                                    src={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2}
+                                                    style={{ height: '40px', maxWidth: '300px' }}
+                                                />
+                                                <a
+                                                    href={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2}
+                                                    download
+                                                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none' }}
+                                                >
+                                                    Download
+                                                </a>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{
+                            background: 'white',
+                            padding: '40px',
+                            borderRadius: '12px',
+                            textAlign: 'center',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                        }}>
+                            <p style={{ color: '#666', fontSize: '16px' }}>No music generated yet. Create your first song above!</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
