@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { MaterialIcon } from '@/components/ui/material-icon';
+// MaterialIcon import removed
 
 export default function SettingsPage() {
     const { data: session } = useSession();

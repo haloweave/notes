@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { MaterialIcon } from '@/components/ui/material-icon';
+import { Coins01Icon, Loading01Icon, SparklesIcon, BulbIcon, MusicNote01Icon, RefreshIcon, PlayCircleIcon, Download01Icon } from 'hugeicons-react';
 
 const formSchema = z.object({
     recipient: z.string().min(1, "Recipient is required"),
@@ -221,8 +221,8 @@ export default function CreatePage() {
                     <h1 className="text-3xl font-bold text-gray-900">Create New Song</h1>
                     <p className="text-gray-500 mt-1">Tell us your story and we'll craft a masterpiece.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-green-100 px-3 py-1 rounded-full text-sm text-green-800">
-                    <MaterialIcon name="token" className="h-4 w-4" />
+                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full text-sm text-primary font-medium">
+                    <Coins01Icon className="h-4 w-4" />
                     <span>{credits} Credits</span>
                 </div>
             </header>
@@ -471,12 +471,12 @@ export default function CreatePage() {
                                 >
                                     {loading ? (
                                         <>
-                                            <MaterialIcon name="progress_activity" className="h-6 w-6 animate-spin" />
+                                            <Loading01Icon className="h-6 w-6 animate-spin" />
                                             Generating Prompt...
                                         </>
                                     ) : (
                                         <>
-                                            <MaterialIcon name="auto_awesome" className="h-6 w-6" />
+                                            <SparklesIcon className="h-6 w-6" />
                                             Generate Prompt
                                         </>
                                     )}
@@ -487,12 +487,12 @@ export default function CreatePage() {
 
                     {/* Generated Prompt Section */}
                     {generatedPrompt && (
-                        <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
-                            <h4 className="flex items-center gap-2 mb-4 text-green-800 font-semibold text-lg">
-                                <MaterialIcon name="lightbulb" className="h-5 w-5" />
+                        <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                            <h4 className="flex items-center gap-2 mb-4 text-gray-900 font-semibold text-lg">
+                                <BulbIcon className="h-5 w-5" />
                                 Generated Prompt
                             </h4>
-                            <pre className="mb-4 p-3 bg-white rounded border text-sm font-mono text-green-700 overflow-auto whitespace-pre-wrap">
+                            <pre className="mb-4 p-3 bg-white rounded border text-sm font-mono text-gray-700 overflow-auto whitespace-pre-wrap">
                                 {generatedPrompt}
                             </pre>
                             <div className="flex justify-end gap-2">
@@ -512,7 +512,7 @@ export default function CreatePage() {
                                     disabled={loading}
                                     className="flex items-center gap-2"
                                 >
-                                    <MaterialIcon name="music_note" className="h-4 w-4" />
+                                    <MusicNote01Icon className="h-4 w-4" />
                                     Create Song (1 Credit)
                                 </Button>
                             </div>
@@ -523,23 +523,23 @@ export default function CreatePage() {
 
             {/* Current Generation Card */}
             {(loading || status || error || (taskId && !audioUrl)) && (
-                <Card className={`shadow-sm border-l-4 ${error ? 'border-l-red-500 bg-red-50' : 'border-l-primary bg-primary/5'}`}>
+                <Card className={`shadow-sm border-l-4 ${error ? 'border-l-destructive bg-destructive/5' : 'border-l-primary bg-primary/5'}`}>
                     <CardHeader>
                         <CardTitle>Current Generation</CardTitle>
                     </CardHeader>
                     <CardContent className="p-6">
                         {error ? (
                             <div className="space-y-4">
-                                <p className="text-red-500">{error}</p>
+                                <p className="text-destructive font-medium">{error}</p>
                                 <Button onClick={handleRetry} variant="destructive" size="sm">
-                                    <MaterialIcon name="refresh" className="mr-2 h-4 w-4" />
+                                    <RefreshIcon className="mr-2 h-4 w-4" />
                                     Retry Generation
                                 </Button>
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 <div className="flex items-center gap-3">
-                                    {loading && <MaterialIcon name="progress_activity" className="h-5 w-5 animate-spin text-primary" />}
+                                    {loading && <Loading01Icon className="h-5 w-5 animate-spin text-primary" />}
                                     <p className="text-primary font-semibold">{status || 'Processing...'}</p>
                                 </div>
                                 {taskId && <p className="text-sm text-gray-500 font-mono">Task ID: {taskId}</p>}
@@ -551,13 +551,13 @@ export default function CreatePage() {
 
             {/* Audio Player (Success State) */}
             {audioUrl && (
-                <Card className="shadow-sm border-l-4 border-l-green-500 bg-green-50">
+                <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <MaterialIcon name="play_circle" className="h-6 w-6 text-green-500" />
+                            <PlayCircleIcon className="h-6 w-6 text-primary" />
                             Your Generated Music
                         </CardTitle>
-                        <CardDescription className="text-green-600 font-medium">
+                        <CardDescription className="text-primary font-medium">
                             Generation Successful!
                         </CardDescription>
                     </CardHeader>
@@ -568,7 +568,7 @@ export default function CreatePage() {
                         </audio>
                         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                             <a href={audioUrl || undefined} download>
-                                <MaterialIcon name="download" className="mr-2 h-4 w-4" />
+                                <Download01Icon className="mr-2 h-4 w-4" />
                                 Download Music
                             </a>
                         </Button>

@@ -5,7 +5,7 @@ import { useSession } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MaterialIcon } from '@/components/ui/material-icon';
+import { Add01Icon, MusicNote01Icon, Coins01Icon, Download01Icon, Loading01Icon } from 'hugeicons-react';
 import { type MusicGeneration } from '@/lib/db/schema';
 
 export default function DashboardPage() {
@@ -96,10 +96,7 @@ export default function DashboardPage() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="flex flex-col items-center gap-2">
-                    <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                    <Loading01Icon className="animate-spin h-8 w-8 text-primary" />
                     <p className="text-gray-500 font-medium">Loading...</p>
                 </div>
             </div>
@@ -118,7 +115,7 @@ export default function DashboardPage() {
                     className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
                     onClick={() => router.push('/dashboard/create')}
                 >
-                    <MaterialIcon name="add" className="h-4 w-4" />
+                    <Add01Icon className="h-4 w-4" />
                     New Song
                 </Button>
             </header>
@@ -127,8 +124,8 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card>
                     <CardContent className="flex items-center gap-4 p-6 pt-6">
-                        <div className="p-3 bg-purple-100 rounded-full">
-                            <MaterialIcon name="music_note" className="h-6 w-6 text-purple-600" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                            <MusicNote01Icon className="h-6 w-6 text-primary" />
                         </div>
                         <div>
                             <div className="text-3xl font-bold text-gray-900">{history.filter((h: MusicGeneration) => h.status === 'completed').length}</div>
@@ -138,8 +135,8 @@ export default function DashboardPage() {
                 </Card>
                 <Card>
                     <CardContent className="flex items-center gap-4 p-6 pt-6">
-                        <div className="p-3 bg-green-100 rounded-full">
-                            <MaterialIcon name="token" className="h-6 w-6 text-green-600" />
+                        <div className="p-3 bg-primary/10 rounded-full">
+                            <Coins01Icon className="h-6 w-6 text-primary" />
                         </div>
                         <div>
                             <div className="text-3xl font-bold text-gray-900">{credits}</div>
@@ -162,9 +159,9 @@ export default function DashboardPage() {
                                                 {item.generatedPrompt || 'No prompt'}
                                             </p>
                                             <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                    item.status === 'failed' ? 'bg-red-100 text-red-700' :
-                                                        'bg-yellow-100 text-yellow-700'
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.status === 'completed' ? 'bg-primary/10 text-primary' :
+                                                    item.status === 'failed' ? 'bg-destructive/10 text-destructive' :
+                                                        'bg-gray-100 text-gray-700'
                                                     }`}>
                                                     {item.status?.toUpperCase() || 'UNKNOWN'}
                                                 </span>
@@ -180,9 +177,9 @@ export default function DashboardPage() {
                                                         src={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2 || undefined}
                                                         className="h-10 w-full md:w-64"
                                                     />
-                                                    <Button variant="link" size="sm" asChild className="h-auto p-0 text-indigo-600">
+                                                    <Button variant="link" size="sm" asChild className="h-auto p-0 text-primary">
                                                         <a href={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2 || undefined} download>
-                                                            <MaterialIcon name="download" className="mr-1 h-3 w-3" />
+                                                            <Download01Icon className="mr-1 h-3 w-3" />
                                                             Download
                                                         </a>
                                                     </Button>
@@ -195,7 +192,7 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <div className="empty-state text-center py-12 bg-white rounded-lg shadow-sm">
-                        <MaterialIcon name="music_note" className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <MusicNote01Icon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold mb-2">No songs yet</h3>
                         <p className="text-gray-600 mb-6">You haven't created any songs yet. Use a credit to get started!</p>
                         <Button onClick={() => router.push('/dashboard/create')} className="bg-primary text-primary-foreground">
