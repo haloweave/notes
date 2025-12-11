@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Music, Download, LogOut, RefreshCw, PlayCircle } from 'lucide-react';
 
 export default function GeneratePage() {
     const { data: session, isPending } = useSession();
@@ -87,10 +94,17 @@ export default function GeneratePage() {
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
+        const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+            [name]: value
+        }));
+    };
+
+    const handleCheckboxChange = (checked: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            include_name: checked
         }));
     };
 
@@ -227,8 +241,11 @@ export default function GeneratePage() {
 
     if (isPending) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ color: '#666' }}>Loading...</p>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                    <p className="text-gray-500">Loading...</p>
+                </div>
             </div>
         );
     }
@@ -242,276 +259,243 @@ export default function GeneratePage() {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '40px 20px' }}>
-            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div className="min-h-screen bg-gray-50 p-6 md:p-10">
+            <div className="max-w-4xl mx-auto space-y-8">
                 {/* Header with Logout */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                <div className="flex justify-between items-center pb-6 border-b border-gray-200">
                     <div>
-                        <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '8px', color: '#000' }}>Music Generator</h1>
-                        <p style={{ color: '#666' }}>Create custom AI-generated music</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Music Generator</h1>
+                        <p className="text-gray-500 mt-1">Create custom AI-generated music</p>
                     </div>
-                    <button
+                    <Button
                         onClick={() => signOut()}
-                        style={{
-                            padding: '10px 20px',
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                        }}
+                        variant="destructive"
+                        className="flex items-center gap-2"
                     >
+                        <LogOut className="h-4 w-4" />
                         Logout
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Form */}
-                <div style={{ background: 'white', padding: '32px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', color: '#000' }}>Song Details</h2>
+                <Card className="shadow-sm border-0 ring-1 ring-gray-200">
+                    <CardHeader>
+                        <CardTitle>Song Details</CardTitle>
+                        <CardDescription>Tell us about the song you want to create</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="recipient">Recipient</Label>
+                                <Input
+                                    id="recipient"
+                                    name="recipient"
+                                    value={formData.recipient}
+                                    onChange={handleInputChange}
+                                    placeholder="Who is this song for?"
+                                    className="bg-white"
+                                />
+                            </div>
 
-                    <div style={{ display: 'grid', gap: '20px' }}>
-                        <div>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Recipient</label>
-                            <input
-                                type="text"
-                                name="recipient"
-                                value={formData.recipient}
-                                onChange={handleInputChange}
-                                placeholder="Who is this song for?"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="relationship">Relationship</Label>
+                                <Input
+                                    id="relationship"
+                                    name="relationship"
+                                    value={formData.relationship}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Wife, Friend, Mother"
+                                    className="bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="tone">Tone/Feelings</Label>
+                                <Input
+                                    id="tone"
+                                    name="tone"
+                                    value={formData.tone}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Joyful, Romantic, Nostalgic"
+                                    className="bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="vibe">Overall Vibe</Label>
+                                <Input
+                                    id="vibe"
+                                    name="vibe"
+                                    value={formData.vibe}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Upbeat, Calm, Energetic"
+                                    className="bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2 col-span-1 md:col-span-2">
+                                <Label htmlFor="style">Music Style</Label>
+                                <Input
+                                    id="style"
+                                    name="style"
+                                    value={formData.style}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Pop, Jazz, Rock, Classical"
+                                    className="bg-white"
+                                />
+                            </div>
+
+                            <div className="space-y-2 col-span-1 md:col-span-2">
+                                <Label htmlFor="story">Story/Memories</Label>
+                                <Textarea
+                                    id="story"
+                                    name="story"
+                                    value={formData.story}
+                                    onChange={handleInputChange}
+                                    placeholder="Share the story or memories you want in the song..."
+                                    rows={4}
+                                    className="bg-white resize-none"
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Relationship</label>
-                            <input
-                                type="text"
-                                name="relationship"
-                                value={formData.relationship}
-                                onChange={handleInputChange}
-                                placeholder="e.g., Wife, Friend, Mother"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Tone/Feelings</label>
-                            <input
-                                type="text"
-                                name="tone"
-                                value={formData.tone}
-                                onChange={handleInputChange}
-                                placeholder="e.g., Joyful, Romantic, Nostalgic"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Overall Vibe</label>
-                            <input
-                                type="text"
-                                name="vibe"
-                                value={formData.vibe}
-                                onChange={handleInputChange}
-                                placeholder="e.g., Upbeat, Calm, Energetic"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Music Style</label>
-                            <input
-                                type="text"
-                                name="style"
-                                value={formData.style}
-                                onChange={handleInputChange}
-                                placeholder="e.g., Pop, Jazz, Rock, Classical"
-                                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-                            />
-                        </div>
-
-                        <div>
-                            <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Story/Memories</label>
-                            <textarea
-                                name="story"
-                                value={formData.story}
-                                onChange={handleInputChange}
-                                placeholder="Share the story or memories you want in the song..."
-                                rows={4}
-                                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', resize: 'vertical', color: '#000' }}
-                            />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <input
-                                type="checkbox"
-                                name="include_name"
-                                checked={formData.include_name}
-                                onChange={handleInputChange}
+                        <div className="flex items-center space-x-2 pt-2">
+                            <Checkbox
                                 id="include_name"
+                                checked={formData.include_name}
+                                onCheckedChange={handleCheckboxChange}
                             />
-                            <label htmlFor="include_name" style={{ fontWeight: '600', color: '#171717' }}>Include recipient's name in the song</label>
+                            <Label htmlFor="include_name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                Include recipient's name in the song
+                            </Label>
                         </div>
-                    </div>
 
-                    <button
-                        onClick={generatePrompt}
-                        disabled={loading}
-                        style={{
-                            marginTop: '24px',
-                            width: '100%',
-                            padding: '12px',
-                            background: '#6366f1',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontWeight: '600',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.6 : 1
-                        }}
-                    >
-                        {loading ? 'Generating Music...' : 'Generate Music'}
-                    </button>
-                </div>
+                        <Button
+                            onClick={generatePrompt}
+                            disabled={loading}
+                            className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-700"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    Generating Music...
+                                </>
+                            ) : (
+                                <>
+                                    <Music className="mr-2 h-5 w-5" />
+                                    Generate Music
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
 
                 {/* Current Generation Card */}
                 {(loading || status || error || (taskId && !audioUrl)) && (
-                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: error ? '4px solid #ef4444' : '4px solid #6366f1' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>Current Generation</h3>
-
-                        {error ? (
-                            <div>
-                                <p style={{ color: '#ef4444', marginBottom: '16px' }}>{error}</p>
-                                <button
-                                    onClick={handleRetry}
-                                    style={{
-                                        padding: '8px 16px',
-                                        background: '#ef4444',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        fontSize: '14px'
-                                    }}
-                                >
-                                    Retry Generation
-                                </button>
-                            </div>
-                        ) : (
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                                    {loading && <div className="spinner" style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderTop: '2px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />}
-                                    <p style={{ color: '#6366f1', fontWeight: '600' }}>{status || 'Processing...'}</p>
+                    <Card className={`shadow-sm border-l-4 ${error ? 'border-l-red-500' : 'border-l-indigo-500'}`}>
+                        <CardHeader>
+                            <CardTitle>Current Generation</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {error ? (
+                                <div className="space-y-4">
+                                    <p className="text-red-500">{error}</p>
+                                    <Button onClick={handleRetry} variant="destructive" size="sm">
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Retry Generation
+                                    </Button>
                                 </div>
-                                {taskId && <p style={{ color: '#666', fontSize: '14px' }}>Task ID: {taskId}</p>}
-                                <style jsx>{`
-                                    @keyframes spin {
-                                        0% { transform: rotate(0deg); }
-                                        100% { transform: rotate(360deg); }
-                                    }
-                                `}</style>
-                            </div>
-                        )}
-                    </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3">
+                                        {loading && <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />}
+                                        <p className="text-indigo-600 font-semibold">{status || 'Processing...'}</p>
+                                    </div>
+                                    {taskId && <p className="text-sm text-gray-500 font-mono">Task ID: {taskId}</p>}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* Audio Player (Success State) */}
                 {audioUrl && (
-                    <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #22c55e', marginBottom: '24px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>Your Generated Music</h3>
-                        <p style={{ color: '#22c55e', fontWeight: '600', marginBottom: '16px' }}>Generation Successful!</p>
-                        <audio controls style={{ width: '100%' }} src={audioUrl}>
-                            Your browser does not support the audio element.
-                        </audio>
-                        <a
-                            href={audioUrl}
-                            download
-                            style={{
-                                display: 'block',
-                                marginTop: '16px',
-                                padding: '12px',
-                                background: '#6366f1',
-                                color: 'white',
-                                textAlign: 'center',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                fontWeight: '600'
-                            }}
-                        >
-                            Download Music
-                        </a>
-                    </div>
+                    <Card className="shadow-sm border-l-4 border-l-green-500">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <PlayCircle className="h-6 w-6 text-green-500" />
+                                Your Generated Music
+                            </CardTitle>
+                            <CardDescription className="text-green-600 font-medium">
+                                Generation Successful!
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <audio controls className="w-full">
+                                <source src={audioUrl} />
+                                Your browser does not support the audio element.
+                            </audio>
+                            <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700">
+                                <a href={audioUrl} download>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download Music
+                                </a>
+                            </Button>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* History Section */}
-                <div style={{ marginTop: '40px' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#000' }}>Your Music History</h2>
+                <div className="space-y-4">
+                    <h2 className="text-2xl font-bold text-gray-900">Your Music History</h2>
                     {history.length > 0 ? (
-                        <div style={{ display: 'grid', gap: '16px' }}>
+                        <div className="grid gap-4">
                             {history.map((item) => (
-                                <div key={item.id} style={{
-                                    background: 'white',
-                                    padding: '20px',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    flexWrap: 'wrap',
-                                    gap: '12px'
-                                }}>
-                                    <div style={{ flex: 1, minWidth: '200px' }}>
-                                        <p style={{ fontWeight: '600', color: '#171717', marginBottom: '4px' }}>
-                                            {item.generatedPrompt || 'No prompt'}
-                                        </p>
-                                        <div style={{ display: 'flex', gap: '12px', fontSize: '14px', color: '#666' }}>
-                                            <span>
-                                                {new Date(item.createdAt).toLocaleDateString()}
-                                            </span>
-                                            <span style={{
-                                                textTransform: 'capitalize',
-                                                color: item.status === 'completed' ? '#16a34a' :
-                                                    item.status === 'failed' ? '#dc2626' : '#ea580c'
-                                            }}>
-                                                ● {item.status}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {item.status === 'completed' && (
-                                        // Prefer WAV if available, otherwise fallback to MP3
-                                        (item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2) && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                                                <audio
-                                                    controls
-                                                    src={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2}
-                                                    style={{ height: '40px', maxWidth: '300px' }}
-                                                />
-                                                <a
-                                                    href={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2}
-                                                    download
-                                                    style={{ fontSize: '12px', color: '#6366f1', textDecoration: 'none' }}
-                                                >
-                                                    Download
-                                                </a>
+                                <Card key={item.id} className="overflow-hidden">
+                                    <CardContent className="p-6">
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                            <div className="flex-1 space-y-2">
+                                                <p className="font-semibold text-gray-900 line-clamp-2">
+                                                    {item.generatedPrompt || 'No prompt'}
+                                                </p>
+                                                <div className="flex items-center gap-3 text-sm text-gray-500">
+                                                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                                    <span className={`flex items-center capitalize ${item.status === 'completed' ? 'text-green-600' :
+                                                            item.status === 'failed' ? 'text-red-600' : 'text-orange-600'
+                                                        }`}>
+                                                        <span className="mr-1.5 h-2 w-2 rounded-full bg-current" />
+                                                        {item.status}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        )
-                                    )}
-                                </div>
+
+                                            {item.status === 'completed' &&
+                                                (item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2) && (
+                                                    <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+                                                        <audio
+                                                            controls
+                                                            src={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2}
+                                                            className="h-10 w-full md:w-64"
+                                                        />
+                                                        <Button variant="link" size="sm" asChild className="h-auto p-0 text-indigo-600">
+                                                            <a href={item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2} download>
+                                                                <Download className="mr-1 h-3 w-3" />
+                                                                Download
+                                                            </a>
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))}
                         </div>
                     ) : (
-                        <div style={{
-                            background: 'white',
-                            padding: '40px',
-                            borderRadius: '12px',
-                            textAlign: 'center',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                        }}>
-                            <p style={{ color: '#666', fontSize: '16px' }}>No music generated yet. Create your first song above!</p>
-                        </div>
+                        <Card className="text-center py-12">
+                            <CardContent>
+                                <p className="text-gray-500">No music generated yet. Create your first song above!</p>
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
             </div>
