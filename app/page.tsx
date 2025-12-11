@@ -1,266 +1,158 @@
 'use client';
 
 import { useState } from 'react';
+import { signIn, signUp } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
-export default function Home() {
-  const [formData, setFormData] = useState({
-    recipient: '',
-    relationship: '',
-    tone: '',
-    vibe: '',
-    style: '',
-    story: '',
-    personalization: 'medium',
-    length: '2-3 minutes',
-    include_name: true
-  });
-
-  const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [taskId, setTaskId] = useState('');
-  const [status, setStatus] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const router = useRouter();
 
-  const handleInputChange = (e: any) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  const generatePrompt = async () => {
-    console.log('[FRONTEND] Generate prompt clicked');
-    setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
-    setStatus('Creating your music prompt...');
-    try {
-      console.log('[FRONTEND] Sending request to /api/create-prompt');
-      const response = await fetch('/api/create-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      console.log('[FRONTEND] Response status:', response.status);
-      const data = await response.json();
-      console.log('[FRONTEND] Response data:', data);
-      if (data.success) {
-        console.log('[FRONTEND] Setting generated prompt:', data.prompt);
-        setGeneratedPrompt(data.prompt);
-        // Automatically start music generation
-        await startMusicGeneration(data.prompt);
-      } else {
-        console.error('[FRONTEND] Error from API:', data.message);
-        setError(data.message || 'Failed to generate prompt');
-        setLoading(false);
-      }
-    } catch (err: any) {
-      console.error('[FRONTEND] Exception:', err);
-      setError(err.message || 'Error generating prompt');
-      setLoading(false);
-    }
-  };
-
-  const startMusicGeneration = async (prompt: string) => {
-    console.log('[FRONTEND] Starting music generation with prompt:', prompt);
-    setStatus('Generating your music...');
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: prompt,
-          make_instrumental: false,
-          wait_audio: false
-        })
-      });
+      if (isSignUp) {
+        // Sign up
+        const result = await signUp.email({
+          email,
+          password,
+          name: 'Test User',
+        });
 
-      const data = await response.json();
-      console.log('[FRONTEND] Generate response:', data);
-
-      // Handle rate limiting
-      if (response.status === 429) {
-        setError('Rate limit reached. Please wait before trying again.');
-        setLoading(false);
-        return;
-      }
-
-      // MusicGPT returns task_id, not id
-      const taskId = data.task_id || data.id;
-
-      if (taskId) {
-        setTaskId(taskId);
-        const eta = data.eta ? `~${Math.ceil(data.eta / 60)} minutes` : 'a few minutes';
-        setStatus(`Music generation started. ETA: ${eta}. Please wait...`);
-        pollStatus(taskId);
-      } else {
-        setError(data.message || data.detail || 'Failed to start music generation');
-        setLoading(false);
-      }
-    } catch (err: any) {
-      console.error('[FRONTEND] Music generation error:', err);
-      setError(err.message || 'Error generating music');
-      setLoading(false);
-    }
-  };
-
-  const generateMusic = async () => {
-    if (!generatedPrompt) {
-      setError('Please generate a prompt first');
-      return;
-    }
-    await startMusicGeneration(generatedPrompt);
-  };
-
-  const pollStatus = async (id: string) => {
-    const checkStatus = async () => {
-      try {
-        console.log('[FRONTEND] Polling status for task:', id);
-        const response = await fetch(`/api/status/${id}`);
-        const data = await response.json();
-        console.log('[FRONTEND] Status response:', data);
-
-        // Check for completion - MusicGPT might use different field names
-        const audioUrl = data.audio_url
-          || data.audioUrl
-          || data.url
-          || data.conversion?.conversion_path_1
-          || data.conversion?.conversion_path_2;
-        const status = data.status || data.state;
-
-        console.log('[FRONTEND] Extracted - Status:', status, 'Audio URL:', audioUrl);
-
-        if ((status === 'COMPLETED' || status === 'complete') && audioUrl) {
-          console.log('[FRONTEND] ✅ Music complete! Audio URL:', audioUrl);
-          setAudioUrl(audioUrl);
-          setStatus('Music generated successfully!');
-          setLoading(false);
-        } else if (status === 'error' || status === 'failed') {
-          console.error('[FRONTEND] Music generation failed:', data);
-          setError(data.error || data.message || 'Music generation failed');
-          setLoading(false);
+        if (result.error) {
+          setError(result.error.message || 'Sign up failed');
         } else {
-          // Still processing
-          const currentStatus = status || 'processing';
-          console.log('[FRONTEND] Current status:', currentStatus);
-          setStatus(`Status: ${currentStatus}... (polling every 3s)`);
-          setTimeout(checkStatus, 3000); // Poll every 3 seconds
+          router.push('/generate');
         }
-      } catch (err: any) {
-        console.error('[FRONTEND] Status check error:', err);
-        setError(err.message || 'Error checking status');
-        setLoading(false);
-      }
-    };
+      } else {
+        // Sign in
+        const result = await signIn.email({
+          email,
+          password,
+        });
 
-    checkStatus();
+        if (result.error) {
+          setError(result.error.message || 'Invalid email or password');
+        } else {
+          router.push('/generate');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || (isSignUp ? 'Sign up failed' : 'Login failed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '8px', color: '#000' }}>Music Generator</h1>
-          <p style={{ color: '#666' }}>Create custom AI-generated music</p>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f9fafb'
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '400px',
+        padding: '40px',
+        background: 'white',
+        borderRadius: '12px',
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+      }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: 'bold',
+          marginBottom: '8px',
+          textAlign: 'center',
+          color: '#000'
+        }}>
+          {isSignUp ? 'Create Account' : 'Welcome Back'}
+        </h1>
+        <p style={{
+          color: '#666',
+          textAlign: 'center',
+          marginBottom: '32px'
+        }}>
+          {isSignUp ? 'Sign up to generate music' : 'Sign in to generate music'}
+        </p>
 
-        {/* Form */}
-        <div style={{ background: 'white', padding: '32px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', color: '#000' }}>Song Details</h2>
-
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Recipient</label>
-              <input
-                type="text"
-                name="recipient"
-                value={formData.recipient}
-                onChange={handleInputChange}
-                placeholder="Who is this song for?"
-                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Relationship</label>
-              <input
-                type="text"
-                name="relationship"
-                value={formData.relationship}
-                onChange={handleInputChange}
-                placeholder="e.g., Wife, Friend, Mother"
-                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Tone/Feelings</label>
-              <input
-                type="text"
-                name="tone"
-                value={formData.tone}
-                onChange={handleInputChange}
-                placeholder="e.g., Joyful, Romantic, Nostalgic"
-                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Overall Vibe</label>
-              <input
-                type="text"
-                name="vibe"
-                value={formData.vibe}
-                onChange={handleInputChange}
-                placeholder="e.g., Upbeat, Calm, Energetic"
-                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', color: '#000' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Music Style</label>
-              <input
-                type="text"
-                name="style"
-                value={formData.style}
-                onChange={handleInputChange}
-                placeholder="e.g., Pop, Jazz, Rock, Classical"
-                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px' }}
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#171717' }}>Story/Memories</label>
-              <textarea
-                name="story"
-                value={formData.story}
-                onChange={handleInputChange}
-                placeholder="Share the story or memories you want in the song..."
-                rows={4}
-                style={{ width: '100%', padding: '10px', border: '1px solid #e5e5e5', borderRadius: '8px', resize: 'vertical', color: '#000' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                name="include_name"
-                checked={formData.include_name}
-                onChange={handleInputChange}
-                id="include_name"
-              />
-              <label htmlFor="include_name" style={{ fontWeight: '600', color: '#171717' }}>Include recipient's name in the song</label>
-            </div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              fontWeight: '600',
+              marginBottom: '8px',
+              color: '#171717'
+            }}>
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="test@example.com"
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                color: '#000',
+                fontSize: '16px'
+              }}
+            />
           </div>
 
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{
+              display: 'block',
+              fontWeight: '600',
+              marginBottom: '8px',
+              color: '#171717'
+            }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #e5e5e5',
+                borderRadius: '8px',
+                color: '#000',
+                fontSize: '16px'
+              }}
+            />
+          </div>
+
+          {error && (
+            <div style={{
+              padding: '12px',
+              background: '#fee',
+              border: '1px solid #fcc',
+              borderRadius: '8px',
+              marginBottom: '20px'
+            }}>
+              <p style={{ color: '#c00', fontSize: '14px', margin: 0 }}>{error}</p>
+            </div>
+          )}
+
           <button
-            onClick={generatePrompt}
+            type="submit"
             disabled={loading}
             style={{
-              marginTop: '24px',
               width: '100%',
               padding: '12px',
               background: '#6366f1',
@@ -268,55 +160,55 @@ export default function Home() {
               border: 'none',
               borderRadius: '8px',
               fontWeight: '600',
+              fontSize: '16px',
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.6 : 1
             }}
           >
-            {loading ? 'Generating Music...' : 'Generate Music'}
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+
+        <div style={{
+          marginTop: '20px',
+          textAlign: 'center'
+        }}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError('');
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#6366f1',
+              cursor: 'pointer',
+              fontSize: '14px',
+              textDecoration: 'underline'
+            }}
+          >
+            {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
           </button>
         </div>
 
-        {/* Status */}
-        {status && (
-          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <p style={{ color: '#6366f1', fontWeight: '600' }}>{status}</p>
-            {taskId && <p style={{ color: '#999', fontSize: '14px', marginTop: '8px' }}>Task ID: {taskId}</p>}
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div style={{ background: '#fee', padding: '20px', borderRadius: '12px', marginBottom: '24px', border: '1px solid #fcc' }}>
-            <p style={{ color: '#c00', fontWeight: '600' }}>Error: {error}</p>
-          </div>
-        )}
-
-        {/* Audio Player */}
-        {audioUrl && (
-          <div style={{ background: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: '#000' }}>Your Generated Music</h3>
-            <audio controls style={{ width: '100%' }} src={audioUrl}>
-              Your browser does not support the audio element.
-            </audio>
-            <a
-              href={audioUrl}
-              download
-              style={{
-                display: 'block',
-                marginTop: '16px',
-                padding: '12px',
-                background: '#6366f1',
-                color: 'white',
-                textAlign: 'center',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: '600'
-              }}
-            >
-              Download Music
-            </a>
-          </div>
-        )}
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: '#f9fafb',
+          borderRadius: '8px'
+        }}>
+          <p style={{
+            fontSize: '14px',
+            color: '#666',
+            margin: 0,
+            textAlign: 'center'
+          }}>
+            <strong style={{ color: '#000' }}>Test Credentials:</strong><br />
+            Email: test@example.com<br />
+            Password: example123
+          </p>
+        </div>
       </div>
     </div>
   );

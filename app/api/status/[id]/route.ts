@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { musicGenerations } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
     request: NextRequest,
@@ -10,8 +13,8 @@ export async function GET(
         const conversionType = searchParams.get('conversionType') || 'MUSIC_AI';
         const idType = searchParams.get('idType') || 'task_id';
 
-        console.log(`[STATUS] Checking status for task ID: ${id}`);
-        console.log(`[STATUS] Conversion type: ${conversionType}, ID type: ${idType}`);
+        console.log(`[STATUS] Checking status for task ID: ${id} `);
+        console.log(`[STATUS] Conversion type: ${conversionType}, ID type: ${idType} `);
 
         const API_KEY = process.env.MUSICGPT_API_KEY;
 
@@ -53,8 +56,47 @@ export async function GET(
 
         if (status === 'COMPLETED' && audioUrl) {
             console.log(`[STATUS] ✅ Music generation COMPLETE! Audio URL: ${audioUrl}`);
+
+            // Update database with completion data
+            try {
+                await db.update(musicGenerations)
+                    .set({
+                        status: 'completed',
+                        audioUrl1: conversion.conversion_path_1,
+                        audioUrl2: conversion.conversion_path_2,
+                        audioUrlWav1: conversion.conversion_path_wav_1,
+                        audioUrlWav2: conversion.conversion_path_wav_2,
+                        title1: conversion.title_1,
+                        title2: conversion.title_2,
+                        lyrics1: conversion.lyrics_1,
+                        lyrics2: conversion.lyrics_2,
+                        duration1: conversion.conversion_duration_1,
+                        duration2: conversion.conversion_duration_2,
+                        albumCoverUrl: conversion.album_cover_path,
+                        statusResponse: conversion,
+                        completedAt: new Date(),
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(musicGenerations.taskId, id));
+                console.log('[STATUS] ✅ Updated database with completion data');
+            } catch (dbError) {
+                console.error('[STATUS] ⚠️ Failed to update database:', dbError);
+            }
         } else if (status) {
             console.log(`[STATUS] Current status: ${status}`);
+
+            // Update status in database
+            try {
+                await db.update(musicGenerations)
+                    .set({
+                        status: status.toLowerCase(),
+                        statusResponse: conversion,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(musicGenerations.taskId, id));
+            } catch (dbError) {
+                console.error('[STATUS] ⚠️ Failed to update status in database:', dbError);
+            }
         }
 
         // Return a normalized response for the frontend

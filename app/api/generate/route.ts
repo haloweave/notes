@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { musicGenerations } from '@/lib/db/schema';
+import { randomUUID } from 'crypto';
 
 export async function POST(request: NextRequest) {
     console.log('[GENERATE] Music generation request received');
@@ -37,6 +40,25 @@ export async function POST(request: NextRequest) {
                 { success: false, message: errorMessage, details: data },
                 { status: musicGptResponse.status }
             );
+        }
+
+        // Save to database
+        try {
+            await db.insert(musicGenerations).values({
+                id: randomUUID(),
+                taskId: data.task_id,
+                generatedPrompt: body.prompt,
+                conversionId1: data.conversion_id_1,
+                conversionId2: data.conversion_id_2,
+                status: 'pending',
+                musicGptResponse: data,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            console.log('[GENERATE] ✅ Saved to database');
+        } catch (dbError) {
+            console.error('[GENERATE] ⚠️ Failed to save to database:', dbError);
+            // Don't fail the request if DB save fails
         }
 
         console.log('[GENERATE] Music generation started successfully. Task ID:', data.task_id || data.id);
