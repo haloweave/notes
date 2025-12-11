@@ -221,7 +221,7 @@ export default function CreatePage() {
                     <h1 className="text-3xl font-bold text-gray-900">Create New Song</h1>
                     <p className="text-gray-500 mt-1">Tell us your story and we'll craft a masterpiece.</p>
                 </div>
-                <div className="flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full text-sm text-primary font-medium">
+                <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1 rounded-full text-sm text-emerald-600 font-medium">
                     <Coins01Icon className="h-4 w-4" />
                     <span>{credits} Credits</span>
                 </div>
@@ -467,7 +467,7 @@ export default function CreatePage() {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
+                                    className="w-full h-14 text-lg flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
                                 >
                                     {loading ? (
                                         <>
@@ -566,7 +566,7 @@ export default function CreatePage() {
                             <source src={audioUrl || undefined} />
                             Your browser does not support the audio element.
                         </audio>
-                        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <Button asChild className="w-full">
                             <a href={audioUrl || undefined} download>
                                 <Download01Icon className="mr-2 h-4 w-4" />
                                 Download Music

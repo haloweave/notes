@@ -112,7 +112,7 @@ export default function DashboardPage() {
                     <p className="text-gray-500 mt-1">Manage and share your custom holiday songs.</p>
                 </div>
                 <Button
-                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="flex items-center gap-2"
                     onClick={() => router.push('/dashboard/create')}
                 >
                     <Add01Icon className="h-4 w-4" />
@@ -124,8 +124,8 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card>
                     <CardContent className="flex items-center gap-4 p-6 pt-6">
-                        <div className="p-3 bg-primary/10 rounded-full">
-                            <MusicNote01Icon className="h-6 w-6 text-primary" />
+                        <div className="p-3 bg-purple-100 rounded-xl">
+                            <MusicNote01Icon className="h-6 w-6 text-purple-600" />
                         </div>
                         <div>
                             <div className="text-3xl font-bold text-gray-900">{history.filter((h: MusicGeneration) => h.status === 'completed').length}</div>
@@ -135,8 +135,8 @@ export default function DashboardPage() {
                 </Card>
                 <Card>
                     <CardContent className="flex items-center gap-4 p-6 pt-6">
-                        <div className="p-3 bg-primary/10 rounded-full">
-                            <Coins01Icon className="h-6 w-6 text-primary" />
+                        <div className="p-3 bg-emerald-100 rounded-xl">
+                            <Coins01Icon className="h-6 w-6 text-emerald-600" />
                         </div>
                         <div>
                             <div className="text-3xl font-bold text-gray-900">{credits}</div>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                                                 {item.generatedPrompt || 'No prompt'}
                                             </p>
                                             <div className="flex items-center gap-3 text-sm text-gray-500">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.status === 'completed' ? 'bg-primary/10 text-primary' :
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
                                                     item.status === 'failed' ? 'bg-destructive/10 text-destructive' :
                                                         'bg-gray-100 text-gray-700'
                                                     }`}>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
                         <MusicNote01Icon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold mb-2">No songs yet</h3>
                         <p className="text-gray-600 mb-6">You haven't created any songs yet. Use a credit to get started!</p>
-                        <Button onClick={() => router.push('/dashboard/create')} className="bg-primary text-primary-foreground">
+                        <Button onClick={() => router.push('/dashboard/create')}>
                             Create Song
                         </Button>
                     </div>
