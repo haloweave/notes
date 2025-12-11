@@ -43,25 +43,7 @@ export default function SettingsPage() {
                             <Button type="submit" className="w-full">Save Changes</Button>
                         </form>
                     </div>
-                    <div className="pt-6 border-t">
-                        <h3 className="text-lg font-semibold mb-4">Danger Zone</h3>
-                        <p className="text-sm text-muted-foreground mb-4">Resetting data will clear all local storage, including your session and created songs. This cannot be undone.</p>
-                        <Button
-                            variant="destructive"
-                            className="w-full flex items-center gap-2"
-                            onClick={() => {
-                                if (confirm('Are you sure you want to reset local data? This action cannot be undone.')) {
-                                    localStorage.clear();
-                                    sessionStorage.clear();
-                                    signOut();
-                                    router.push('/');
-                                }
-                            }}
-                        >
-                            <MaterialIcon name="refresh" className="h-4 w-4" />
-                            Reset Local Data
-                        </Button>
-                    </div>
+
                 </CardContent>
             </Card>
         </div>

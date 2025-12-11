@@ -14,6 +14,7 @@ export default function DashboardPage() {
 
     const [credits, setCredits] = useState(0);
     const [history, setHistory] = useState<MusicGeneration[]>([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
     // Polling state for any pending items on the dashboard
     const [pollingIds, setPollingIds] = useState<Set<string>>(new Set());
@@ -27,7 +28,7 @@ export default function DashboardPage() {
 
             if (status === 'COMPLETED' || status === 'complete' || status === 'failed' || status === 'error') {
                 // Refresh history to update UI with final status
-                fetchHistory();
+                fetchHistory(false); // Don't trigger full loading state on status check updates
                 setPollingIds(prev => {
                     const next = new Set(prev);
                     next.delete(id);
@@ -48,7 +49,8 @@ export default function DashboardPage() {
         }
     };
 
-    const fetchHistory = async () => {
+    const fetchHistory = async (showLoading = true) => {
+        if (showLoading) setIsLoadingHistory(true);
         try {
             const response = await fetch('/api/history');
             const data = await response.json();
@@ -70,14 +72,19 @@ export default function DashboardPage() {
             }
         } catch (error) {
             console.error('Failed to fetch history:', error);
+        } finally {
+            if (showLoading) setIsLoadingHistory(false);
         }
     };
 
     useEffect(() => {
         if (session) {
             fetchHistory();
+        } else if (!isPending) {
+            // If not pending and no session, we aren't loading history
+            setIsLoadingHistory(false);
         }
-    }, [session]);
+    }, [session, isPending]);
 
     // Redirect to login if not authenticated
     if (!isPending && !session) {
@@ -85,12 +92,15 @@ export default function DashboardPage() {
         return null;
     }
 
-    if (isPending) {
+    if (isPending || (session && isLoadingHistory)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="flex flex-col items-center gap-2">
-                    <MaterialIcon name="progress_activity" className="h-8 w-8 animate-spin text-indigo-600" />
-                    <p className="text-gray-500">Loading...</p>
+                    <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p className="text-gray-500 font-medium">Loading...</p>
                 </div>
             </div>
         );
@@ -153,8 +163,8 @@ export default function DashboardPage() {
                                             </p>
                                             <div className="flex items-center gap-3 text-sm text-gray-500">
                                                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${item.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                        item.status === 'failed' ? 'bg-red-100 text-red-700' :
-                                                            'bg-yellow-100 text-yellow-700'
+                                                    item.status === 'failed' ? 'bg-red-100 text-red-700' :
+                                                        'bg-yellow-100 text-yellow-700'
                                                     }`}>
                                                     {item.status?.toUpperCase() || 'UNKNOWN'}
                                                 </span>

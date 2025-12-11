@@ -14,26 +14,41 @@ export function Sidebar() {
     // Helper to determine if a link is active
     const isActive = (path: string) => {
         if (path === '/dashboard' && pathname === '/dashboard') return true;
-        if (path !== '/dashboard' && pathname?.startsWith(path)) return true;
+        if (path.length > 10 && pathname?.startsWith(path)) return true;
         return false;
     };
 
     const getLinkClass = (path: string) => {
-        return `w-full justify-start ${isActive(path) ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-gray-600 hover:bg-gray-50'}`;
+        return `w-full justify-start rounded-xl ${isActive(path) ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50'}`;
     };
 
     return (
         <aside className="w-64 h-screen bg-white border-r shadow-sm flex flex-col shrink-0 sticky top-0">
             {/* Logo */}
-            <div className="p-4">
-                <Link href="/dashboard" className="logo flex items-center gap-2 font-bold text-lg">
-                    <span className="logo-badge bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-black">H</span>
-                    Huggnote
+            <div className="p-6 flex items-center justify-center border-b border-gray-100">
+                <Link href="/dashboard" className="flex items-center gap-3">
+                    <img src="/logo.png" alt="Huggnote Logo" className="w-10 h-10 object-contain" />
+                    <span className="font-bold text-xl text-gray-900 tracking-tight">Huggnote</span>
                 </Link>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 p-4 space-y-2">
+                <Button
+                    variant={isActive('/dashboard/create') ? 'secondary' : 'default'}
+                    className={`w-full justify-start h-14 rounded-xl ${isActive('/dashboard/create') ? 'bg-primary/10 text-primary hover:bg-primary/20 font-medium' : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/30'}`}
+                    asChild
+                >
+                    <Link href="/dashboard/create">
+                        <MaterialIcon name="add_circle" className={`mr-3 h-5 w-5 shrink-0 ${isActive('/dashboard/create') ? 'text-primary' : 'text-primary-foreground'}`} />
+                        Create New
+                    </Link>
+                </Button>
+
+                <div className="pt-2 pb-2">
+                    <div className="h-px bg-gray-100 mx-2"></div>
+                </div>
+
                 <Button
                     variant="ghost"
                     className={getLinkClass('/dashboard')}
@@ -44,16 +59,7 @@ export function Sidebar() {
                         My Songs
                     </Link>
                 </Button>
-                <Button
-                    variant="ghost"
-                    className={getLinkClass('/dashboard/create')}
-                    asChild
-                >
-                    <Link href="/dashboard/create">
-                        <MaterialIcon name="add_circle" className="mr-3 h-5 w-5 shrink-0" />
-                        Create New
-                    </Link>
-                </Button>
+
                 <Button
                     variant="ghost"
                     className={getLinkClass('/dashboard/orders')}
@@ -78,19 +84,21 @@ export function Sidebar() {
 
             {/* Footer */}
             <div className="p-4 border-t bg-gray-50">
-                <div className="user-info flex items-center gap-3 mb-4 p-3 bg-white rounded-lg shadow-sm">
-                    <div className="user-avatar bg-gray-200 p-2 rounded-full">
-                        <MaterialIcon name="person" className="h-6 w-6 text-gray-600" />
+                <div className="user-info flex items-center gap-3 mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                    <div className="user-avatar bg-primary/10 p-2 rounded-full flex items-center justify-center">
+                        <MaterialIcon name="person" className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{session?.user?.email || 'User'}</p>
-                        {/* Credits would ideally be fetched from a context or prop, removing basic 0 for now or handled in separate component */}
-                        <p className="text-xs text-muted-foreground">{(session?.user as any)?.credits || 0} Credits</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                            {(session?.user as any)?.credits || 0} Credits
+                        </p>
                     </div>
                 </div>
                 <Button
                     variant="outline"
-                    className="w-full justify-start"
+                    className="w-full justify-start rounded-xl text-gray-600 hover:text-red-600 hover:bg-red-50 hover:border-red-100 transition-colors"
                     onClick={() => signOut()}
                     size="sm"
                 >

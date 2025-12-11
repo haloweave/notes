@@ -467,7 +467,7 @@ export default function CreatePage() {
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-14 text-lg bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
+                                    className="w-full h-14 text-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
                                 >
                                     {loading ? (
                                         <>
@@ -523,7 +523,7 @@ export default function CreatePage() {
 
             {/* Current Generation Card */}
             {(loading || status || error || (taskId && !audioUrl)) && (
-                <Card className={`shadow-sm border-l-4 ${error ? 'border-l-red-500 bg-red-50' : 'border-l-indigo-500 bg-indigo-50'}`}>
+                <Card className={`shadow-sm border-l-4 ${error ? 'border-l-red-500 bg-red-50' : 'border-l-primary bg-primary/5'}`}>
                     <CardHeader>
                         <CardTitle>Current Generation</CardTitle>
                     </CardHeader>
@@ -539,8 +539,8 @@ export default function CreatePage() {
                         ) : (
                             <div className="space-y-2">
                                 <div className="flex items-center gap-3">
-                                    {loading && <MaterialIcon name="progress_activity" className="h-5 w-5 animate-spin text-indigo-600" />}
-                                    <p className="text-indigo-600 font-semibold">{status || 'Processing...'}</p>
+                                    {loading && <MaterialIcon name="progress_activity" className="h-5 w-5 animate-spin text-primary" />}
+                                    <p className="text-primary font-semibold">{status || 'Processing...'}</p>
                                 </div>
                                 {taskId && <p className="text-sm text-gray-500 font-mono">Task ID: {taskId}</p>}
                             </div>
@@ -566,7 +566,7 @@ export default function CreatePage() {
                             <source src={audioUrl || undefined} />
                             Your browser does not support the audio element.
                         </audio>
-                        <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700">
+                        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                             <a href={audioUrl || undefined} download>
                                 <MaterialIcon name="download" className="mr-2 h-4 w-4" />
                                 Download Music
