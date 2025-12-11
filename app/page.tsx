@@ -33,7 +33,7 @@ export default function LoginPage() {
         if (result.error) {
           setError(result.error.message || 'Sign up failed');
         } else {
-          router.push('/generate');
+          router.push('/dashboard');
         }
       } else {
         // Sign in
@@ -45,7 +45,7 @@ export default function LoginPage() {
         if (result.error) {
           setError(result.error.message || 'Invalid email or password');
         } else {
-          router.push('/generate');
+          router.push('/dashboard');
         }
       }
     } catch (err: any) {

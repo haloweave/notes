@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { musicGenerations } from '@/lib/db/schema';
+import { musicGenerations, user } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 import { auth } from '@/lib/auth';
@@ -51,7 +52,19 @@ export async function POST(request: NextRequest) {
         });
 
         if (session?.user) {
-            console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email})`);
+            const userRecord = await db.query.user.findFirst({
+                where: eq(user.id, session.user.id),
+            });
+
+            if (!userRecord || userRecord.credits < 1) {
+                console.log('[GENERATE] Insufficient credits for user:', session.user.id);
+                return NextResponse.json(
+                    { success: false, message: 'Insufficient credits. Please purchase more credits to generate music.' },
+                    { status: 402 }
+                );
+            }
+
+            console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email}) with ${userRecord.credits} credits`);
         } else {
             console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
         }
@@ -70,6 +83,11 @@ export async function POST(request: NextRequest) {
                 updatedAt: new Date(),
             });
             console.log(`[GENERATE] ✅ Successfully saved generation record. Task ID: ${data.task_id}, User ID: ${session?.user?.id || 'null'}`);
+
+            if (session?.user && userRecord) {
+                await db.update(user).set({ credits: userRecord.credits - 1 }).where(eq(user.id, session.user.id));
+                console.log(`[GENERATE] 💳 Deducted 1 credit from user ${session.user.id}. Remaining: ${userRecord.credits - 1}`);
+            }
         } catch (dbError) {
             console.error('[GENERATE] ⚠️ Failed to save to database:', dbError);
             // Don't fail the request if DB save fails

@@ -15,6 +15,13 @@
       "when": 1765474221245,
       "tag": "0001_handy_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1765477838380,
+      "tag": "0002_sweet_invisible_woman",
+      "breakpoints": true
     }
   ]
 }
