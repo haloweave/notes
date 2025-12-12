@@ -48,14 +48,23 @@ export async function POST(request: NextRequest) {
             console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
         }
 
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+        const webhookUrl = appUrl ? `${appUrl}/api/webhooks/musicgpt` : undefined;
+
         console.log('[GENERATE] Calling MusicGPT API...');
+        if (webhookUrl) console.log('[GENERATE] Using webhook URL:', webhookUrl);
+
         const musicGptResponse = await fetch('https://api.musicgpt.com/api/public/v1/MusicAI', {
             method: 'POST',
             headers: {
                 'Authorization': API_KEY,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify({
+                ...body,
+                webhook_url: webhookUrl,
+                num_outputs: 1
+            }),
         });
 
         const data = await musicGptResponse.json();

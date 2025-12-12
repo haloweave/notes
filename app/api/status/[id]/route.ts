@@ -16,6 +16,26 @@ export async function GET(
         console.log(`[STATUS] Checking status for task ID: ${id} `);
         console.log(`[STATUS] Conversion type: ${conversionType}, ID type: ${idType} `);
 
+        // 1. Check DB first for completion
+        try {
+            const existingRecord = await db.query.musicGenerations.findFirst({
+                where: eq(musicGenerations.taskId, id)
+            });
+
+            if (existingRecord && (existingRecord.status === 'completed' || existingRecord.status === 'failed')) {
+                console.log(`[STATUS] ✅ Returning CACHED status for ${id}: ${existingRecord.status}`);
+                // Construct response matching the API format
+                return NextResponse.json({
+                    success: true,
+                    status: existingRecord.status === 'completed' ? 'COMPLETED' : 'FAILED',
+                    audio_url: existingRecord.audioUrl1 || existingRecord.audioUrl2 || existingRecord.audioUrlWav1,
+                    conversion: existingRecord.statusResponse || {}
+                });
+            }
+        } catch (dbErr) {
+            console.warn("[STATUS] DB check failed, proceeding to API poll", dbErr);
+        }
+
         const API_KEY = process.env.MUSICGPT_API_KEY;
 
         if (!API_KEY) {

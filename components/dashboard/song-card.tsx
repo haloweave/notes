@@ -19,13 +19,26 @@ export function SongCard({ item }: SongCardProps) {
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const audioUrl = item.audioUrlWav1 || item.audioUrlWav2 || item.audioUrl1 || item.audioUrl2;
+    const [selectedVersion, setSelectedVersion] = useState<'v1' | 'v2'>('v1');
+
+    // Determine the active audio URL based on selection
+    const activeAudioUrl = selectedVersion === 'v1'
+        ? (item.audioUrlWav1 || item.audioUrl1)
+        : (item.audioUrlWav2 || item.audioUrl2);
+
+    // Fallback if the selected version is missing (unlikely if completed, but good for safety)
+    const audioUrl = activeAudioUrl || (item.audioUrlWav1 || item.audioUrl1);
+
+    // Check if we actually have two versions to toggle between
+    const hasSecondVersion = !!(item.audioUrlWav2 || item.audioUrl2);
 
     useEffect(() => {
         if (audioRef.current) {
             // Reset state when audio source changes
             setProgress(0);
             setIsPlaying(false);
+            if (audioRef.current) audioRef.current.currentTime = 0;
+            setIsExpanded(false); // Collapse when switching versions
         }
     }, [audioUrl]);
 
@@ -42,6 +55,18 @@ export function SongCard({ item }: SongCardProps) {
         }
         setIsPlaying(!isPlaying);
     };
+
+    // ... (rest of handlers remain same)
+
+    const handleVersionChange = (version: 'v1' | 'v2') => {
+        if (selectedVersion === version) return;
+        setSelectedVersion(version);
+        // State reset handled by useEffect on audioUrl dependency
+    };
+
+    // ...
+
+
 
     const stopPlayback = (e?: React.MouseEvent) => {
         e?.stopPropagation();
@@ -132,32 +157,61 @@ export function SongCard({ item }: SongCardProps) {
                     </div>
 
                     {/* Right: Big Play Button (or Status) */}
-                    {isProcessing ? (
-                        <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100">
-                            <div className="w-8 h-8 rounded-full border-4 border-blue-500/30 border-t-blue-600 animate-spin" />
-                        </div>
-                    ) : isFailed ? (
-                        <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-red-50 border border-red-100 text-red-500">
-                            <Square className="w-6 h-6 fill-current opacity-50" />
-                        </div>
-                    ) : (
-                        <button
-                            onClick={togglePlay}
-                            disabled={!audioUrl}
-                            className={cn(
-                                "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
-                                isPlaying
-                                    ? "bg-purple-100 text-purple-600 scale-95"
-                                    : "bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
-                            )}
-                        >
-                            {isPlaying ? (
-                                <Pause className="w-8 h-8 fill-current" />
-                            ) : (
-                                <Play className="w-8 h-8 fill-current ml-1" />
-                            )}
-                        </button>
-                    )}
+                    <div className="flex flex-col items-center gap-2">
+                        {hasSecondVersion && item.status === 'completed' && (
+                            <div className="flex items-center bg-gray-100 rounded-full p-1 w-fit mb-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleVersionChange('v1'); }}
+                                    className={cn(
+                                        "px-3 py-1 text-xs font-semibold rounded-full transition-all",
+                                        selectedVersion === 'v1'
+                                            ? "bg-white text-purple-600 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-700"
+                                    )}
+                                >
+                                    V1
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleVersionChange('v2'); }}
+                                    className={cn(
+                                        "px-3 py-1 text-xs font-semibold rounded-full transition-all",
+                                        selectedVersion === 'v2'
+                                            ? "bg-white text-purple-600 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-700"
+                                    )}
+                                >
+                                    V2
+                                </button>
+                            </div>
+                        )}
+
+                        {isProcessing ? (
+                            <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100">
+                                <div className="w-8 h-8 rounded-full border-4 border-blue-500/30 border-t-blue-600 animate-spin" />
+                            </div>
+                        ) : isFailed ? (
+                            <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-red-50 border border-red-100 text-red-500">
+                                <Square className="w-6 h-6 fill-current opacity-50" />
+                            </div>
+                        ) : (
+                            <button
+                                onClick={togglePlay}
+                                disabled={!audioUrl}
+                                className={cn(
+                                    "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                    isPlaying
+                                        ? "bg-purple-100 text-purple-600 scale-95"
+                                        : "bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                )}
+                            >
+                                {isPlaying ? (
+                                    <Pause className="w-8 h-8 fill-current" />
+                                ) : (
+                                    <Play className="w-8 h-8 fill-current ml-1" />
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Expanded Section */}
