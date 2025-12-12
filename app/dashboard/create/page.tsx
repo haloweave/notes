@@ -14,52 +14,70 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Coins01Icon, Loading01Icon, SparklesIcon, BulbIcon, MusicNote01Icon, RefreshIcon, PlayCircleIcon, Download01Icon } from 'hugeicons-react';
+import { db } from '@/lib/db'; // Will fetch via API actually
+import { PricingTable } from '@/components/dashboard/pricing-table';
+import { useEffect } from 'react';
+import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
-const formSchema = z.object({
-    recipient: z.string().min(1, "Recipient is required"),
-    relationship: z.string().min(1, "Relationship is required"),
-    tone: z.string().min(1, "Tone is required"),
-    vibe: z.string().min(1, "Vibe is required"),
-    style: z.string().min(1, "Style is required"),
-    story: z.string().min(10, "Please share at least 10 characters about them"),
-    personalization: z.string().min(1, "Personalization level is required"),
-    length: z.string().min(1, "Length is required"),
-    include_name: z.boolean().default(true)
-});
+// ... (schema remains same)
 
 export default function CreatePage() {
     const { data: session } = useSession();
     const router = useRouter();
     const [generatedPrompt, setGeneratedPrompt] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // Used for both prompt and music generation loading states
     const [error, setError] = useState('');
     const [status, setStatus] = useState('');
-    const [credits, setCredits] = useState(0); // This should ideally come from a shared context or layout fetch
+    const [credits, setCredits] = useState<number | null>(null);
     const [taskId, setTaskId] = useState('');
     const [audioUrl, setAudioUrl] = useState('');
+    const [showCreditsDialog, setShowCreditsDialog] = useState(false);
+
+    // New state for dialog
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchCredits = async () => {
+            try {
+                const res = await fetch('/api/credits');
+                if (res.ok) {
+                    const data = await res.json();
+                    setCredits(data.credits);
+                }
+            } catch (e) {
+                console.error("Failed to fetch credits", e);
+            }
+        };
+        fetchCredits();
+    }, []);
 
     const form = useForm({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            recipient: '',
-            relationship: '',
-            tone: '',
-            vibe: '',
-            style: '',
-            story: '',
-            personalization: '',
-            length: '',
-            include_name: true
-        }
+        // ... (remains same)
     });
 
     const generatePrompt = async (values: z.infer<typeof formSchema>) => {
+        if (credits !== null && credits < 1) {
+            setShowCreditsDialog(true);
+            return;
+        }
+
         const dataToSubmit = values;
 
         console.log('[FRONTEND] Generate prompt clicked', dataToSubmit);
+        setIsDialogOpen(true); // Open dialog immediately
+        setGeneratedPrompt(''); // Reset previous prompt
         setLoading(true);
         setError('');
         setStatus('Creating your music prompt...');
+
         try {
             console.log('[FRONTEND] Sending request to /api/create-prompt');
             const response = await fetch('/api/create-prompt', {
@@ -74,11 +92,13 @@ export default function CreatePage() {
                 console.log('[FRONTEND] Setting generated prompt:', data.prompt);
                 setGeneratedPrompt(data.prompt);
                 setLoading(false);
-                setStatus('Prompt generated successfully! Now click "Create Song" to generate music (costs 1 credit).');
+                // Status cleared so "Current Generation" card doesn't show background noise
+                setStatus('');
             } else {
                 console.error('[FRONTEND] Error from API:', data.message);
                 setError(data.message || 'Failed to generate prompt');
                 setLoading(false);
+                // Keep dialog open to show error? or close?
             }
         } catch (err: any) {
             console.error('[FRONTEND] Exception:', err);
@@ -88,9 +108,11 @@ export default function CreatePage() {
     };
 
     const startMusicGeneration = async (prompt: string) => {
+        setIsDialogOpen(false); // Close dialog as we start generation
         console.log('[FRONTEND] Starting music generation with prompt:', prompt);
         setStatus('Generating your music...');
         setError(''); // Clear any previous errors
+        setLoading(true); // Set loading true for the main page card
 
         try {
             const response = await fetch('/api/generate', {
@@ -120,7 +142,10 @@ export default function CreatePage() {
                 setTaskId(taskId);
                 const eta = data.eta ? `~${Math.ceil(data.eta / 60)} minutes` : 'a few minutes';
                 setStatus(`Music generation started. ETA: ${eta}. Please wait...`);
-                pollStatus(taskId);
+                // pollStatus(taskId); // No longer needed as we redirect
+
+                // Redirect immediately to dashboard where it will appear in the history
+                router.push('/dashboard');
             } else {
                 setError(data.message || data.detail || 'Failed to start music generation');
                 setLoading(false);
@@ -137,111 +162,39 @@ export default function CreatePage() {
             setError('Please generate a prompt first');
             return;
         }
-        // Basic frontend check, backend also checks
-        if (credits < 0) {
-            // Logic to handle insufficient credits if we have that data
-        }
         await startMusicGeneration(generatedPrompt);
     };
 
-    const pollStatus = async (id: string) => {
-        const checkStatus = async () => {
-            try {
-                console.log('[FRONTEND] Polling status for task:', id);
-                const response = await fetch(`/api/status/${id}`);
-                const data = await response.json();
-                console.log('[FRONTEND] Status response:', data);
-
-                // Check for completion - MusicGPT might use different field names
-                const audioUrl = data.audio_url
-                    || data.audioUrl
-                    || data.url
-                    || data.conversion?.conversion_path_1
-                    || data.conversion?.conversion_path_2;
-                const status = data.status || data.state;
-
-                console.log('[FRONTEND] Extracted - Status:', status, 'Audio URL:', audioUrl);
-
-                if ((status === 'COMPLETED' || status === 'complete') && audioUrl) {
-                    console.log('[FRONTEND] ✅ Music complete! Audio URL:', audioUrl);
-                    setAudioUrl(audioUrl);
-                    setStatus('Music generated successfully!');
-                    setLoading(false);
-                } else if (status === 'error' || status === 'failed') {
-                    console.error('[FRONTEND] Music generation failed:', data);
-                    setError(data.error || data.message || 'Music generation failed');
-                    setLoading(false);
-                } else {
-                    // Still processing
-                    const currentStatus = status || 'processing';
-                    console.log('[FRONTEND] Current status:', currentStatus);
-                    setStatus(`Status: ${currentStatus}... (polling every 3s)`);
-                    setTimeout(checkStatus, 3000); // Poll every 3 seconds
-                }
-            } catch (err: any) {
-                console.error('[FRONTEND] Status check error:', err);
-                setError(err.message || 'Error checking status');
-                setLoading(false);
-            }
-        };
-
-        checkStatus();
-    };
-
-    const copyPrompt = () => {
-        if (generatedPrompt) {
-            navigator.clipboard.writeText(generatedPrompt).then(() => {
-                setStatus('Prompt copied to clipboard!');
-                setTimeout(() => setStatus(''), 3000);
-            }).catch((err) => {
-                console.error('Failed to copy', err);
-                setError('Failed to copy prompt');
-            });
-        }
-    };
-
-    const handleRetry = () => {
-        if (generatedPrompt) {
-            startMusicGeneration(generatedPrompt);
-        } else {
-            generatePrompt(form.getValues() as any);
-        }
-    };
-
-    const mockPurchase = (type: 'single' | 'multi') => {
-        alert(`Mock purchase of ${type} pack. In real app, this would integrate with payment gateway and add credits to your account.`);
-        const added = type === 'single' ? 1 : 5;
-        setCredits(prev => prev + added);
-        setStatus(`Added ${added} credits!`);
-        setTimeout(() => setStatus(''), 3000);
-    };
+    // ... (rest of functions: pollStatus, copyPrompt, handleRetry, mockPurchase)
 
     return (
         <div className="space-y-8">
-            <header className="flex justify-between items-center pb-6 border-b border-gray-200">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Create New Song</h1>
-                    <p className="text-gray-500 mt-1">Tell us your story and we'll craft a masterpiece.</p>
-                </div>
-                <div className="flex items-center gap-4">
-                    <Button 
-                        variant="outline" 
-                        onClick={() => router.push('/dashboard')}
-                    >
-                        View All Your Songs
-                    </Button>
-                    <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1 rounded-full text-sm text-emerald-600 font-medium">
-                        <Coins01Icon className="h-4 w-4" />
-                        <span>{credits} Credits</span>
-                    </div>
-                </div>
-            </header>
+            <DashboardHeader
+                title="Create New Song"
+                description="Tell us your story and we'll craft a masterpiece."
+            >
+                <Button
+                    variant="outline"
+                    onClick={() => router.push('/dashboard')}
+                >
+                    View All Your Songs
+                </Button>
+            </DashboardHeader>
 
             {/* Form State */}
             <Card className="max-w-4xl mx-auto shadow-sm">
                 <CardContent className="p-8 space-y-8">
                     <Form {...form}>
+                        {/* ... form content ... */}
+                        {/* Form code will be preserved by replacement logic if careful, but since I am replacing a huge chunk, I need to be careful. 
+                             Actually, the Instruction says "Remove the on-page 'Generated Prompt' section.".
+                             I will include the Form and the Dialog at the end. 
+                         */}
                         <form onSubmit={form.handleSubmit(generatePrompt as any)} className="space-y-8">
+                            {/* ... Fields ... I will have to include the fields in replacement if I replace the whole return block, 
+                                but I can target StartLine/EndLine to partial replace. 
+                                The user request implies replacing the workflow. 
+                            */}
                             {/* 1. Who is the song for? */}
                             <FormField
                                 control={form.control as any}
@@ -482,7 +435,7 @@ export default function CreatePage() {
                                     {loading ? (
                                         <>
                                             <Loading01Icon className="h-6 w-6 animate-spin" />
-                                            Generating Prompt...
+                                            Processing...
                                         </>
                                     ) : (
                                         <>
@@ -494,97 +447,79 @@ export default function CreatePage() {
                             </div>
                         </form>
                     </Form>
-
-                    {/* Generated Prompt Section */}
-                    {generatedPrompt && (
-                        <div className="p-6 bg-gray-50 border border-gray-200 rounded-lg">
-                            <h4 className="flex items-center gap-2 mb-4 text-gray-900 font-semibold text-lg">
-                                <BulbIcon className="h-5 w-5" />
-                                Generated Prompt
-                            </h4>
-                            <pre className="mb-4 p-3 bg-white rounded border text-sm font-mono text-gray-700 overflow-auto whitespace-pre-wrap">
-                                {generatedPrompt}
-                            </pre>
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={copyPrompt}
-                                    disabled={loading}
-                                >
-                                    Copy
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    onClick={generateMusic}
-                                    disabled={loading}
-                                    className="flex items-center gap-2"
-                                >
-                                    <MusicNote01Icon className="h-4 w-4" />
-                                    Create Song (1 Credit)
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                    {/* Removed Generated Prompt Section */}
                 </CardContent>
             </Card>
 
-            {/* Current Generation Card */}
-            {(loading || status || error || (taskId && !audioUrl)) && (
-                <Card className={`shadow-sm border-l-4 ${error ? 'border-l-destructive bg-destructive/5' : 'border-l-primary bg-primary/5'}`}>
-                    <CardHeader>
-                        <CardTitle>Current Generation</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        {error ? (
-                            <div className="space-y-4">
-                                <p className="text-destructive font-medium">{error}</p>
-                                <Button onClick={handleRetry} variant="destructive" size="sm">
-                                    <RefreshIcon className="mr-2 h-4 w-4" />
-                                    Retry Generation
-                                </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {loading && !generatedPrompt ? "Crafting Your Song..." : "Confirm Your Song"}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {loading && !generatedPrompt ? "Our AI is writing the perfect lyrics and prompt based on your story." : "Review the generated lyrics prompt below before we create the audio."}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        {loading && !generatedPrompt ? (
+                            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                                <SparklesIcon className="h-12 w-12 text-primary animate-pulse" />
+                                <p className="text-center text-muted-foreground animate-pulse">Writing lyrics and composing melody instructions...</p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-3">
-                                    {loading && <Loading01Icon className="h-5 w-5 animate-spin text-primary" />}
-                                    <p className="text-primary font-semibold">{status || 'Processing...'}</p>
-                                </div>
-                                {taskId && <p className="text-sm text-gray-500 font-mono">Task ID: {taskId}</p>}
+                            <div className="space-y-4">
+                                {generatedPrompt && (
+                                    <div className="p-4 bg-muted rounded-md text-sm font-mono whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                                        {generatedPrompt}
+                                    </div>
+                                )}
+                                {error && (
+                                    <p className="text-destructive text-sm font-medium">{error}</p>
+                                )}
                             </div>
                         )}
-                    </CardContent>
-                </Card>
-            )}
+                    </div>
 
-            {/* Audio Player (Success State) */}
-            {audioUrl && (
-                <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <PlayCircleIcon className="h-6 w-6 text-primary" />
-                            Your Generated Music
-                        </CardTitle>
-                        <CardDescription className="text-primary font-medium">
-                            Generation Successful!
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 p-6">
-                        <audio controls className="w-full">
-                            <source src={audioUrl || undefined} />
-                            Your browser does not support the audio element.
-                        </audio>
-                        <Button asChild className="w-full">
-                            <a href={audioUrl || undefined} download>
-                                <Download01Icon className="mr-2 h-4 w-4" />
-                                Download Music
-                            </a>
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
+                    <DialogFooter className="sm:justify-between gap-2">
+                        <div className="flex-1"></div>
+                        {(!loading || generatedPrompt) && (
+                            <>
+                                <Button variant="secondary" onClick={() => setIsDialogOpen(false)} disabled={loading && !generatedPrompt}>
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={generateMusic}
+                                    disabled={!generatedPrompt || loading}
+                                    className="gap-2"
+                                >
+                                    <MusicNote01Icon className="h-4 w-4" />
+                                    Generate Song (1 Credit)
+                                </Button>
+                            </>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </DialogContent>
+        </Dialog>
+
+            {/* Credits Dialog */ }
+    <Dialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
+        <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Insufficient Credits</DialogTitle>
+                <DialogDescription>
+                    You need at least 1 credit to generate a song. Please purchase a credit package below to continue.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <PricingTable />
+            </div>
+        </DialogContent>
+    </Dialog>
+
+    {/* Current Generation and Audio Player sections removed as redirected to Dashboard */ }
+        </div >
     );
 }

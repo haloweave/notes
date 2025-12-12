@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Add01Icon, MusicNote01Icon, Coins01Icon, Loading01Icon } from 'hugeicons-react';
 import { type MusicGeneration } from '@/lib/db/schema';
 import { SongCard } from '@/components/dashboard/song-card';
+import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 
 export default function DashboardPage() {
     const { data: session, isPending } = useSession();
@@ -107,11 +108,10 @@ export default function DashboardPage() {
     return (
         <div className="space-y-8">
             {/* Home Header */}
-            <header className="flex justify-between items-center pb-6 border-b border-gray-200">
-                <div>
-                    <h1 className="text-5xl font-bold text-gray-900">My Songs</h1>
-                    <p className="text-gray-500 mt-1">Manage and share your custom holiday songs.</p>
-                </div>
+            <DashboardHeader
+                title="My Songs"
+                description="Manage and share your custom holiday songs."
+            >
                 <Button
                     className="flex items-center gap-2 h-14 text-lg px-8"
                     onClick={() => router.push('/dashboard/create')}
@@ -119,7 +119,7 @@ export default function DashboardPage() {
                     <Add01Icon className="h-5 w-5" />
                     New Song
                 </Button>
-            </header>
+            </DashboardHeader>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

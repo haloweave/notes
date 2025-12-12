@@ -8,18 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 // MaterialIcon import removed
 
+import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+
 export default function SettingsPage() {
     const { data: session } = useSession();
     const router = useRouter();
 
     return (
         <div className="space-y-8">
-            <header className="flex justify-between items-center pb-6 border-b border-gray-200">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-                    <p className="text-gray-500 mt-1">Manage your profile and preferences.</p>
-                </div>
-            </header>
+            <DashboardHeader
+                title="Settings"
+                description="Manage your profile and preferences."
+            />
             <Card className="max-w-2xl">
                 <CardContent className="p-6 space-y-6">
                     <div>

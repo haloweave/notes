@@ -98,7 +98,10 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('[GENERATE] Music generation started successfully. Task ID:', data.task_id || data.id);
-        return NextResponse.json(data);
+        return NextResponse.json({
+            ...data,
+            success: true
+        });
     } catch (error: any) {
         console.error('Error processing /api/generate:', error);
         return NextResponse.json(

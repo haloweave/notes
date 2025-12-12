@@ -68,7 +68,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     <p className="muted">{isSignUp ? 'Sign up to create your song.' : 'Sign in to access your songs and orders.'}</p>
                 </div>
                 <div className="modal-body">
-                    <button className="btn btn-secondary google-btn" type="button">
+                    <button
+                        className="btn btn-secondary google-btn"
+                        type="button"
+                        onClick={async () => {
+                            await signIn.social({
+                                provider: 'google',
+                                callbackURL: '/dashboard'
+                            });
+                        }}
+                    >
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20" />
                         Continue with Google
                     </button>
