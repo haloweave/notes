@@ -23,7 +23,7 @@ export default function LandingPage() {
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
             <a href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}>Login</a>
-            <a className="btn btn-primary btn-mindblowing" href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}><span className="btn-text-content">Start Your Gift</span></a>
+            <a className="btn btn-mindblowing" href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}><span className="btn-text-content">Start Your Gift</span></a>
           </nav>
         </div>
       </header>

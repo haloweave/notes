@@ -9,9 +9,11 @@ import { cn } from '@/lib/utils';
 
 interface SongCardProps {
     item: MusicGeneration;
+    currentPlayingId?: string | null;
+    onPlay?: (id: string) => void;
 }
 
-export function SongCard({ item }: SongCardProps) {
+export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -42,6 +44,18 @@ export function SongCard({ item }: SongCardProps) {
         }
     }, [audioUrl]);
 
+    // Stop playing if another song starts
+    useEffect(() => {
+        if (currentPlayingId && currentPlayingId !== item.id && isPlaying) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
+            setIsPlaying(false);
+            setProgress(0);
+        }
+    }, [currentPlayingId, item.id, isPlaying]);
+
     const togglePlay = (e?: React.MouseEvent) => {
         e?.stopPropagation();
 
@@ -50,6 +64,9 @@ export function SongCard({ item }: SongCardProps) {
         if (isPlaying) {
             audioRef.current.pause();
         } else {
+            // Notify parent that we are playing
+            if (onPlay) onPlay(item.id);
+
             audioRef.current.play();
             setIsExpanded(true);
         }

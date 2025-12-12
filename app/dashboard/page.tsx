@@ -20,6 +20,7 @@ export default function DashboardPage() {
 
     // Polling state for any pending items on the dashboard
     const [pollingIds, setPollingIds] = useState<Set<string>>(new Set());
+    const [currentPlayingId, setCurrentPlayingId] = useState<string | null>(null);
 
     const checkHistoryItemStatus = async (id: string) => {
         try {
@@ -152,7 +153,12 @@ export default function DashboardPage() {
                 {history.length > 0 ? (
                     <div className="grid gap-6">
                         {history.map((item: MusicGeneration) => (
-                            <SongCard key={item.id} item={item} />
+                            <SongCard
+                                key={item.id}
+                                item={item}
+                                currentPlayingId={currentPlayingId}
+                                onPlay={(id) => setCurrentPlayingId(id)}
+                            />
                         ))}
                     </div>
                 ) : (
