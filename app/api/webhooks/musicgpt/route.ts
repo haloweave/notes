@@ -16,13 +16,25 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, message: "Missing task_id" }, { status: 400 });
         }
 
+        // Specific handling for album cover generation webhooks which might not have 'status'
+        if (body.subtype === 'album_cover_generation' && body.success) {
+            console.log(`[WEBHOOK] Received album cover update for task ${task_id}`);
+            if (body.image_path) {
+                await db.update(musicGenerations)
+                    .set({ albumCoverUrl: body.image_path, updatedAt: new Date() })
+                    .where(eq(musicGenerations.taskId, task_id));
+                console.log("[WEBHOOK] Updated album cover URL");
+            }
+            return NextResponse.json({ success: true });
+        }
+
         // Map status to our DB status enum/string
         // DB statuses: 'pending', 'in_progress', 'completed', 'failed'
         let dbStatus = 'pending';
         if (status === 'COMPLETED') dbStatus = 'completed';
         else if (status === 'FAILED') dbStatus = 'failed';
         else if (status === 'IN_PROGRESS') dbStatus = 'in_progress';
-        else dbStatus = status.toLowerCase();
+        else dbStatus = status ? status.toLowerCase() : 'unknown';
 
         // Prepare update data
         const updateData: any = {
