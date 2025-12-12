@@ -5,7 +5,8 @@ async function createTestUser() {
 
     try {
         // This will use Better Auth's internal user creation
-        const result = await fetch('http://localhost:3000/api/auth/sign-up/email', {
+        const baseUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+        const result = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
