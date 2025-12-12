@@ -87,7 +87,8 @@ export function SongCard({ item }: SongCardProps) {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    if (!audioUrl) return null; // Or some error state
+    const isProcessing = item.status === 'pending' || item.status === 'in_progress' || !audioUrl;
+    const isFailed = item.status === 'failed' || item.status === 'error';
 
     return (
         <Card className={cn(
@@ -103,10 +104,12 @@ export function SongCard({ item }: SongCardProps) {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                             <span className={cn(
-                                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
-                                item.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1",
+                                item.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                    isProcessing ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
                             )}>
-                                {item.status || 'Processed'}
+                                {isProcessing && <div className="w-2 h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />}
+                                {item.status === 'in_progress' ? 'Processing' : (item.status || 'Pending')}
                             </span>
                             <div className="flex items-center text-xs text-gray-400 gap-1">
                                 <Calendar className="w-3 h-3" />
@@ -116,25 +119,45 @@ export function SongCard({ item }: SongCardProps) {
                         <h3 className="font-bold text-gray-900 text-lg leading-tight truncate pr-4" title={item.generatedPrompt || 'Untitled'}>
                             {item.generatedPrompt || 'Untitled Composition'}
                         </h3>
-
+                        {isProcessing && (
+                            <p className="text-xs text-muted-foreground mt-1 animate-pulse">
+                                Composing your song, This usually takes about 2 minutes...
+                            </p>
+                        )}
+                        {isFailed && (
+                            <p className="text-xs text-red-500 mt-1">
+                                Generation failed. Please try again.
+                            </p>
+                        )}
                     </div>
 
-                    {/* Right: Big Play Button */}
-                    <button
-                        onClick={togglePlay}
-                        className={cn(
-                            "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
-                            isPlaying
-                                ? "bg-purple-100 text-purple-600 scale-95"
-                                : "bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
-                        )}
-                    >
-                        {isPlaying ? (
-                            <Pause className="w-8 h-8 fill-current" />
-                        ) : (
-                            <Play className="w-8 h-8 fill-current ml-1" />
-                        )}
-                    </button>
+                    {/* Right: Big Play Button (or Status) */}
+                    {isProcessing ? (
+                        <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100">
+                            <div className="w-8 h-8 rounded-full border-4 border-blue-500/30 border-t-blue-600 animate-spin" />
+                        </div>
+                    ) : isFailed ? (
+                        <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-red-50 border border-red-100 text-red-500">
+                            <Square className="w-6 h-6 fill-current opacity-50" />
+                        </div>
+                    ) : (
+                        <button
+                            onClick={togglePlay}
+                            disabled={!audioUrl}
+                            className={cn(
+                                "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                isPlaying
+                                    ? "bg-purple-100 text-purple-600 scale-95"
+                                    : "bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                            )}
+                        >
+                            {isPlaying ? (
+                                <Pause className="w-8 h-8 fill-current" />
+                            ) : (
+                                <Play className="w-8 h-8 fill-current ml-1" />
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 {/* Expanded Section */}
@@ -161,6 +184,7 @@ export function SongCard({ item }: SongCardProps) {
                                     value={progress}
                                     onChange={handleSliderChange}
                                     className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+                                    disabled={!audioUrl}
                                 />
                                 {/* Thumb indicator (visual only) */}
                                 <div
@@ -179,33 +203,38 @@ export function SongCard({ item }: SongCardProps) {
                                 onClick={stopPlayback}
                                 className="h-12 w-12 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
                                 title="Stop"
+                                disabled={!audioUrl}
                             >
                                 <Square className="w-5 h-5 fill-current" />
                             </Button>
 
-                            <Button
-                                variant="outline"
-                                className="h-12 px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700"
-                                asChild
-                            >
-                                <a href={audioUrl} download>
-                                    <Download className="w-4 h-4" />
-                                    <span className="font-medium">Download MP3</span>
-                                </a>
-                            </Button>
+                            {audioUrl && (
+                                <Button
+                                    variant="outline"
+                                    className="h-12 px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700"
+                                    asChild
+                                >
+                                    <a href={audioUrl} download>
+                                        <Download className="w-4 h-4" />
+                                        <span className="font-medium">Download MP3</span>
+                                    </a>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <audio
-                ref={audioRef}
-                src={audioUrl}
-                onTimeUpdate={handleTimeUpdate}
-                onEnded={handleEnded}
-                preload="metadata"
-                className="hidden"
-            />
+            {audioUrl && (
+                <audio
+                    ref={audioRef}
+                    src={audioUrl}
+                    onTimeUpdate={handleTimeUpdate}
+                    onEnded={handleEnded}
+                    preload="metadata"
+                    className="hidden"
+                />
+            )}
         </Card>
     );
 }

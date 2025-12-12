@@ -29,6 +29,18 @@ import {
 
 // ... (schema remains same)
 
+const formSchema = z.object({
+    recipient: z.string().min(1, "Please tell us who this is for"),
+    relationship: z.string().min(1, "Please select a relationship"),
+    tone: z.string().min(1, "Please select a tone"),
+    vibe: z.string().min(1, "Please select a vibe"),
+    style: z.string().min(1, "Please select a style"),
+    story: z.string().min(10, "Please share a bit more detail (at least 10 characters)"),
+    personalization: z.string().min(1, "Please select personalization level"),
+    length: z.string().min(1, "Please select song length"),
+    include_name: z.boolean().default(false),
+});
+
 export default function CreatePage() {
     const { data: session } = useSession();
     const router = useRouter();
@@ -501,25 +513,24 @@ export default function CreatePage() {
                         )}
                     </DialogFooter>
                 </DialogContent>
-            </DialogContent>
-        </Dialog>
+            </Dialog>
 
-            {/* Credits Dialog */ }
-    <Dialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
-        <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Insufficient Credits</DialogTitle>
-                <DialogDescription>
-                    You need at least 1 credit to generate a song. Please purchase a credit package below to continue.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <PricingTable />
-            </div>
-        </DialogContent>
-    </Dialog>
+            {/* Credits Dialog */}
+            <Dialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
+                <DialogContent className="sm:max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Insufficient Credits</DialogTitle>
+                        <DialogDescription>
+                            You need at least 1 credit to generate a song. Please purchase a credit package below to continue.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <PricingTable />
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-    {/* Current Generation and Audio Player sections removed as redirected to Dashboard */ }
+            {/* Current Generation and Audio Player sections removed as redirected to Dashboard */}
         </div >
     );
 }
