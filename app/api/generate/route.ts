@@ -48,7 +48,14 @@ export async function POST(request: NextRequest) {
             console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
         }
 
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+        // Prioritize explicit APP_URL for dev tunnels/localhost
+        let appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+        // Fallback to Vercel URL if in production and APP_URL not set
+        if (!appUrl && process.env.VERCEL_URL) {
+            appUrl = `https://${process.env.VERCEL_URL}`;
+        }
+
         const webhookUrl = appUrl ? `${appUrl}/api/webhooks/musicgpt` : undefined;
 
         console.log('[GENERATE] Calling MusicGPT API...');
