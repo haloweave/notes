@@ -37,9 +37,10 @@ export async function GET(
         const version = isV1 ? 'v1' : 'v2';
 
         // Select the appropriate audio URL and metadata
+        // Prioritize MP3 for better streaming (smaller, faster loading)
         const audioUrl = isV1
-            ? (song.audioUrlWav1 || song.audioUrl1)
-            : (song.audioUrlWav2 || song.audioUrl2);
+            ? (song.audioUrl1 || song.audioUrlWav1)
+            : (song.audioUrl2 || song.audioUrlWav2);
 
         const title = isV1 ? song.title1 : song.title2;
         const lyrics = isV1 ? song.lyrics1 : song.lyrics2;

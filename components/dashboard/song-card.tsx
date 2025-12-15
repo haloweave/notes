@@ -26,12 +26,13 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
     const [copied, setCopied] = useState(false);
 
     // Determine the active audio URL based on selection
+    // Prioritize MP3 for better streaming (smaller, faster loading)
     const activeAudioUrl = selectedVersion === 'v1'
-        ? (item.audioUrlWav1 || item.audioUrl1)
-        : (item.audioUrlWav2 || item.audioUrl2);
+        ? (item.audioUrl1 || item.audioUrlWav1)
+        : (item.audioUrl2 || item.audioUrlWav2);
 
     // Fallback if the selected version is missing (unlikely if completed, but good for safety)
-    const audioUrl = activeAudioUrl || (item.audioUrlWav1 || item.audioUrl1);
+    const audioUrl = activeAudioUrl || (item.audioUrl1 || item.audioUrlWav1);
 
     // Check if we actually have two versions to toggle between
     const hasSecondVersion = !!(item.audioUrlWav2 || item.audioUrl2);
@@ -61,18 +62,17 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
     const togglePlay = (e?: React.MouseEvent) => {
         e?.stopPropagation();
 
-        if (!audioRef.current) return;
+        // Get the share slug for the selected version
+        const slug = selectedVersion === 'v1' ? item.shareSlugV1 : item.shareSlugV2;
 
-        if (isPlaying) {
-            audioRef.current.pause();
-        } else {
-            // Notify parent that we are playing
-            if (onPlay) onPlay(item.id);
-
-            audioRef.current.play();
-            setIsExpanded(true);
+        if (!slug) {
+            console.error('No share slug available');
+            return;
         }
-        setIsPlaying(!isPlaying);
+
+        // Open the immersive player in a new tab
+        const shareUrl = getShareUrl(slug);
+        window.open(shareUrl, '_blank');
     };
 
     // ... (rest of handlers remain same)
@@ -180,9 +180,14 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                 {new Date(item.createdAt).toLocaleDateString()}
                             </div>
                         </div>
-                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.generatedPrompt || 'Untitled'}>
-                            {item.generatedPrompt || 'Untitled Composition'}
+                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={(selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled'}>
+                            {(selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled Composition'}
                         </h3>
+                        {((selectedVersion === 'v1' ? item.title1 : item.title2) && item.generatedPrompt) && (
+                            <p className="text-[10px] md:text-xs text-gray-500 mt-1 line-clamp-1">
+                                {item.generatedPrompt}
+                            </p>
+                        )}
                         {isProcessing && (
                             <p className="text-[10px] md:text-xs text-muted-foreground mt-1 animate-pulse">
                                 Composing your song, This usually takes about 2 minutes...
@@ -233,127 +238,41 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                 <Square className="w-5 h-5 md:w-6 md:h-6 fill-current opacity-50" />
                             </div>
                         ) : (
-                            <button
-                                onClick={togglePlay}
-                                disabled={!audioUrl}
-                                className={cn(
-                                    "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
-                                    isPlaying
-                                        ? "bg-purple-100 text-purple-600 scale-95"
-                                        : "bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
-                                )}
-                            >
-                                {isPlaying ? (
-                                    <Pause className="w-6 h-6 md:w-8 md:h-8 fill-current" />
-                                ) : (
+                            <div className="flex items-center gap-2 md:gap-3">
+                                <button
+                                    onClick={togglePlay}
+                                    disabled={!audioUrl}
+                                    className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                    title="Open player in new tab"
+                                >
                                     <Play className="w-6 h-6 md:w-8 md:h-8 fill-current ml-0.5 md:ml-1" />
+                                </button>
+
+                                {/* Share Button */}
+                                {(selectedVersion === 'v1' ? item.shareSlugV1 : item.shareSlugV2) && (
+                                    <button
+                                        onClick={copyShareLink}
+                                        disabled={!item.shareSlugV1 && !item.shareSlugV2}
+                                        className={cn(
+                                            "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                            copied
+                                                ? "bg-green-100 text-green-600 scale-95"
+                                                : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                        )}
+                                        title="Copy share link"
+                                    >
+                                        {copied ? (
+                                            <Check className="w-5 h-5 md:w-6 md:h-6" />
+                                        ) : (
+                                            <Share2 className="w-5 h-5 md:w-6 md:h-6" />
+                                        )}
+                                    </button>
                                 )}
-                            </button>
+                            </div>
                         )}
                     </div>
                 </div>
-
-                {/* Expanded Section */}
-                <div className={cn(
-                    "grid transition-all duration-500 ease-in-out",
-                    isExpanded ? "grid-rows-[1fr] opacity-100 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-100" : "grid-rows-[0fr] opacity-0"
-                )}>
-                    <div className="overflow-hidden min-h-0">
-                        {/* Progress Bar */}
-                        <div className="flex items-center gap-2 md:gap-4 mb-3 md:mb-4">
-                            <span className="text-[10px] md:text-xs font-medium text-gray-500 w-8 md:w-10 text-right">{formatTime(currentTime)}</span>
-                            <div className="flex-1 h-6 md:h-8 flex items-center relative group/slider">
-                                {/* Custom track background */}
-                                <div className="absolute w-full h-1.5 md:h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-purple-500 transition-all duration-100 ease-out"
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={progress}
-                                    onChange={handleSliderChange}
-                                    className="absolute w-full h-full opacity-0 cursor-pointer z-10"
-                                    disabled={!audioUrl}
-                                />
-                                {/* Thumb indicator (visual only) */}
-                                <div
-                                    className="w-3 h-3 md:w-4 md:h-4 bg-white border-2 border-purple-600 rounded-full shadow-md absolute pointer-events-none transition-all duration-100 ease-out"
-                                    style={{ left: `calc(${progress}% - ${progress > 50 ? '12px' : '6px'})` }}
-                                />
-                            </div>
-                            <span className="text-[10px] md:text-xs font-medium text-gray-500 w-8 md:w-10">{formatTime(duration)}</span>
-                        </div>
-
-                        {/* Controls */}
-                        <div className="flex items-center justify-center gap-3 md:gap-6">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={stopPlayback}
-                                className="h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
-                                title="Stop"
-                                disabled={!audioUrl}
-                            >
-                                <Square className="w-4 h-4 md:w-5 md:h-5 fill-current" />
-                            </Button>
-
-                            {audioUrl && (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        className="h-10 md:h-12 px-4 md:px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700 text-xs md:text-sm"
-                                        asChild
-                                    >
-                                        <a href={audioUrl} download>
-                                            <Download className="w-3 h-3 md:w-4 md:h-4" />
-                                            <span className="font-medium">Download MP3</span>
-                                        </a>
-                                    </Button>
-
-                                    <Button
-                                        variant="outline"
-                                        onClick={copyShareLink}
-                                        className={cn(
-                                            "h-10 md:h-12 px-4 md:px-6 rounded-full gap-2 text-xs md:text-sm transition-all",
-                                            copied
-                                                ? "border-green-200 bg-green-50 text-green-700"
-                                                : "border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700"
-                                        )}
-                                        disabled={!item.shareSlugV1 && !item.shareSlugV2}
-                                    >
-                                        {copied ? (
-                                            <>
-                                                <Check className="w-3 h-3 md:w-4 md:h-4" />
-                                                <span className="font-medium">Copied!</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Share2 className="w-3 h-3 md:w-4 md:h-4" />
-                                                <span className="font-medium">Share Link</span>
-                                            </>
-                                        )}
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            {audioUrl && (
-                <audio
-                    ref={audioRef}
-                    src={audioUrl}
-                    onTimeUpdate={handleTimeUpdate}
-                    onEnded={handleEnded}
-                    preload="metadata"
-                    className="hidden"
-                />
-            )}
         </Card>
     );
 }
