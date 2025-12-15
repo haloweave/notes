@@ -32,9 +32,17 @@ export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardP
 
     // Edit dialog state
     const [showEditDialog, setShowEditDialog] = useState(false);
-    const [customMessage, setCustomMessage] = useState(item.customMessage || '');
-    const [customTitle, setCustomTitle] = useState(item.customTitle || '');
+    const [customMessage, setCustomMessage] = useState('');
+    const [customTitle, setCustomTitle] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+
+    // Prefill dialog when it opens
+    useEffect(() => {
+        if (showEditDialog) {
+            setCustomMessage(item.customMessage || '');
+            setCustomTitle(item.customTitle || '');
+        }
+    }, [showEditDialog, item.customMessage, item.customTitle]);
 
     // Determine the active audio URL based on selection
     // Prioritize MP3 for better streaming (smaller, faster loading)
@@ -236,8 +244,8 @@ export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardP
                         )}
                     </div>
 
-                    {/* Right: Big Play Button (or Status) */}
-                    <div className="flex flex-col items-center gap-2 self-end md:self-auto">
+                    {/* Right: Action Buttons */}
+                    <div className="flex flex-col items-end gap-2 self-end md:self-auto">
                         {hasSecondVersion && item.status === 'completed' && (
                             <div className="flex items-center bg-gray-100 rounded-full p-1 w-fit mb-1" onClick={(e) => e.stopPropagation()}>
                                 <button
@@ -274,28 +282,19 @@ export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardP
                                 <Square className="w-5 h-5 md:w-6 md:h-6 fill-current opacity-50" />
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 md:gap-3">
-                                <button
-                                    onClick={togglePlay}
-                                    disabled={!audioUrl}
-                                    className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm bg-gray-900 text-white hover:bg-blue-600 hover:scale-105 hover:shadow-blue-200 hover:shadow-xl"
-                                    title="Open player in new tab"
-                                >
-                                    <Play className="w-6 h-6 md:w-8 md:h-8 fill-current ml-0.5 md:ml-1" />
-                                </button>
-
+                            <div className="flex items-center gap-2">
                                 {/* Edit Button */}
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setShowEditDialog(true); }}
                                     className={cn(
-                                        "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                        "flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
                                         item.customMessage
                                             ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
-                                            : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                            : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-600 hover:scale-105"
                                     )}
                                     title={item.customMessage ? "Edit title & message" : "Add title & message"}
                                 >
-                                    <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
+                                    <MessageSquare className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
 
                                 {/* Share Button */}
@@ -304,20 +303,30 @@ export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardP
                                         onClick={copyShareLink}
                                         disabled={!item.shareSlugV1 && !item.shareSlugV2}
                                         className={cn(
-                                            "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                            "flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
                                             copied
                                                 ? "bg-green-100 text-green-600 scale-95"
-                                                : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 hover:scale-105 hover:shadow-blue-200 hover:shadow-xl"
+                                                : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 hover:scale-105"
                                         )}
                                         title="Copy share link"
                                     >
                                         {copied ? (
-                                            <Check className="w-5 h-5 md:w-6 md:h-6" />
+                                            <Check className="w-4 h-4 md:w-5 md:h-5" />
                                         ) : (
-                                            <Share2 className="w-5 h-5 md:w-6 md:h-6" />
+                                            <Share2 className="w-4 h-4 md:w-5 md:h-5" />
                                         )}
                                     </button>
                                 )}
+
+                                {/* Play Button */}
+                                <button
+                                    onClick={togglePlay}
+                                    disabled={!audioUrl}
+                                    className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm bg-gray-900 text-white hover:bg-blue-600 hover:scale-105 hover:shadow-blue-200 hover:shadow-xl"
+                                    title="Open player in new tab"
+                                >
+                                    <Play className="w-6 h-6 md:w-8 md:h-8 fill-current ml-0.5 md:ml-1" />
+                                </button>
                             </div>
                         )}
                     </div>

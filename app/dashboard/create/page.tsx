@@ -91,7 +91,6 @@ export default function CreatePage() {
         setFormValues(values);
 
         console.log('[FRONTEND] Generate prompt clicked', dataToSubmit);
-        setIsDialogOpen(true); // Open dialog immediately
         setGeneratedPrompt(''); // Reset previous prompt
         setLoading(true);
         setError('');
@@ -110,14 +109,12 @@ export default function CreatePage() {
             if (data.success) {
                 console.log('[FRONTEND] Setting generated prompt:', data.prompt);
                 setGeneratedPrompt(data.prompt);
-                setLoading(false);
-                // Status cleared so "Current Generation" card doesn't show background noise
-                setStatus('');
+                // Automatically start music generation without showing dialog
+                await startMusicGeneration(data.prompt);
             } else {
                 console.error('[FRONTEND] Error from API:', data.message);
                 setError(data.message || 'Failed to generate prompt');
                 setLoading(false);
-                // Keep dialog open to show error? or close?
             }
         } catch (err: any) {
             console.error('[FRONTEND] Exception:', err);

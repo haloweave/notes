@@ -338,7 +338,7 @@ export default function PlayPage() {
                         {/* Top Section - Song Info */}
                         <div className="w-full max-w-4xl text-center space-y-3 animate-fade-in">
                             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                                <Music className="w-5 h-5 text-white" />
+                                <img src="/Christmas logo g_s.png" alt="Huggnote" className="w-5 h-5 object-contain" />
                                 <span className="text-sm font-semibold text-white">Huggnote</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight drop-shadow-2xl px-4">
@@ -356,16 +356,16 @@ export default function PlayPage() {
                             <button
                                 onClick={togglePlay}
                                 className={cn(
-                                    "w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl backdrop-blur-md border-4",
+                                    "w-20 h-20 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl backdrop-blur-md border-4",
                                     isPlaying
                                         ? "bg-white/20 border-white/40 scale-95"
                                         : "bg-white/30 border-white/60 hover:scale-110 hover:bg-white/40"
                                 )}
                             >
                                 {isPlaying ? (
-                                    <Pause className="w-16 h-16 md:w-20 md:h-20 text-white fill-current" />
+                                    <Pause className="w-10 h-10 md:w-20 md:h-20 text-white fill-current" />
                                 ) : (
-                                    <Play className="w-16 h-16 md:w-20 md:h-20 text-white fill-current ml-2" />
+                                    <Play className="w-10 h-10 md:w-20 md:h-20 text-white fill-current ml-2" />
                                 )}
                             </button>
                         </div>
@@ -437,11 +437,11 @@ export default function PlayPage() {
 
                             {/* Synced Lyrics (if available) */}
                             {parsedLyrics.length > 0 ? (
-                                <div className="mt-6 p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10">
-                                    <h3 className="text-sm font-semibold text-white/90 mb-4 text-center">Lyrics</h3>
+                                <div className="mt-4 md:mt-6 p-4 md:p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 max-h-[30vh] flex flex-col">
+                                    <h3 className="text-sm font-semibold text-white/90 mb-2 md:mb-4 text-center shrink-0">Lyrics</h3>
                                     <div
                                         ref={lyricsContainerRef}
-                                        className="max-h-48 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-3"
+                                        className="overflow-y-auto overflow-x-hidden custom-scrollbar space-y-3 min-h-0"
                                     >
                                         {parsedLyrics.map((line, index) => (
                                             <div
@@ -462,9 +462,9 @@ export default function PlayPage() {
                                 </div>
                             ) : song.lyrics && (
                                 // Fallback to plain lyrics if no timestamped data
-                                <div className="mt-6 p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10">
-                                    <h3 className="text-sm font-semibold text-white/90 mb-3">Lyrics</h3>
-                                    <div className="text-sm text-white/70 whitespace-pre-wrap max-h-32 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                                <div className="mt-4 md:mt-6 p-4 md:p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 max-h-[30vh] flex flex-col">
+                                    <h3 className="text-sm font-semibold text-white/90 mb-2 md:mb-3 shrink-0">Lyrics</h3>
+                                    <div className="text-sm text-white/70 whitespace-pre-wrap overflow-y-auto overflow-x-hidden custom-scrollbar min-h-0">
                                         {song.lyrics}
                                     </div>
                                 </div>

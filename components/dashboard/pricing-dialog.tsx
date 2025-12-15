@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Coins01Icon, CheckmarkCircle01Icon as CheckCircleIcon, Loading01Icon } from 'hugeicons-react';
+import { MusicNote01Icon, CheckmarkCircle01Icon as CheckCircleIcon, Loading01Icon } from 'hugeicons-react';
 
 interface PricingDialogProps {
     open: boolean;
@@ -38,120 +38,154 @@ export function PricingDialog({ open, onOpenChange }: PricingDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#2A374F' }}>
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">Get More Songs</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-2xl font-bold text-white">Get More Songs</DialogTitle>
+                    <DialogDescription className="text-white/70">
                         Choose a package to create more personalized songs
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                     {/* Solo Serenade */}
-                    <Card className="border-2 hover:border-purple-500 transition-all cursor-pointer relative overflow-hidden text-left">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold">
+                    <Card className="border-0 shadow-xl transition-all cursor-pointer relative overflow-visible text-left bg-white">
+                        {/* Decorative circles */}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-2">
+                            <div className="w-12 h-12 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}></div>
+                            <div className="w-8 h-8 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fff5d6, #fae8b4)' }}></div>
+                            <div className="w-12 h-12 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}></div>
+                        </div>
+
+                        <CardHeader className="text-center pt-12">
+                            {/* Music Icon */}
+                            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'linear-gradient(to bottom right, #2F5A8E, #86CCEA)' }}>
+                                <MusicNote01Icon className="h-8 w-8 text-white" />
+                            </div>
+                            <CardTitle className="text-2xl font-bold text-slate-700">
                                 Solo Serenade
                             </CardTitle>
-                            <CardDescription>Perfect for one special person</CardDescription>
+                            <CardDescription className="italic text-slate-600">Perfect for one special person</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="text-4xl font-bold text-gray-900">€37</div>
-                            <ul className="space-y-2 text-sm text-gray-600">
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-purple-500" />
-                                    1 custom personalised song
+                            <div className="text-5xl font-bold text-slate-700 text-center">€37</div>
+                            <ul className="space-y-2.5 text-sm text-slate-600">
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
+                                    <span>1 custom personalised song</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-purple-500" />
-                                    3 versions to choose from
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
+                                    <span>3 versions to choose from</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-purple-500" />
-                                    Beautifully presented as a snowy Christmas scene
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
+                                    <span>Beautifully presented as a snowy Christmas scene</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-purple-500" />
-                                    Email or WhatsApp delivery
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
+                                    <span>Email or WhatsApp delivery</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-purple-500" />
-                                    Yours to keep forever - downloadable MP3 file
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
+                                    <span>Yours to keep forever - downloadable MP3 file</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-purple-500" />
-                                    Add a gift card: 30,000 brands
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
+                                    <span>Add a gift card: 30,000 brands</span>
                                 </li>
                             </ul>
                         </CardContent>
-                        <CardFooter>
-                            <Button
-                                className="w-full bg-purple-600 hover:bg-purple-700"
+                        <CardFooter className="pb-6">
+                            <button
+                                className="w-full text-slate-900 font-bold py-6 rounded-xl shadow-lg hover:scale-105 transition-all border-2"
+                                style={{
+                                    background: '#fae8b4',
+                                    borderColor: '#fae8b4'
+                                }}
                                 onClick={() => handlePurchase(1, 'solo-serenade')}
                                 disabled={!!isPurchasing}
                             >
                                 {isPurchasing === 'solo-serenade' ? (
-                                    <Loading01Icon className="h-4 w-4 animate-spin" />
+                                    <Loading01Icon className="h-5 w-5 animate-spin inline" />
                                 ) : 'Select Solo Serenade'}
-                            </Button>
+                            </button>
                         </CardFooter>
                     </Card>
 
                     {/* Holiday Hamper */}
-                    <Card className="border-2 hover:border-emerald-500 transition-all cursor-pointer relative overflow-hidden text-left bg-emerald-50">
-                        <div className="absolute top-0 right-0 bg-emerald-600 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">
-                            BEST VALUE
+                    <Card className="border-0 shadow-xl transition-all cursor-pointer relative overflow-visible text-left bg-white">
+                        {/* Decorative circles */}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-2">
+                            <div className="w-12 h-12 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}></div>
+                            <div className="w-8 h-8 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fff5d6, #fae8b4)' }}></div>
+                            <div className="w-12 h-12 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}></div>
                         </div>
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold">
+
+                        {/* Best Value Badge */}
+                        <div className="absolute top-4 right-4 px-4 py-1.5 text-xs font-bold rounded-full flex items-center gap-1.5 shadow-md border-2" style={{
+                            background: '#fae8b4',
+                            color: '#2A374F',
+                            borderColor: '#f5d98f'
+                        }}>
+                            <span style={{ color: '#d4a574' }}>✨</span>
+                            Best Value
+                        </div>
+
+                        <CardHeader className="text-center pt-12">
+                            {/* Music Icon */}
+                            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}>
+                                <MusicNote01Icon className="h-8 w-8" style={{ color: '#2A374F' }} />
+                            </div>
+                            <CardTitle className="text-2xl font-bold text-slate-700">
                                 Holiday Hamper
                             </CardTitle>
-                            <CardDescription>Save with family/friends bundle</CardDescription>
+                            <CardDescription className="italic text-slate-600">Save with family/friends bundle</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-end gap-2">
-                                <div className="text-4xl font-bold text-gray-900">€87</div>
+                            <div className="text-5xl font-bold text-slate-700 text-center">€87</div>
+                            <div className="text-center">
+                                <span className="text-sm font-semibold" style={{ color: '#2F5A8E' }}>
+                                    Save €98 (53% off!)
+                                </span>
                             </div>
-                            <div className="text-sm font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-md inline-block">
-                                Save €98 (53% off!)
-                            </div>
-                            <ul className="space-y-2 text-sm text-gray-600">
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                                    Up to 5 custom personalised songs
+                            <ul className="space-y-2.5 text-sm text-slate-600">
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
+                                    <span>Up to 5 custom personalised songs</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                                    3 versions per song to choose from
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
+                                    <span>3 versions per song to choose from</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                                    Email or WhatsApp delivery
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
+                                    <span>Email or WhatsApp delivery</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                                    Yours to keep forever - downloadable MP3 files
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
+                                    <span>Yours to keep forever - downloadable MP3 files</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                                    Add a gift card: 30,000 brands
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
+                                    <span>Add a gift card: 30,000 brands</span>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                                    Big saving due to bulk buy discount
+                                <li className="flex items-start gap-2">
+                                    <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
+                                    <span>Big saving due to bulk buy discount</span>
                                 </li>
                             </ul>
                         </CardContent>
-                        <CardFooter>
-                            <Button
-                                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                        <CardFooter className="pb-6">
+                            <button
+                                className="w-full text-white font-bold py-6 rounded-xl shadow-lg hover:opacity-90 transition-all"
+                                style={{ background: 'linear-gradient(to right, #2F5A8E, #86CCEA)' }}
                                 onClick={() => handlePurchase(5, 'holiday-hamper')}
                                 disabled={!!isPurchasing}
                             >
                                 {isPurchasing === 'holiday-hamper' ? (
-                                    <Loading01Icon className="h-4 w-4 animate-spin" />
+                                    <Loading01Icon className="h-5 w-5 animate-spin inline" />
                                 ) : 'Select Holiday Hamper'}
-                            </Button>
+                            </button>
                         </CardFooter>
                     </Card>
                 </div>
