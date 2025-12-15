@@ -1,17 +1,77 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/dashboard/sidebar';
+import { PricingDialog } from '@/components/dashboard/pricing-dialog';
+import { SparklesIcon } from 'hugeicons-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const [credits, setCredits] = useState<number | null>(null);
+    const [showPricingDialog, setShowPricingDialog] = useState(false);
+
+    useEffect(() => {
+        const fetchCredits = async () => {
+            try {
+                const res = await fetch('/api/credits');
+                if (res.ok) {
+                    const data = await res.json();
+                    setCredits(data.credits);
+
+                    // Auto-open pricing dialog when credits = 0 on initial load
+                    if (data.credits === 0) {
+                        setShowPricingDialog(true);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch credits", e);
+            }
+        };
+        fetchCredits();
+    }, []);
+
     return (
         <div className="min-h-screen bg-gray-50 flex">
             <Sidebar />
             <main className="flex-1 overflow-hidden w-full">
-                <div className="h-full overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 pt-16 md:pt-6">
-                    <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-                        {children}
+                <div className="h-full overflow-y-auto">
+                    {/* Purchase Ribbon - Show when credits are low */}
+                    {credits !== null && credits <= 2 && (
+                        <div className="sticky top-0 z-50 w-full">
+                            <button
+                                onClick={() => setShowPricingDialog(true)}
+                                className="w-full py-3 md:py-4 px-4 transition-all hover:scale-[1.01] shadow-md hover:shadow-lg"
+                                style={{
+                                    background: 'linear-gradient(to right, #fae8b4, #f5d98f)',
+                                    border: '2px solid #f5d98f'
+                                }}
+                            >
+                                <div className="flex items-center justify-center gap-2 md:gap-3">
+                                    <SparklesIcon className="h-5 w-5 md:h-6 md:w-6" style={{ color: '#2A374F' }} />
+                                    <span className="font-bold text-sm md:text-base" style={{ color: '#2A374F' }}>
+                                        {credits === 0
+                                            ? '🎄 Get Started! Purchase songs to create your magical Christmas gifts'
+                                            : `🎁 Only ${credits} song${credits === 1 ? '' : 's'} left! Get more to keep the magic going`
+                                        }
+                                    </span>
+                                    <SparklesIcon className="h-5 w-5 md:h-6 md:w-6" style={{ color: '#2A374F' }} />
+                                </div>
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="p-4 sm:p-6 md:p-8 lg:p-10 pt-16 md:pt-6">
+                        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+                            {children}
+                        </div>
                     </div>
                 </div>
             </main>
+
+            {/* Pricing Dialog */}
+            <PricingDialog
+                open={showPricingDialog}
+                onOpenChange={setShowPricingDialog}
+            />
         </div>
     );
 }

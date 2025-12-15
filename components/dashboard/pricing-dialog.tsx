@@ -38,7 +38,10 @@ export function PricingDialog({ open, onOpenChange }: PricingDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#2A374F' }}>
+            <DialogContent
+                className="max-w-4xl max-h-[90vh] overflow-y-auto [&>button]:text-white [&>button]:hover:text-[#fae8b4]"
+                style={{ backgroundColor: '#2A374F' }}
+            >
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-white">Get More Songs</DialogTitle>
                     <DialogDescription className="text-white/70">
@@ -67,7 +70,7 @@ export function PricingDialog({ open, onOpenChange }: PricingDialogProps) {
                             <CardDescription className="italic text-slate-600">Perfect for one special person</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="text-5xl font-bold text-slate-700 text-center">€37</div>
+                            <div className="text-5xl font-bold text-slate-700 text-center">$3.99</div>
                             <ul className="space-y-2.5 text-sm text-slate-600">
                                 <li className="flex items-start gap-2">
                                     <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
@@ -142,10 +145,10 @@ export function PricingDialog({ open, onOpenChange }: PricingDialogProps) {
                             <CardDescription className="italic text-slate-600">Save with family/friends bundle</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="text-5xl font-bold text-slate-700 text-center">€87</div>
+                            <div className="text-5xl font-bold text-slate-700 text-center">$9.99</div>
                             <div className="text-center">
                                 <span className="text-sm font-semibold" style={{ color: '#2F5A8E' }}>
-                                    Save €98 (53% off!)
+                                    Save $2 (Best Value!)
                                 </span>
                             </div>
                             <ul className="space-y-2.5 text-sm text-slate-600">

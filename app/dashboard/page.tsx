@@ -164,7 +164,7 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <div className="empty-state text-center py-8 md:py-12 bg-white rounded-lg shadow-sm px-4">
-                        <MusicNote01Icon className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
+                        <MusicNote01Icon className="h-10 w-10 md:h-12 md:h-12 text-gray-400 mx-auto mb-3 md:mb-4" />
                         <h3 className="text-base md:text-lg font-semibold mb-2">No songs yet</h3>
                         <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">You haven't created any songs yet. Start creating now!</p>
                         <Button

@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
         let priceData;
         let credits = 0;
 
-        // Define packages
-        if (packageId === 'single') {
+        // Define packages - keeping original pricing in USD
+        if (packageId === 'solo-serenade' || packageId === 'single') {
             priceData = {
                 currency: 'usd',
                 product_data: {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
                 unit_amount: 399, // $3.99
             };
             credits = 1;
-        } else if (packageId === 'bundle') {
+        } else if (packageId === 'holiday-hamper' || packageId === 'bundle') {
             priceData = {
                 currency: 'usd',
                 product_data: {
