@@ -39,6 +39,8 @@ export const musicGenerations = pgTable('music_generations', {
     title2: text('title_2'),
     lyrics1: text('lyrics_1'),
     lyrics2: text('lyrics_2'),
+    lyricsTimestamped1: text('lyrics_timestamped_1'), // LRC format with timestamps
+    lyricsTimestamped2: text('lyrics_timestamped_2'), // LRC format with timestamps
     duration1: integer('duration_1'),
     duration2: integer('duration_2'),
     albumCoverUrl: text('album_cover_url'),

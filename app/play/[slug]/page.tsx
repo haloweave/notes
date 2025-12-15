@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Square, Download, Music, Home, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Download, Music, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SongData {
@@ -14,9 +14,17 @@ interface SongData {
     audioUrlWav?: string;
     title?: string;
     lyrics?: string;
+    lyricsTimestamped?: string; // JSON string from MusicGPT
     duration?: number;
     createdAt: string;
     version: 'v1' | 'v2';
+}
+
+interface LyricLine {
+    index: number;
+    text: string;
+    start: number; // milliseconds
+    end: number;   // milliseconds
 }
 
 // Background video options
@@ -57,9 +65,13 @@ export default function PlayPage() {
     const [progress, setProgress] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isMuted, setIsMuted] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const backgroundVideoRef = useRef<HTMLVideoElement | null>(null);
+
+    // Synced lyrics state
+    const [parsedLyrics, setParsedLyrics] = useState<LyricLine[]>([]);
+    const [currentLyricIndex, setCurrentLyricIndex] = useState(-1);
+    const lyricsContainerRef = useRef<HTMLDivElement | null>(null);
 
     // Random background video based on device type
     const [backgroundVideo] = useState(() => {
@@ -68,16 +80,50 @@ export default function PlayPage() {
         return videos[Math.floor(Math.random() * videos.length)];
     });
 
+    // Parse timestamped lyrics
+    const parseLyricsTimestamped = (lyricsJson: string): LyricLine[] => {
+        try {
+            console.log('📝 [LYRICS] Parsing timestamped lyrics...');
+            const parsed = JSON.parse(lyricsJson);
+            const filtered = parsed.filter((line: LyricLine) =>
+                // Filter out section markers like [Verse 1], [Chorus], etc.
+                !line.text.match(/^\[.*\]$/)
+            );
+            console.log(`✅ [LYRICS] Successfully parsed ${filtered.length} lyric lines (filtered from ${parsed.length} total)`);
+            console.log('🎵 [LYRICS] First line:', filtered[0]?.text);
+            console.log('🎵 [LYRICS] Last line:', filtered[filtered.length - 1]?.text);
+            return filtered;
+        } catch (error) {
+            console.error('❌ [LYRICS] Failed to parse timestamped lyrics:', error);
+            return [];
+        }
+    };
+
     useEffect(() => {
         const fetchSong = async () => {
             try {
+                console.log(`🎵 [PLAYER] Fetching song data for slug: ${slug}`);
                 const response = await fetch(`/api/play/${slug}`);
                 if (!response.ok) {
                     throw new Error('Song not found');
                 }
                 const data = await response.json();
+                console.log('📦 [PLAYER] Song data received:', {
+                    title: data.title,
+                    hasLyrics: !!data.lyrics,
+                    hasTimestampedLyrics: !!data.lyricsTimestamped,
+                    version: data.version
+                });
+                if (data.lyricsTimestamped) {
+                    console.log('🎯 [LYRICS] Timestamped lyrics found! Synced lyrics will be enabled.');
+                } else if (data.lyrics) {
+                    console.log('📄 [LYRICS] Only plain lyrics found. Falling back to static display.');
+                } else {
+                    console.log('⚠️ [LYRICS] No lyrics available for this song.');
+                }
                 setSong(data);
             } catch (err: any) {
+                console.error('❌ [PLAYER] Error fetching song:', err);
                 setError(err.message || 'Failed to load song');
             } finally {
                 setLoading(false);
@@ -88,6 +134,20 @@ export default function PlayPage() {
             fetchSong();
         }
     }, [slug]);
+
+    // Parse timestamped lyrics when song loads
+    useEffect(() => {
+        if (song?.lyricsTimestamped) {
+            console.log('🔄 [LYRICS] Processing timestamped lyrics data...');
+            const lyrics = parseLyricsTimestamped(song.lyricsTimestamped);
+            setParsedLyrics(lyrics);
+            if (lyrics.length > 0) {
+                console.log('🎤 [LYRICS] Synced lyrics ready! Will sync with audio playback.');
+            }
+        } else {
+            console.log('ℹ️ [LYRICS] No timestamped lyrics to process.');
+        }
+    }, [song]);
 
     // Auto-play intro video when loaded
     useEffect(() => {
@@ -132,30 +192,45 @@ export default function PlayPage() {
         setIsPlaying(!isPlaying);
     };
 
-    const stopPlayback = () => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-            setIsPlaying(false);
-            setProgress(0);
-        }
-    };
 
-    const toggleMute = () => {
-        if (audioRef.current) {
-            audioRef.current.muted = !isMuted;
-            setIsMuted(!isMuted);
-        }
-    };
 
     const handleTimeUpdate = () => {
         if (audioRef.current) {
             const current = audioRef.current.currentTime;
             const total = audioRef.current.duration;
+            const currentMs = current * 1000; // Convert to milliseconds
+
             setCurrentTime(current);
             if (!isNaN(total)) {
                 setDuration(total);
                 setProgress((current / total) * 100);
+            }
+
+            // Update current lyric index based on playback time
+            if (parsedLyrics.length > 0) {
+                const index = parsedLyrics.findIndex((line, i) => {
+                    const nextLine = parsedLyrics[i + 1];
+                    return currentMs >= line.start && (!nextLine || currentMs < nextLine.start);
+                });
+
+                if (index !== currentLyricIndex) {
+                    setCurrentLyricIndex(index);
+
+                    if (index >= 0) {
+                        console.log(`🎵 [SYNC] Lyric line changed: [${index + 1}/${parsedLyrics.length}] "${parsedLyrics[index].text}" (${currentMs.toFixed(0)}ms)`);
+                    }
+
+                    // Auto-scroll to current lyric
+                    if (index >= 0 && lyricsContainerRef.current) {
+                        const lyricElement = lyricsContainerRef.current.children[index] as HTMLElement;
+                        if (lyricElement) {
+                            lyricElement.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center',
+                            });
+                        }
+                    }
+                }
             }
         }
     };
@@ -336,30 +411,6 @@ export default function PlayPage() {
 
                             {/* Control Buttons */}
                             <div className="flex items-center justify-center gap-4 flex-wrap">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={stopPlayback}
-                                    className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-md hover:bg-red-500/30 text-white border border-white/20 transition-all"
-                                    title="Stop"
-                                >
-                                    <Square className="w-6 h-6 fill-current" />
-                                </Button>
-
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={toggleMute}
-                                    className="h-14 w-14 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border border-white/20 transition-all"
-                                    title={isMuted ? "Unmute" : "Mute"}
-                                >
-                                    {isMuted ? (
-                                        <VolumeX className="w-6 h-6" />
-                                    ) : (
-                                        <Volume2 className="w-6 h-6" />
-                                    )}
-                                </Button>
-
                                 {song.audioUrl && (
                                     <Button
                                         variant="outline"
@@ -367,7 +418,7 @@ export default function PlayPage() {
                                         asChild
                                     >
                                         <a href={song.audioUrl} download>
-                                            <Download className="w-5 h-5" />
+                                            <Download className="w-6 h-6" />
                                             <span className="font-medium">Download</span>
                                         </a>
                                     </Button>
@@ -378,16 +429,41 @@ export default function PlayPage() {
                                     onClick={() => router.push('/')}
                                     className="h-14 px-6 rounded-full gap-2 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border-white/30 hover:border-white/50"
                                 >
-                                    <Home className="w-5 h-5" />
+                                    <Home className="w-6 h-6" />
                                     <span className="font-medium">Create Your Song</span>
                                 </Button>
                             </div>
 
-                            {/* Lyrics (if available) */}
-                            {song.lyrics && (
+                            {/* Synced Lyrics (if available) */}
+                            {parsedLyrics.length > 0 ? (
+                                <div className="mt-6 p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10">
+                                    <h3 className="text-sm font-semibold text-white/90 mb-4 text-center">Lyrics</h3>
+                                    <div
+                                        ref={lyricsContainerRef}
+                                        className="max-h-48 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-3"
+                                    >
+                                        {parsedLyrics.map((line, index) => (
+                                            <div
+                                                key={index}
+                                                className={cn(
+                                                    "text-center transition-all duration-300 ease-out px-2 py-1 rounded-lg",
+                                                    index === currentLyricIndex
+                                                        ? "text-white text-lg md:text-xl font-bold scale-105 bg-white/10"
+                                                        : index === currentLyricIndex - 1 || index === currentLyricIndex + 1
+                                                            ? "text-white/60 text-base"
+                                                            : "text-white/30 text-sm"
+                                                )}
+                                            >
+                                                {line.text}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : song.lyrics && (
+                                // Fallback to plain lyrics if no timestamped data
                                 <div className="mt-6 p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10">
                                     <h3 className="text-sm font-semibold text-white/90 mb-3">Lyrics</h3>
-                                    <div className="text-sm text-white/70 whitespace-pre-wrap max-h-32 overflow-y-auto custom-scrollbar">
+                                    <div className="text-sm text-white/70 whitespace-pre-wrap max-h-32 overflow-y-auto overflow-x-hidden custom-scrollbar">
                                         {song.lyrics}
                                     </div>
                                 </div>

@@ -44,6 +44,7 @@ export async function GET(
 
         const title = isV1 ? song.title1 : song.title2;
         const lyrics = isV1 ? song.lyrics1 : song.lyrics2;
+        const lyricsTimestamped = isV1 ? song.lyricsTimestamped1 : song.lyricsTimestamped2;
         const duration = isV1 ? song.duration1 : song.duration2;
 
         // Only return completed songs
@@ -54,6 +55,21 @@ export async function GET(
             );
         }
 
+        // Log what we're returning
+        console.log(`🎵 [API] Serving song for slug: ${slug}`);
+        console.log(`📌 [API] Version: ${version}, Title: ${title || 'Untitled'}`);
+        console.log(`🎤 [API] Lyrics available: ${!!lyrics}`);
+        console.log(`⏱️ [API] Timestamped lyrics available: ${!!lyricsTimestamped}`);
+
+        if (lyricsTimestamped) {
+            try {
+                const parsed = JSON.parse(lyricsTimestamped);
+                console.log(`✅ [API] Timestamped lyrics: ${parsed.length} lines`);
+            } catch (e) {
+                console.error('❌ [API] Invalid timestamped lyrics JSON');
+            }
+        }
+
         // Return public-safe data
         return NextResponse.json({
             id: song.id,
@@ -61,6 +77,7 @@ export async function GET(
             audioUrl,
             title,
             lyrics,
+            lyricsTimestamped,
             duration,
             createdAt: song.createdAt,
             version,

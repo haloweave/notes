@@ -44,6 +44,48 @@ export async function POST(request: NextRequest) {
             statusResponse: body
         };
 
+        // Check for top-level lyrics_timestamped (from individual webhooks)
+        // This needs to run BEFORE the status check because these webhooks don't have a status field
+        if (body.lyrics_timestamped && body.conversion_id) {
+            console.log('🎯 [WEBHOOK] Individual timestamped lyrics webhook received');
+            console.log(`📌 [WEBHOOK] Conversion ID: ${body.conversion_id}`);
+
+            // We need to fetch the current record to match conversion_id to V1 or V2
+            const currentRecord = await db.query.musicGenerations.findFirst({
+                where: eq(musicGenerations.taskId, task_id),
+            });
+
+            if (currentRecord) {
+                // Match conversion_id to determine if this is V1 or V2
+                if (currentRecord.conversionId1 === body.conversion_id) {
+                    updateData.lyricsTimestamped1 = body.lyrics_timestamped;
+                    console.log('✅ [WEBHOOK] Saving timestamped lyrics to V1');
+                    try {
+                        const parsed = JSON.parse(body.lyrics_timestamped);
+                        console.log(`🎵 [WEBHOOK] V1: ${parsed.length} timestamped lyric lines`);
+                    } catch (e) {
+                        console.error('❌ [WEBHOOK] V1: Invalid JSON');
+                    }
+                } else if (currentRecord.conversionId2 === body.conversion_id) {
+                    updateData.lyricsTimestamped2 = body.lyrics_timestamped;
+                    console.log('✅ [WEBHOOK] Saving timestamped lyrics to V2');
+                    try {
+                        const parsed = JSON.parse(body.lyrics_timestamped);
+                        console.log(`🎵 [WEBHOOK] V2: ${parsed.length} timestamped lyric lines`);
+                    } catch (e) {
+                        console.error('❌ [WEBHOOK] V2: Invalid JSON');
+                    }
+                } else {
+                    console.warn('⚠️ [WEBHOOK] Conversion ID does not match V1 or V2');
+                    console.log(`🔍 [WEBHOOK] Looking for: ${body.conversion_id}`);
+                    console.log(`🔍 [WEBHOOK] V1: ${currentRecord.conversionId1}`);
+                    console.log(`🔍 [WEBHOOK] V2: ${currentRecord.conversionId2}`);
+                }
+            } else {
+                console.error('❌ [WEBHOOK] Could not find record to match conversion_id');
+            }
+        }
+
         if (dbStatus === 'completed') {
             // Extract fields based on available data (MusicGPT payload structure can vary)
             // User sample payload has 'audio_url', but conversion object might have more details
@@ -65,7 +107,29 @@ export async function POST(request: NextRequest) {
                 updateData.title2 = conversion.title_2;
                 updateData.lyrics1 = conversion.lyrics_1;
                 updateData.lyrics2 = conversion.lyrics_2;
+                updateData.lyricsTimestamped1 = conversion.lyrics_timestamped_1;
+                updateData.lyricsTimestamped2 = conversion.lyrics_timestamped_2;
                 updateData.albumCoverUrl = conversion.album_cover_path;
+
+                // Log timestamped lyrics info
+                if (conversion.lyrics_timestamped_1) {
+                    console.log('🎯 [WEBHOOK] Timestamped lyrics V1 received from conversion object');
+                    try {
+                        const parsed = JSON.parse(conversion.lyrics_timestamped_1);
+                        console.log(`✅ [WEBHOOK] V1: ${parsed.length} timestamped lyric lines`);
+                    } catch (e) {
+                        console.error('❌ [WEBHOOK] V1: Invalid timestamped lyrics JSON');
+                    }
+                }
+                if (conversion.lyrics_timestamped_2) {
+                    console.log('🎯 [WEBHOOK] Timestamped lyrics V2 received from conversion object');
+                    try {
+                        const parsed = JSON.parse(conversion.lyrics_timestamped_2);
+                        console.log(`✅ [WEBHOOK] V2: ${parsed.length} timestamped lyric lines`);
+                    } catch (e) {
+                        console.error('❌ [WEBHOOK] V2: Invalid timestamped lyrics JSON');
+                    }
+                }
             }
 
             // Fallback to top-level audio_url if that's what we got
