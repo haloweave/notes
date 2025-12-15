@@ -27,22 +27,22 @@ export async function POST(req: NextRequest) {
         // Define packages - keeping original pricing in USD
         if (packageId === 'solo-serenade' || packageId === 'single') {
             priceData = {
-                currency: 'usd',
+                currency: 'eur',
                 product_data: {
                     name: '1 Song Credit',
                     description: 'Create 1 Custom AI Song',
                 },
-                unit_amount: 399, // $3.99
+                unit_amount: 3700, // €37
             };
             credits = 1;
         } else if (packageId === 'holiday-hamper' || packageId === 'bundle') {
             priceData = {
-                currency: 'usd',
+                currency: 'eur',
                 product_data: {
                     name: '3 Song Bundle',
                     description: 'Create 3 Custom AI Songs',
                 },
-                unit_amount: 999, // $9.99
+                unit_amount: 8700, // €87
             };
             credits = 3;
         } else {
