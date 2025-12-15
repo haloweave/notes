@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { AddCircleIcon, FolderMusicIcon, Invoice01Icon, Settings01Icon, UserIcon, Logout01Icon, Menu01Icon, Cancel01Icon } from 'hugeicons-react';
+import { AddCircleIcon, FolderMusicIcon, Settings01Icon, UserIcon, Logout01Icon, Menu01Icon, Cancel01Icon } from 'hugeicons-react';
 import { useSession, signOut } from '@/lib/auth-client';
 import Link from 'next/link';
+import { PricingDialog } from './pricing-dialog';
 
 export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { data: session } = useSession();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isPricingOpen, setIsPricingOpen] = useState(false);
 
     // Helper to determine if a link is active
     const isActive = (path: string) => {
@@ -70,17 +72,6 @@ export function Sidebar() {
                         My Songs
                     </Link>
                 </Button>
-
-                <Button
-                    variant="ghost"
-                    className={getLinkClass('/dashboard/orders')}
-                    asChild
-                >
-                    <Link href="/dashboard/orders" onClick={closeMobileMenu}>
-                        <Invoice01Icon className="mr-2 md:mr-3 h-6 w-6 md:h-7 md:w-7 shrink-0 stroke-[2]" />
-                        Orders
-                    </Link>
-                </Button>
                 <Button
                     variant="ghost"
                     className={getLinkClass('/dashboard/settings')}
@@ -95,18 +86,21 @@ export function Sidebar() {
 
             {/* Footer */}
             <div className="p-3 md:p-4 border-t bg-gray-50">
-                <div className="user-info flex items-center gap-2 md:gap-3 mb-3 md:mb-4 p-2 md:p-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                <button
+                    onClick={() => setIsPricingOpen(true)}
+                    className="user-info flex items-center gap-2 md:gap-3 mb-3 md:mb-4 p-2 md:p-3 bg-white rounded-lg shadow-sm border border-gray-100 w-full hover:border-emerald-300 hover:bg-emerald-50 transition-all cursor-pointer"
+                >
                     <div className="user-avatar bg-gray-100 p-2 md:p-2.5 rounded-full flex items-center justify-center">
                         <UserIcon className="h-5 w-5 md:h-6 md:w-6 text-gray-500" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-left">
                         <p className="text-xs md:text-sm font-semibold text-gray-900 truncate">{session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}</p>
                         <p className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1">
                             <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500"></span>
-                            {(session?.user as any)?.credits || 0} Credits
+                            {(session?.user as any)?.credits || 0} Songs Available
                         </p>
                     </div>
-                </div>
+                </button>
                 <Button
                     variant="outline"
                     size="default"
@@ -154,6 +148,9 @@ export function Sidebar() {
             `}>
                 <SidebarContent />
             </aside>
+
+            {/* Pricing Dialog */}
+            <PricingDialog open={isPricingOpen} onOpenChange={setIsPricingOpen} />
         </>
     );
 }

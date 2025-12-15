@@ -34,84 +34,110 @@ export function PricingTable() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="border-2 hover:border-emerald-500 transition-all cursor-pointer relative overflow-hidden text-left">
-                <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-bold rounded-bl-lg">
-                    POPULAR
-                </div>
+            {/* Solo Serenade */}
+            <Card className="border-2 hover:border-purple-500 transition-all cursor-pointer relative overflow-hidden text-left">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                        <Coins01Icon className="h-6 w-6 text-emerald-600" />
-                        1 Song Credit
+                    <CardTitle className="text-2xl font-bold">
+                        Solo Serenade
                     </CardTitle>
-                    <CardDescription>Perfect for a single special gift</CardDescription>
+                    <CardDescription>Perfect for one special person</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="text-3xl font-bold text-gray-900">$3.99</div>
+                    <div className="text-4xl font-bold text-gray-900">€37</div>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            1 custom personalised song
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            3 versions to choose from
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            Beautifully presented as a snowy Christmas scene
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            Email or WhatsApp delivery
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            Yours to keep forever - downloadable MP3 file
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            Add a gift card: 30,000 brands
+                        </li>
+                    </ul>
+                </CardContent>
+                <CardFooter>
+                    <Button
+                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        onClick={() => handlePurchase(1, 'solo-serenade')}
+                        disabled={!!isPurchasing}
+                    >
+                        {isPurchasing === 'solo-serenade' ? (
+                            <Loading01Icon className="h-4 w-4 animate-spin" />
+                        ) : 'Select Solo Serenade'}
+                    </Button>
+                </CardFooter>
+            </Card>
+
+            {/* Holiday Hamper */}
+            <Card className="border-2 hover:border-emerald-500 transition-all cursor-pointer relative overflow-hidden text-left bg-emerald-50">
+                <div className="absolute top-0 right-0 bg-emerald-600 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">
+                    BEST VALUE
+                </div>
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold">
+                        Holiday Hamper
+                    </CardTitle>
+                    <CardDescription>Save with family/friends bundle</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-end gap-2">
+                        <div className="text-4xl font-bold text-gray-900">€87</div>
+                    </div>
+                    <div className="text-sm font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-md inline-block">
+                        Save €98 (53% off!)
+                    </div>
                     <ul className="space-y-2 text-sm text-gray-600">
                         <li className="flex items-center gap-2">
                             <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                            1 Custom AI Song
+                            Up to 5 custom personalised songs
                         </li>
                         <li className="flex items-center gap-2">
                             <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                            High Quality Audio Download
+                            3 versions per song to choose from
                         </li>
                         <li className="flex items-center gap-2">
                             <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
-                            Shareable Link
+                            Email or WhatsApp delivery
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
+                            Yours to keep forever - downloadable MP3 files
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
+                            Add a gift card: 30,000 brands
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4 text-emerald-500" />
+                            Big saving due to bulk buy discount
                         </li>
                     </ul>
                 </CardContent>
                 <CardFooter>
                     <Button
                         className="w-full bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => handlePurchase(1, 'single')}
+                        onClick={() => handlePurchase(5, 'holiday-hamper')}
                         disabled={!!isPurchasing}
                     >
-                        {isPurchasing === 'single' ? (
+                        {isPurchasing === 'holiday-hamper' ? (
                             <Loading01Icon className="h-4 w-4 animate-spin" />
-                        ) : 'Purchase Now'}
-                    </Button>
-                </CardFooter>
-            </Card>
-
-            <Card className="border-2 hover:border-blue-500 transition-all cursor-pointer bg-blue-50 text-left">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                        <Coins01Icon className="h-6 w-6 text-blue-600" />
-                        3 Song Bundle
-                    </CardTitle>
-                    <CardDescription>Best value for the holiday season</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-end gap-2">
-                        <div className="text-3xl font-bold text-gray-900">$9.99</div>
-                        <div className="text-sm text-gray-500 line-through mb-1">$11.97</div>
-                    </div>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                        <li className="flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4 text-blue-500" />
-                            3 Custom AI Songs
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4 text-blue-500" />
-                            Save 20%
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4 text-blue-500" />
-                            Priority Generation
-                        </li>
-                    </ul>
-                </CardContent>
-                <CardFooter>
-                    <Button
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handlePurchase(3, 'bundle')}
-                        disabled={!!isPurchasing}
-                    >
-                        {isPurchasing === 'bundle' ? (
-                            <Loading01Icon className="h-4 w-4 animate-spin" />
-                        ) : 'Purchase Bundle'}
+                        ) : 'Select Holiday Hamper'}
                     </Button>
                 </CardFooter>
             </Card>

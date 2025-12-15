@@ -44,7 +44,7 @@ export function OrderSuccessDialog() {
                     </div>
                     <DialogTitle className="text-center text-xl">Payment Successful!</DialogTitle>
                     <DialogDescription className="text-center text-base pt-2">
-                        Thank you for your purchase. Your credits have been added to your account and you are ready to create magic!
+                        Thank you for your purchase. Your songs have been added to your account and you are ready to create magic!
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="sm:justify-center">

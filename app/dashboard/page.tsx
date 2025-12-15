@@ -142,7 +142,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                             <div className="text-2xl md:text-3xl font-bold text-gray-900">{credits}</div>
-                            <div className="text-xs md:text-sm text-muted-foreground">Credits Available</div>
+                            <div className="text-xs md:text-sm text-muted-foreground">Songs Available</div>
                         </div>
                     </CardContent>
                 </Card>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
                     <div className="empty-state text-center py-8 md:py-12 bg-white rounded-lg shadow-sm px-4">
                         <MusicNote01Icon className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
                         <h3 className="text-base md:text-lg font-semibold mb-2">No songs yet</h3>
-                        <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">You haven't created any songs yet. Use a credit to get started!</p>
+                        <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">You haven't created any songs yet. Start creating now!</p>
                         <Button
                             onClick={() => router.push('/dashboard/create')}
                             className="w-full sm:w-auto"

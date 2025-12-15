@@ -28,8 +28,8 @@ export default async function OrdersPage() {
     return (
         <div className="space-y-6 md:space-y-8">
             <DashboardHeader
-                title="Get Credits"
-                description="Purchase credits to create more songs."
+                title="Get Songs"
+                description="Purchase songs to create more music."
             />
 
             {/* Pricing Options */}
@@ -48,14 +48,14 @@ export default async function OrdersPage() {
                                     <th className="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
                                     <th className="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     <th className="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
+                                    <th className="px-4 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">Songs</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {userOrders.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="px-4 md:px-6 py-8 md:py-12 text-center text-sm md:text-base text-gray-500">
-                                            No orders yet. Purchase credits to see your purchase history here.
+                                            No orders yet. Purchase songs to see your purchase history here.
                                         </td>
                                     </tr>
                                 ) : (
@@ -68,7 +68,7 @@ export default async function OrdersPage() {
                                                 {new Date(order.createdAt).toLocaleDateString()}
                                             </td>
                                             <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                                                {order.packageId === 'bundle' ? '3 Song Bundle' : '1 Song Credit'}
+                                                {order.packageId === 'bundle' ? '3 Song Bundle' : '1 Song'}
                                             </td>
                                             <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                                                 ${(order.amount / 100).toFixed(2)}

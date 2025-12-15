@@ -537,7 +537,7 @@ export default function CreatePage() {
                                     className="gap-2"
                                 >
                                     <MusicNote01Icon className="h-4 w-4" />
-                                    Generate Song (1 Credit)
+                                    Generate Song
                                 </Button>
                             </>
                         )}
@@ -549,9 +549,9 @@ export default function CreatePage() {
             <Dialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
                 <DialogContent className="sm:max-w-3xl">
                     <DialogHeader>
-                        <DialogTitle>Insufficient Credits</DialogTitle>
+                        <DialogTitle>Insufficient Songs</DialogTitle>
                         <DialogDescription>
-                            You need at least 1 credit to generate a song. Please purchase a credit package below to continue.
+                            You need at least 1 song available to generate a track. Please purchase a song package below to continue.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
