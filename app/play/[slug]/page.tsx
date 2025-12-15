@@ -260,7 +260,7 @@ export default function PlayPage() {
         return (
             <div className="fixed inset-0 bg-black flex items-center justify-center">
                 <div className="text-center space-y-4">
-                    <div className="w-16 h-16 mx-auto rounded-full border-4 border-purple-500/30 border-t-purple-600 animate-spin" />
+                    <div className="w-16 h-16 mx-auto rounded-full border-4 border-blue-500/30 border-t-blue-600 animate-spin" />
                     <p className="text-white animate-pulse">Loading your song...</p>
                 </div>
             </div>
@@ -269,8 +269,8 @@ export default function PlayPage() {
 
     if (error || !song) {
         return (
-            <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-black to-pink-900 flex items-center justify-center p-4">
-                <Card className="max-w-md w-full p-8 text-center space-y-4 bg-black/50 backdrop-blur-lg border-purple-500/30">
+            <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-black to-cyan-900 flex items-center justify-center p-4">
+                <Card className="max-w-md w-full p-8 text-center space-y-4 bg-black/50 backdrop-blur-lg border-blue-500/30">
                     <div className="w-16 h-16 mx-auto rounded-full bg-red-500/20 flex items-center justify-center">
                         <Music className="w-8 h-8 text-red-400" />
                     </div>
@@ -382,7 +382,7 @@ export default function PlayPage() {
                                             className="h-full transition-all duration-100 ease-out"
                                             style={{
                                                 width: `${progress}%`,
-                                                backgroundImage: 'linear-gradient(120deg, #635bff, #ec4899)'
+                                                backgroundImage: 'linear-gradient(to right, #2F5A8E, #86CCEA)'
                                             }}
                                         />
                                     </div>
@@ -399,7 +399,7 @@ export default function PlayPage() {
                                         className="w-5 h-5 bg-white border-2 rounded-full shadow-lg absolute pointer-events-none transition-all duration-100 ease-out"
                                         style={{
                                             left: `calc(${progress}% - 10px)`,
-                                            borderColor: '#635bff'
+                                            borderColor: '#2F5A8E'
                                         }}
                                     />
                                 </div>

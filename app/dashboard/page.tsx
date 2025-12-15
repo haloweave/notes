@@ -126,8 +126,8 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                 <Card>
                     <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6 pt-4 md:pt-6">
-                        <div className="p-2.5 md:p-3 bg-purple-100 rounded-xl">
-                            <MusicNote01Icon className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                        <div className="p-2.5 md:p-3 bg-blue-100 rounded-xl">
+                            <MusicNote01Icon className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />
                         </div>
                         <div>
                             <div className="text-2xl md:text-3xl font-bold text-gray-900">{history.filter((h: MusicGeneration) => h.status === 'completed').length}</div>

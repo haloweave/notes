@@ -156,11 +156,11 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
 
     return (
         <Card className={cn(
-            "group relative overflow-hidden transition-all duration-300 border border-gray-100 hover:shadow-lg hover:border-purple-100 bg-white",
-            isExpanded ? "shadow-md ring-1 ring-purple-100" : ""
+            "group relative overflow-hidden transition-all duration-300 border border-gray-100 hover:shadow-lg hover:border-blue-100 bg-white",
+            isExpanded ? "shadow-md ring-1 ring-blue-100" : ""
         )}>
             {/* Background Gradient Effect on Hover */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-50/0 via-purple-50/30 to-purple-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 via-blue-50/30 to-blue-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
             <div className="p-4 md:p-6 relative z-10">
                 <div className="flex items-start md:items-center justify-between gap-3 md:gap-6 flex-col md:flex-row">
@@ -209,7 +209,7 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                     className={cn(
                                         "px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold rounded-full transition-all",
                                         selectedVersion === 'v1'
-                                            ? "bg-white text-purple-600 shadow-sm"
+                                            ? "bg-white text-blue-600 shadow-sm"
                                             : "text-gray-500 hover:text-gray-700"
                                     )}
                                 >
@@ -220,7 +220,7 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                     className={cn(
                                         "px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold rounded-full transition-all",
                                         selectedVersion === 'v2'
-                                            ? "bg-white text-purple-600 shadow-sm"
+                                            ? "bg-white text-blue-600 shadow-sm"
                                             : "text-gray-500 hover:text-gray-700"
                                     )}
                                 >
@@ -242,7 +242,7 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                 <button
                                     onClick={togglePlay}
                                     disabled={!audioUrl}
-                                    className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                    className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm bg-gray-900 text-white hover:bg-blue-600 hover:scale-105 hover:shadow-blue-200 hover:shadow-xl"
                                     title="Open player in new tab"
                                 >
                                     <Play className="w-6 h-6 md:w-8 md:h-8 fill-current ml-0.5 md:ml-1" />
@@ -257,7 +257,7 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                             "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
                                             copied
                                                 ? "bg-green-100 text-green-600 scale-95"
-                                                : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                                : "bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 hover:scale-105 hover:shadow-blue-200 hover:shadow-xl"
                                         )}
                                         title="Copy share link"
                                     >

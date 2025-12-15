@@ -75,10 +75,10 @@ export function PricingTable() {
                 </CardFooter>
             </Card>
 
-            <Card className="border-2 hover:border-purple-500 transition-all cursor-pointer bg-purple-50 text-left">
+            <Card className="border-2 hover:border-blue-500 transition-all cursor-pointer bg-blue-50 text-left">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-xl">
-                        <Coins01Icon className="h-6 w-6 text-purple-600" />
+                        <Coins01Icon className="h-6 w-6 text-blue-600" />
                         3 Song Bundle
                     </CardTitle>
                     <CardDescription>Best value for the holiday season</CardDescription>
@@ -90,22 +90,22 @@ export function PricingTable() {
                     </div>
                     <ul className="space-y-2 text-sm text-gray-600">
                         <li className="flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            <CheckCircleIcon className="h-4 w-4 text-blue-500" />
                             3 Custom AI Songs
                         </li>
                         <li className="flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            <CheckCircleIcon className="h-4 w-4 text-blue-500" />
                             Save 20%
                         </li>
                         <li className="flex items-center gap-2">
-                            <CheckCircleIcon className="h-4 w-4 text-purple-500" />
+                            <CheckCircleIcon className="h-4 w-4 text-blue-500" />
                             Priority Generation
                         </li>
                     </ul>
                 </CardContent>
                 <CardFooter>
                     <Button
-                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        className="w-full bg-blue-600 hover:bg-blue-700"
                         onClick={() => handlePurchase(3, 'bundle')}
                         disabled={!!isPurchasing}
                     >
