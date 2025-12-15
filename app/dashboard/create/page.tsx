@@ -180,7 +180,7 @@ export default function CreatePage() {
     // ... (rest of functions: pollStatus, copyPrompt, handleRetry, mockPurchase)
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
             <DashboardHeader
                 title="Create New Song"
                 description="Tell us your story and we'll craft a masterpiece."
@@ -188,6 +188,7 @@ export default function CreatePage() {
                 <Button
                     variant="outline"
                     onClick={() => router.push('/dashboard')}
+                    className="w-full sm:w-auto"
                 >
                     View All Your Songs
                 </Button>
@@ -195,14 +196,14 @@ export default function CreatePage() {
 
             {/* Form State */}
             <Card className="max-w-4xl mx-auto shadow-sm">
-                <CardContent className="p-8 space-y-8">
+                <CardContent className="p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8">
                     <Form {...form}>
                         {/* ... form content ... */}
                         {/* Form code will be preserved by replacement logic if careful, but since I am replacing a huge chunk, I need to be careful. 
                              Actually, the Instruction says "Remove the on-page 'Generated Prompt' section.".
                              I will include the Form and the Dialog at the end. 
                          */}
-                        <form onSubmit={form.handleSubmit(generatePrompt as any)} className="space-y-8">
+                        <form onSubmit={form.handleSubmit(generatePrompt as any)} className="space-y-6 md:space-y-8">
                             {/* ... Fields ... I will have to include the fields in replacement if I replace the whole return block, 
                                 but I can target StartLine/EndLine to partial replace. 
                                 The user request implies replacing the workflow. 
@@ -438,20 +439,20 @@ export default function CreatePage() {
                                 )}
                             />
 
-                            <div className="pt-8">
+                            <div className="pt-6 md:pt-8">
                                 <Button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full h-14 text-lg flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
+                                    className="w-full h-12 md:h-14 text-base md:text-lg flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
                                 >
                                     {loading ? (
                                         <>
-                                            <Loading01Icon className="h-6 w-6 animate-spin" />
+                                            <Loading01Icon className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
                                             Processing...
                                         </>
                                     ) : (
                                         <>
-                                            <SparklesIcon className="h-6 w-6" />
+                                            <SparklesIcon className="h-5 w-5 md:h-6 md:w-6" />
                                             Generate Music
                                         </>
                                     )}

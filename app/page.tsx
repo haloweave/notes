@@ -8,6 +8,9 @@ import { AuthModal } from '@/components/auth/AuthModal';
 
 export default function LandingPage() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
     <div className="msg-landing">
@@ -17,13 +20,38 @@ export default function LandingPage() {
             <Image src="/logo.png" alt="Huggnote Logo" width={40} height={40} style={{ borderRadius: '10px' }} />
             Huggnote
           </Link>
-          <nav className="nav-links">
-            <a href="#examples">Examples</a>
-            <a href="#how">How it works</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#faq">FAQ</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}>Login</a>
-            <a className="btn btn-mindblowing" href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); }}><span className="btn-text-content">Start Your Gift</span></a>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            ☰
+          </button>
+
+          {/* Mobile Overlay */}
+          {isMobileMenuOpen && (
+            <div className="mobile-overlay" onClick={closeMobileMenu} />
+          )}
+
+          <nav className={`nav-links ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+            {/* Close button for mobile */}
+            <button
+              className="mobile-menu-btn"
+              onClick={closeMobileMenu}
+              style={{ position: 'absolute', top: '20px', right: '20px' }}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+
+            <a href="#examples" onClick={closeMobileMenu}>Examples</a>
+            <a href="#how" onClick={closeMobileMenu}>How it works</a>
+            <a href="#pricing" onClick={closeMobileMenu}>Pricing</a>
+            <a href="#faq" onClick={closeMobileMenu}>FAQ</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); closeMobileMenu(); }}>Login</a>
+            <a className="btn btn-mindblowing" href="#" onClick={(e) => { e.preventDefault(); setIsAuthOpen(true); closeMobileMenu(); }}><span className="btn-text-content">Start Your Gift</span></a>
           </nav>
         </div>
       </header>

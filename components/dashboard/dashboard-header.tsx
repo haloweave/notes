@@ -14,18 +14,22 @@ export function DashboardHeader({ title, description, children }: DashboardHeade
     const credits = (session?.user as any)?.credits ?? 0;
 
     return (
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center pb-6 border-b border-gray-200 gap-4 md:gap-0">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-                {description && <p className="text-gray-500 mt-1">{description}</p>}
-            </div>
-            <div className="flex items-center gap-4 w-full md:w-auto">
-                <div className="flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-full text-sm text-emerald-600 font-medium whitespace-nowrap shadow-sm">
-                    <Coins01Icon className="h-4 w-4" />
+        <header className="flex flex-col gap-3 md:gap-4 pb-4 md:pb-6 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 md:gap-4">
+                <div className="flex-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
+                    {description && <p className="text-sm sm:text-base text-gray-500 mt-1">{description}</p>}
+                </div>
+                <div className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-3 py-1.5 rounded-full text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap shadow-sm">
+                    <Coins01Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span>{credits} Credits</span>
                 </div>
-                {children}
             </div>
+            {children && (
+                <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto">
+                    {children}
+                </div>
+            )}
         </header>
     );
 }

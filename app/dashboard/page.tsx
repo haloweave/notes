@@ -107,42 +107,42 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 md:space-y-8">
             {/* Home Header */}
             <DashboardHeader
                 title="My Songs"
                 description="Manage and share your custom holiday songs."
             >
                 <Button
-                    className="flex items-center gap-2 h-14 text-lg px-8"
+                    className="flex items-center gap-2 h-12 md:h-14 text-base md:text-lg px-6 md:px-8 w-full sm:w-auto"
                     onClick={() => router.push('/dashboard/create')}
                 >
-                    <Add01Icon className="h-5 w-5" />
+                    <Add01Icon className="h-4 w-4 md:h-5 md:w-5" />
                     New Song
                 </Button>
             </DashboardHeader>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
                 <Card>
-                    <CardContent className="flex items-center gap-4 p-6 pt-6">
-                        <div className="p-3 bg-purple-100 rounded-xl">
-                            <MusicNote01Icon className="h-6 w-6 text-purple-600" />
+                    <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6 pt-4 md:pt-6">
+                        <div className="p-2.5 md:p-3 bg-purple-100 rounded-xl">
+                            <MusicNote01Icon className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
                         </div>
                         <div>
-                            <div className="text-3xl font-bold text-gray-900">{history.filter((h: MusicGeneration) => h.status === 'completed').length}</div>
-                            <div className="text-sm text-muted-foreground">Songs Created</div>
+                            <div className="text-2xl md:text-3xl font-bold text-gray-900">{history.filter((h: MusicGeneration) => h.status === 'completed').length}</div>
+                            <div className="text-xs md:text-sm text-muted-foreground">Songs Created</div>
                         </div>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardContent className="flex items-center gap-4 p-6 pt-6">
-                        <div className="p-3 bg-emerald-100 rounded-xl">
-                            <Coins01Icon className="h-6 w-6 text-emerald-600" />
+                    <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-6 pt-4 md:pt-6">
+                        <div className="p-2.5 md:p-3 bg-emerald-100 rounded-xl">
+                            <Coins01Icon className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />
                         </div>
                         <div>
-                            <div className="text-3xl font-bold text-gray-900">{credits}</div>
-                            <div className="text-sm text-muted-foreground">Credits Available</div>
+                            <div className="text-2xl md:text-3xl font-bold text-gray-900">{credits}</div>
+                            <div className="text-xs md:text-sm text-muted-foreground">Credits Available</div>
                         </div>
                     </CardContent>
                 </Card>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
             {/* Songs List */}
             <div className="song-list-wrapper">
                 {history.length > 0 ? (
-                    <div className="grid gap-6">
+                    <div className="grid gap-4 md:gap-6">
                         {history.map((item: MusicGeneration) => (
                             <SongCard
                                 key={item.id}
@@ -162,11 +162,14 @@ export default function DashboardPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="empty-state text-center py-12 bg-white rounded-lg shadow-sm">
-                        <MusicNote01Icon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No songs yet</h3>
-                        <p className="text-gray-600 mb-6">You haven't created any songs yet. Use a credit to get started!</p>
-                        <Button onClick={() => router.push('/dashboard/create')}>
+                    <div className="empty-state text-center py-8 md:py-12 bg-white rounded-lg shadow-sm px-4">
+                        <MusicNote01Icon className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
+                        <h3 className="text-base md:text-lg font-semibold mb-2">No songs yet</h3>
+                        <p className="text-sm md:text-base text-gray-600 mb-4 md:mb-6">You haven't created any songs yet. Use a credit to get started!</p>
+                        <Button
+                            onClick={() => router.push('/dashboard/create')}
+                            className="w-full sm:w-auto"
+                        >
                             Create Song
                         </Button>
                     </div>

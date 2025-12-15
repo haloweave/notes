@@ -140,47 +140,47 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
             {/* Background Gradient Effect on Hover */}
             <div className="absolute inset-0 bg-gradient-to-r from-purple-50/0 via-purple-50/30 to-purple-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-            <div className="p-6 relative z-10">
-                <div className="flex items-center justify-between gap-6">
+            <div className="p-4 md:p-6 relative z-10">
+                <div className="flex items-start md:items-center justify-between gap-3 md:gap-6 flex-col md:flex-row">
                     {/* Left: Info */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
+                    <div className="flex-1 min-w-0 w-full">
+                        <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
                             <span className={cn(
-                                "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1",
+                                "text-[9px] md:text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1",
                                 item.status === 'completed' ? 'bg-green-100 text-green-700' :
                                     isProcessing ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
                             )}>
-                                {isProcessing && <div className="w-2 h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />}
+                                {isProcessing && <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full border-2 border-current border-t-transparent animate-spin" />}
                                 {item.status === 'in_progress' ? 'Processing' : (item.status || 'Pending')}
                             </span>
-                            <div className="flex items-center text-xs text-gray-400 gap-1">
-                                <Calendar className="w-3 h-3" />
+                            <div className="flex items-center text-[10px] md:text-xs text-gray-400 gap-1">
+                                <Calendar className="w-2.5 h-2.5 md:w-3 md:h-3" />
                                 {new Date(item.createdAt).toLocaleDateString()}
                             </div>
                         </div>
-                        <h3 className="font-bold text-gray-900 text-lg leading-tight truncate pr-4" title={item.generatedPrompt || 'Untitled'}>
+                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.generatedPrompt || 'Untitled'}>
                             {item.generatedPrompt || 'Untitled Composition'}
                         </h3>
                         {isProcessing && (
-                            <p className="text-xs text-muted-foreground mt-1 animate-pulse">
+                            <p className="text-[10px] md:text-xs text-muted-foreground mt-1 animate-pulse">
                                 Composing your song, This usually takes about 2 minutes...
                             </p>
                         )}
                         {isFailed && (
-                            <p className="text-xs text-red-500 mt-1">
+                            <p className="text-[10px] md:text-xs text-red-500 mt-1">
                                 Generation failed. Please try again.
                             </p>
                         )}
                     </div>
 
                     {/* Right: Big Play Button (or Status) */}
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-2 self-end md:self-auto">
                         {hasSecondVersion && item.status === 'completed' && (
                             <div className="flex items-center bg-gray-100 rounded-full p-1 w-fit mb-1" onClick={(e) => e.stopPropagation()}>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleVersionChange('v1'); }}
                                     className={cn(
-                                        "px-3 py-1 text-xs font-semibold rounded-full transition-all",
+                                        "px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold rounded-full transition-all",
                                         selectedVersion === 'v1'
                                             ? "bg-white text-purple-600 shadow-sm"
                                             : "text-gray-500 hover:text-gray-700"
@@ -191,7 +191,7 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleVersionChange('v2'); }}
                                     className={cn(
-                                        "px-3 py-1 text-xs font-semibold rounded-full transition-all",
+                                        "px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold rounded-full transition-all",
                                         selectedVersion === 'v2'
                                             ? "bg-white text-purple-600 shadow-sm"
                                             : "text-gray-500 hover:text-gray-700"
@@ -203,28 +203,28 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                         )}
 
                         {isProcessing ? (
-                            <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100">
-                                <div className="w-8 h-8 rounded-full border-4 border-blue-500/30 border-t-blue-600 animate-spin" />
+                            <div className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100">
+                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full border-4 border-blue-500/30 border-t-blue-600 animate-spin" />
                             </div>
                         ) : isFailed ? (
-                            <div className="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-red-50 border border-red-100 text-red-500">
-                                <Square className="w-6 h-6 fill-current opacity-50" />
+                            <div className="flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center bg-red-50 border border-red-100 text-red-500">
+                                <Square className="w-5 h-5 md:w-6 md:h-6 fill-current opacity-50" />
                             </div>
                         ) : (
                             <button
                                 onClick={togglePlay}
                                 disabled={!audioUrl}
                                 className={cn(
-                                    "flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                    "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
                                     isPlaying
                                         ? "bg-purple-100 text-purple-600 scale-95"
                                         : "bg-gray-900 text-white hover:bg-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
                                 )}
                             >
                                 {isPlaying ? (
-                                    <Pause className="w-8 h-8 fill-current" />
+                                    <Pause className="w-6 h-6 md:w-8 md:h-8 fill-current" />
                                 ) : (
-                                    <Play className="w-8 h-8 fill-current ml-1" />
+                                    <Play className="w-6 h-6 md:w-8 md:h-8 fill-current ml-0.5 md:ml-1" />
                                 )}
                             </button>
                         )}
@@ -234,15 +234,15 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                 {/* Expanded Section */}
                 <div className={cn(
                     "grid transition-all duration-500 ease-in-out",
-                    isExpanded ? "grid-rows-[1fr] opacity-100 mt-6 pt-6 border-t border-gray-100" : "grid-rows-[0fr] opacity-0"
+                    isExpanded ? "grid-rows-[1fr] opacity-100 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-100" : "grid-rows-[0fr] opacity-0"
                 )}>
                     <div className="overflow-hidden min-h-0">
                         {/* Progress Bar */}
-                        <div className="flex items-center gap-4 mb-4">
-                            <span className="text-xs font-medium text-gray-500 w-10 text-right">{formatTime(currentTime)}</span>
-                            <div className="flex-1 h-8 flex items-center relative group/slider">
+                        <div className="flex items-center gap-2 md:gap-4 mb-3 md:mb-4">
+                            <span className="text-[10px] md:text-xs font-medium text-gray-500 w-8 md:w-10 text-right">{formatTime(currentTime)}</span>
+                            <div className="flex-1 h-6 md:h-8 flex items-center relative group/slider">
                                 {/* Custom track background */}
-                                <div className="absolute w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="absolute w-full h-1.5 md:h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-purple-500 transition-all duration-100 ease-out"
                                         style={{ width: `${progress}%` }}
@@ -259,34 +259,34 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                 />
                                 {/* Thumb indicator (visual only) */}
                                 <div
-                                    className="w-4 h-4 bg-white border-2 border-purple-600 rounded-full shadow-md absolute pointer-events-none transition-all duration-100 ease-out"
-                                    style={{ left: `calc(${progress}% - 8px)` }}
+                                    className="w-3 h-3 md:w-4 md:h-4 bg-white border-2 border-purple-600 rounded-full shadow-md absolute pointer-events-none transition-all duration-100 ease-out"
+                                    style={{ left: `calc(${progress}% - ${progress > 50 ? '12px' : '6px'})` }}
                                 />
                             </div>
-                            <span className="text-xs font-medium text-gray-500 w-10">{formatTime(duration)}</span>
+                            <span className="text-[10px] md:text-xs font-medium text-gray-500 w-8 md:w-10">{formatTime(duration)}</span>
                         </div>
 
                         {/* Controls */}
-                        <div className="flex items-center justify-center gap-6">
+                        <div className="flex items-center justify-center gap-3 md:gap-6">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={stopPlayback}
-                                className="h-12 w-12 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
+                                className="h-10 w-10 md:h-12 md:w-12 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors"
                                 title="Stop"
                                 disabled={!audioUrl}
                             >
-                                <Square className="w-5 h-5 fill-current" />
+                                <Square className="w-4 h-4 md:w-5 md:h-5 fill-current" />
                             </Button>
 
                             {audioUrl && (
                                 <Button
                                     variant="outline"
-                                    className="h-12 px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700"
+                                    className="h-10 md:h-12 px-4 md:px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700 text-xs md:text-sm"
                                     asChild
                                 >
                                     <a href={audioUrl} download>
-                                        <Download className="w-4 h-4" />
+                                        <Download className="w-3 h-3 md:w-4 md:h-4" />
                                         <span className="font-medium">Download MP3</span>
                                     </a>
                                 </Button>

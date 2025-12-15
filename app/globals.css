@@ -1339,3 +1339,138 @@
     background-position: 0 400px;
   }
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .msg-landing .container {
+    width: 90vw;
+  }
+
+  .msg-landing .nav-inner {
+    height: 70px;
+  }
+
+  .msg-landing .nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: white;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 80px 24px 24px;
+    gap: 24px;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+  }
+
+  .msg-landing .nav-links.mobile-open {
+    right: 0;
+  }
+
+  .msg-landing .mobile-menu-btn {
+    display: block;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    color: var(--color-text);
+  }
+
+  .msg-landing .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    backdrop-filter: blur(4px);
+  }
+
+  .msg-landing .hero {
+    padding: var(--space-12) 0;
+    height: auto;
+    min-height: 80vh;
+  }
+
+  .msg-landing .hero-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .msg-landing .hero-cta {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .msg-landing .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .msg-landing .two-column {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .msg-landing .steps {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .msg-landing .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .msg-landing .section {
+    padding: var(--space-12) 0;
+  }
+
+  .msg-landing h1 {
+    font-size: clamp(32px, 8vw, 48px);
+  }
+
+  .msg-landing h2 {
+    font-size: clamp(24px, 6vw, 32px);
+  }
+
+  .msg-landing .preview-card {
+    padding: var(--space-6);
+  }
+
+  .msg-landing .form-card {
+    padding: 24px;
+    margin: 24px auto;
+  }
+
+  .msg-landing .plan-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  .msg-landing .footer-nav-row,
+  .msg-landing .footer-social-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media (min-width: 769px) {
+  .msg-landing .mobile-menu-btn {
+    display: none;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .msg-landing .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .msg-landing .pricing-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
