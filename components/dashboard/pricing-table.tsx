@@ -13,23 +13,20 @@ export function PricingTable() {
     const handlePurchase = async (amount: number, packageId: string) => {
         setIsPurchasing(packageId);
         try {
-            const response = await fetch('/api/credits/add', {
+            const response = await fetch('/api/stripe/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
+                body: JSON.stringify({ packageId })
             });
             const data = await response.json();
 
-            if (data.success) {
-                // Refresh the page or update context to show new credits
-                router.refresh();
-                // We'll also force a reload to ensure the layout header updates immediately
-                window.location.reload();
+            if (data.url) {
+                window.location.href = data.url;
             } else {
-                console.error("Purchase failed:", data.message);
+                console.error("Purchase failed:", data.error);
             }
         } catch (error) {
-            console.error("Error purchasing credits:", error);
+            console.error("Error initiating checkout:", error);
         } finally {
             setIsPurchasing(null);
         }

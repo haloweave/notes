@@ -1,14 +1,29 @@
-'use client';
 
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { PricingTable } from '@/components/dashboard/pricing-table';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { db } from '@/lib/db';
+import { orders } from '@/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { OrderSuccessDialog } from '@/components/dashboard/order-success-dialog';
 
-export default function OrdersPage() {
-    const router = useRouter();
+export default async function OrdersPage() {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    });
+
+    if (!session?.user) {
+        redirect('/');
+    }
+
+    // Fetch orders
+    const userOrders = await db.select()
+        .from(orders)
+        .where(eq(orders.userId, session.user.id))
+        .orderBy(desc(orders.createdAt));
 
     return (
         <div className="space-y-8">
@@ -18,8 +33,8 @@ export default function OrdersPage() {
             />
 
             {/* Pricing Options */}
-            {/* Pricing Options */}
             <PricingTable />
+            <OrderSuccessDialog />
 
             <div className="pt-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Order History</h2>
@@ -33,13 +48,44 @@ export default function OrdersPage() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">No orders yet. Purchase credits to see your purchase history here.</td>
-                                </tr>
+                                {userOrders.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                            No orders yet. Purchase credits to see your purchase history here.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    userOrders.map((order) => (
+                                        <tr key={order.id}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {order.id.substring(0, 8)}...
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {new Date(order.createdAt).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {order.packageId === 'bundle' ? '3 Song Bundle' : '1 Song Credit'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                ${(order.amount / 100).toFixed(2)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'succeeded' ? 'bg-green-100 text-green-800' :
+                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {order.credits}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
