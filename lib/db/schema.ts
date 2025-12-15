@@ -19,6 +19,12 @@ export const musicGenerations = pgTable('music_generations', {
     // Generated prompt
     generatedPrompt: text('generated_prompt'),
 
+    // Custom message from user (optional, displayed on public play page)
+    customMessage: text('custom_message'),
+
+    // Custom title from user (optional, applies to both versions)
+    customTitle: text('custom_title'),
+
     // MusicGPT response data
     conversionId1: text('conversion_id_1'),
     conversionId2: text('conversion_id_2'),

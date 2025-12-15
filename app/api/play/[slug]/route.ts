@@ -74,6 +74,8 @@ export async function GET(
         return NextResponse.json({
             id: song.id,
             generatedPrompt: song.generatedPrompt,
+            customMessage: song.customMessage,
+            customTitle: song.customTitle,
             audioUrl,
             title,
             lyrics,

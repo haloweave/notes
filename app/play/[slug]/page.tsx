@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 interface SongData {
     id: string;
     generatedPrompt: string;
+    customMessage?: string;
+    customTitle?: string;
     audioUrl: string;
     audioUrlWav?: string;
     title?: string;
@@ -340,11 +342,11 @@ export default function PlayPage() {
                                 <span className="text-sm font-semibold text-white">Huggnote</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight drop-shadow-2xl px-4">
-                                {song.title || song.generatedPrompt || 'Untitled Song'}
+                                {song.customTitle || song.title || song.generatedPrompt || 'Untitled Song'}
                             </h1>
-                            {song.title && song.generatedPrompt && (
-                                <p className="text-sm md:text-base text-white/60 max-w-2xl mx-auto px-4 line-clamp-2">
-                                    {song.generatedPrompt}
+                            {song.customMessage && (
+                                <p className="text-sm md:text-base text-white/80 max-w-2xl mx-auto px-4 whitespace-pre-wrap">
+                                    {song.customMessage}
                                 </p>
                             )}
                         </div>

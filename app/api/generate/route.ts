@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
                 taskId: data.task_id,
                 userId: session?.user?.id,
                 generatedPrompt: body.prompt,
+                customMessage: body.custom_message || null,
                 conversionId1: data.conversion_id_1,
                 conversionId2: data.conversion_id_2,
                 status: 'pending',

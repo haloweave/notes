@@ -39,6 +39,7 @@ const formSchema = z.object({
     personalization: z.string().min(1, "Please select personalization level"),
     length: z.string().min(1, "Please select song length"),
     include_name: z.boolean().default(false),
+    custom_message: z.string().optional(),
 });
 
 export default function CreatePage() {
@@ -55,6 +56,9 @@ export default function CreatePage() {
 
     // New state for dialog
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    // Store form values to pass custom message later
+    const [formValues, setFormValues] = useState<z.infer<typeof formSchema> | null>(null);
 
     useEffect(() => {
         const fetchCredits = async () => {
@@ -82,6 +86,9 @@ export default function CreatePage() {
         }
 
         const dataToSubmit = values;
+
+        // Store form values for later use
+        setFormValues(values);
 
         console.log('[FRONTEND] Generate prompt clicked', dataToSubmit);
         setIsDialogOpen(true); // Open dialog immediately
@@ -133,7 +140,8 @@ export default function CreatePage() {
                 body: JSON.stringify({
                     prompt: prompt,
                     make_instrumental: false,
-                    wait_audio: false
+                    wait_audio: false,
+                    custom_message: formValues?.custom_message || null
                 })
             });
 
@@ -435,6 +443,27 @@ export default function CreatePage() {
                                                 Include their name in the lyrics?
                                             </FormLabel>
                                         </div>
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Custom Message */}
+                            <FormField
+                                control={form.control as any}
+                                name="custom_message"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Custom Message (Optional)</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Add a personal message that will be displayed when someone plays your song (e.g., 'Merry Christmas! Hope you love this special song I made for you!')"
+                                                className="resize-none"
+                                                rows={3}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <p className="text-sm text-muted-foreground">This message will appear on the public play page instead of the AI-generated prompt.</p>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />

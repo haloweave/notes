@@ -4,17 +4,22 @@ import { useState, useRef, useEffect } from 'react';
 import { type MusicGeneration } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, Square, Download, Calendar, Share2, Check } from 'lucide-react';
+import { Play, Pause, Square, Download, Calendar, Share2, Check, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getShareUrl } from '@/lib/share-utils';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface SongCardProps {
     item: MusicGeneration;
     currentPlayingId?: string | null;
     onPlay?: (id: string) => void;
+    onUpdate?: () => void;
 }
 
-export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
+export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -24,6 +29,12 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
 
     const [selectedVersion, setSelectedVersion] = useState<'v1' | 'v2'>('v1');
     const [copied, setCopied] = useState(false);
+
+    // Edit dialog state
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [customMessage, setCustomMessage] = useState(item.customMessage || '');
+    const [customTitle, setCustomTitle] = useState(item.customTitle || '');
+    const [isSaving, setIsSaving] = useState(false);
 
     // Determine the active audio URL based on selection
     // Prioritize MP3 for better streaming (smaller, faster loading)
@@ -151,6 +162,31 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
         }
     };
 
+    const saveEdits = async () => {
+        setIsSaving(true);
+        try {
+            const response = await fetch(`/api/songs/${item.id}/edit`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customMessage,
+                    customTitle
+                })
+            });
+
+            if (response.ok) {
+                setShowEditDialog(false);
+                onUpdate?.(); // Refresh the list
+            } else {
+                console.error('Failed to save edits');
+            }
+        } catch (error) {
+            console.error('Error saving edits:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const isProcessing = item.status === 'pending' || item.status === 'in_progress' || !audioUrl;
     const isFailed = item.status === 'failed' || item.status === 'error';
 
@@ -180,10 +216,10 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                 {new Date(item.createdAt).toLocaleDateString()}
                             </div>
                         </div>
-                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={(selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled'}>
-                            {(selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled Composition'}
+                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled'}>
+                            {item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled Composition'}
                         </h3>
-                        {((selectedVersion === 'v1' ? item.title1 : item.title2) && item.generatedPrompt) && (
+                        {((item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2)) && item.generatedPrompt) && (
                             <p className="text-[10px] md:text-xs text-gray-500 mt-1 line-clamp-1">
                                 {item.generatedPrompt}
                             </p>
@@ -248,6 +284,20 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                                     <Play className="w-6 h-6 md:w-8 md:h-8 fill-current ml-0.5 md:ml-1" />
                                 </button>
 
+                                {/* Edit Button */}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowEditDialog(true); }}
+                                    className={cn(
+                                        "flex-shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-sm",
+                                        item.customMessage
+                                            ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                                            : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-600 hover:scale-105 hover:shadow-purple-200 hover:shadow-xl"
+                                    )}
+                                    title={item.customMessage ? "Edit title & message" : "Add title & message"}
+                                >
+                                    <MessageSquare className="w-5 h-5 md:w-6 md:h-6" />
+                                </button>
+
                                 {/* Share Button */}
                                 {(selectedVersion === 'v1' ? item.shareSlugV1 : item.shareSlugV2) && (
                                     <button
@@ -273,6 +323,68 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                     </div>
                 </div>
             </div>
-        </Card>
+
+            {/* Edit Dialog */}
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Song Details</DialogTitle>
+                        <DialogDescription>
+                            Customize the title and message for your song. The message will be displayed on the public play page.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        {/* Title Input */}
+                        <div>
+                            <Label htmlFor="song-title" className="text-sm font-medium mb-2 block">
+                                Song Title
+                            </Label>
+                            <Input
+                                id="song-title"
+                                placeholder="Enter a custom title for your song"
+                                value={customTitle}
+                                onChange={(e) => setCustomTitle(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                This title applies to both versions. Leave empty to use the AI-generated title.
+                            </p>
+                        </div>
+
+                        {/* Custom Message */}
+                        <div>
+                            <Label htmlFor="custom-message" className="text-sm font-medium mb-2 block">
+                                Custom Message
+                            </Label>
+                            <Textarea
+                                id="custom-message"
+                                placeholder="e.g., 'Merry Christmas! Hope you love this special song I made for you!'"
+                                value={customMessage}
+                                onChange={(e) => setCustomMessage(e.target.value)}
+                                rows={5}
+                                className="resize-none"
+                            />
+
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowEditDialog(false)}
+                            disabled={isSaving}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={saveEdits}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </Card >
     );
 }

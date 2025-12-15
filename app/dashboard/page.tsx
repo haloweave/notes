@@ -158,6 +158,7 @@ export default function DashboardPage() {
                                 item={item}
                                 currentPlayingId={currentPlayingId}
                                 onPlay={(id) => setCurrentPlayingId(id)}
+                                onUpdate={() => fetchHistory(false)}
                             />
                         ))}
                     </div>
