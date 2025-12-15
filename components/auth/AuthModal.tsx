@@ -146,7 +146,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                         <button
                             type="submit"
-                            className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98] transition-all"
+                            className="w-full py-3.5 px-4 bg-gradient-to-r from-[#2F5A8E] to-[#86CCEA] hover:opacity-90 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all"
                             disabled={loading}
                         >
                             {loading
