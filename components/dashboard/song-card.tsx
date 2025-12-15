@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { type MusicGeneration } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, Square, Download, Calendar } from 'lucide-react';
+import { Play, Pause, Square, Download, Calendar, Share2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getShareUrl } from '@/lib/share-utils';
 
 interface SongCardProps {
     item: MusicGeneration;
@@ -22,6 +23,7 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const [selectedVersion, setSelectedVersion] = useState<'v1' | 'v2'>('v1');
+    const [copied, setCopied] = useState(false);
 
     // Determine the active audio URL based on selection
     const activeAudioUrl = selectedVersion === 'v1'
@@ -127,6 +129,26 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const copyShareLink = async (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        const slug = selectedVersion === 'v1' ? item.shareSlugV1 : item.shareSlugV2;
+
+        if (!slug) {
+            console.error('No share slug available for this version');
+            return;
+        }
+
+        const shareUrl = getShareUrl(slug);
+
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
     };
 
     const isProcessing = item.status === 'pending' || item.status === 'in_progress' || !audioUrl;
@@ -280,16 +302,42 @@ export function SongCard({ item, currentPlayingId, onPlay }: SongCardProps) {
                             </Button>
 
                             {audioUrl && (
-                                <Button
-                                    variant="outline"
-                                    className="h-10 md:h-12 px-4 md:px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700 text-xs md:text-sm"
-                                    asChild
-                                >
-                                    <a href={audioUrl} download>
-                                        <Download className="w-3 h-3 md:w-4 md:h-4" />
-                                        <span className="font-medium">Download MP3</span>
-                                    </a>
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        className="h-10 md:h-12 px-4 md:px-6 rounded-full gap-2 border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700 text-xs md:text-sm"
+                                        asChild
+                                    >
+                                        <a href={audioUrl} download>
+                                            <Download className="w-3 h-3 md:w-4 md:h-4" />
+                                            <span className="font-medium">Download MP3</span>
+                                        </a>
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        onClick={copyShareLink}
+                                        className={cn(
+                                            "h-10 md:h-12 px-4 md:px-6 rounded-full gap-2 text-xs md:text-sm transition-all",
+                                            copied
+                                                ? "border-green-200 bg-green-50 text-green-700"
+                                                : "border-gray-200 hover:border-purple-200 hover:bg-purple-50 text-gray-700"
+                                        )}
+                                        disabled={!item.shareSlugV1 && !item.shareSlugV2}
+                                    >
+                                        {copied ? (
+                                            <>
+                                                <Check className="w-3 h-3 md:w-4 md:h-4" />
+                                                <span className="font-medium">Copied!</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Share2 className="w-3 h-3 md:w-4 md:h-4" />
+                                                <span className="font-medium">Share Link</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                </>
                             )}
                         </div>
                     </div>

@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { generateShareSlug } from '@/lib/share-utils';
 
 export async function POST(request: NextRequest) {
     console.log('[GENERATE] Music generation request received');
@@ -99,6 +100,8 @@ export async function POST(request: NextRequest) {
                 conversionId2: data.conversion_id_2,
                 status: 'pending',
                 musicGptResponse: data,
+                shareSlugV1: generateShareSlug(),
+                shareSlugV2: generateShareSlug(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });

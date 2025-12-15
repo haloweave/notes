@@ -30,6 +30,10 @@ export const musicGenerations = pgTable('music_generations', {
     audioUrlWav1: text('audio_url_wav_1'),
     audioUrlWav2: text('audio_url_wav_2'),
 
+    // Shareable URL slugs for public playback
+    shareSlugV1: text('share_slug_v1').unique(),
+    shareSlugV2: text('share_slug_v2').unique(),
+
     // Metadata
     title1: text('title_1'),
     title2: text('title_2'),
