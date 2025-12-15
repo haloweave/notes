@@ -224,17 +224,12 @@ export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardP
                                 {new Date(item.createdAt).toLocaleDateString()}
                             </div>
                         </div>
-                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled'}>
-                            {item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || item.generatedPrompt || 'Untitled Composition'}
+                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || 'Untitled'}>
+                            {item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || 'Untitled Composition'}
                         </h3>
-                        {((item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2)) && item.generatedPrompt) && (
-                            <p className="text-[10px] md:text-xs text-gray-500 mt-1 line-clamp-1">
-                                {item.generatedPrompt}
-                            </p>
-                        )}
                         {isProcessing && (
                             <p className="text-[10px] md:text-xs text-muted-foreground mt-1 animate-pulse">
-                                Composing your song, This usually takes about 2 minutes...
+                                Creating your music... This usually takes about 2 minutes.
                             </p>
                         )}
                         {isFailed && (
