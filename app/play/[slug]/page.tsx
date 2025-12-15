@@ -154,8 +154,7 @@ export default function PlayPage() {
         if (introVideoRef.current && showIntro && !loading && song) {
             introVideoRef.current.play().catch(err => {
                 console.error('Intro video autoplay failed:', err);
-                // If autoplay fails, skip intro
-                handleIntroEnd();
+                // Don't auto-skip - let user see the intro and click skip or play
             });
         }
     }, [showIntro, loading, song]);
@@ -302,7 +301,7 @@ export default function PlayPage() {
                         className="w-full h-full object-cover"
                         onEnded={handleIntroEnd}
                         playsInline
-                        muted={false}
+                        muted
                     />
 
                     {/* Skip Intro Button */}
