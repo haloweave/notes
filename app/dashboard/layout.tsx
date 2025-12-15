@@ -36,24 +36,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="h-full overflow-y-auto">
                     {/* Purchase Ribbon - Show when credits are low */}
                     {credits !== null && credits <= 2 && (
-                        <div className="sticky top-0 z-50 w-full">
+                        <div className="sticky top-4 z-50 w-full px-4 sm:px-6 md:px-8 lg:px-10">
                             <button
                                 onClick={() => setShowPricingDialog(true)}
-                                className="w-full py-3 md:py-4 px-4 transition-all hover:scale-[1.01] shadow-md hover:shadow-lg"
+                                className="w-full py-3 md:py-4 px-4 transition-all hover:scale-[1.02] shadow-lg hover:shadow-xl rounded-2xl"
                                 style={{
-                                    background: 'linear-gradient(to right, #fae8b4, #f5d98f)',
-                                    border: '2px solid #f5d98f'
+                                    background: 'linear-gradient(135deg, #fae8b4 0%, #f5d98f 50%, #f0ca6a 100%)',
+                                    border: '2px solid #f5d98f',
+                                    backdropFilter: 'blur(10px)'
                                 }}
                             >
                                 <div className="flex items-center justify-center gap-2 md:gap-3">
-                                    <SparklesIcon className="h-5 w-5 md:h-6 md:w-6" style={{ color: '#2A374F' }} />
+                                    <SparklesIcon className="h-5 w-5 md:h-6 md:w-6 animate-pulse" style={{ color: '#2A374F' }} />
                                     <span className="font-bold text-sm md:text-base" style={{ color: '#2A374F' }}>
                                         {credits === 0
                                             ? '🎄 Get Started! Purchase songs to create your magical Christmas gifts'
                                             : `🎁 Only ${credits} song${credits === 1 ? '' : 's'} left! Get more to keep the magic going`
                                         }
                                     </span>
-                                    <SparklesIcon className="h-5 w-5 md:h-6 md:w-6" style={{ color: '#2A374F' }} />
+                                    <SparklesIcon className="h-5 w-5 md:h-6 md:w-6 animate-pulse" style={{ color: '#2A374F' }} />
                                 </div>
                             </button>
                         </div>
