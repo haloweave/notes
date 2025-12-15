@@ -12,6 +12,29 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Huggnote — Custom Holiday Songs",
   description: "Turn your memories into a custom holiday song. Delivered as a magical, interactive experience with snow, hearts, and music.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    title: "Huggnote — Custom Holiday Songs",
+    description: "Turn your memories into a custom holiday song. Delivered as a magical, interactive experience with snow, hearts, and music.",
+    siteName: 'Huggnote',
+    images: [
+      {
+        url: '/metaImage.png',
+        width: 1200,
+        height: 630,
+        alt: 'Huggnote - Custom Holiday Songs',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Huggnote — Custom Holiday Songs",
+    description: "Turn your memories into a custom holiday song. Delivered as a magical, interactive experience with snow, hearts, and music.",
+    images: ['/metaImage.png'],
+  },
 };
 
 export default function RootLayout({
