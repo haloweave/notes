@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ interface SongData {
     moreInfo?: string;
 }
 
-export default function VariationsPage() {
+function VariationsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -362,5 +362,17 @@ export default function VariationsPage() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(135, 206, 235, 0.3); border-radius: 10px; }
             `}</style>
         </div>
+    );
+}
+
+export default function VariationsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <Loading01Icon className="w-8 h-8 text-[#F5E6B8] animate-spin" />
+            </div>
+        }>
+            <VariationsContent />
+        </Suspense>
     );
 }
