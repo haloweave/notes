@@ -142,7 +142,9 @@ export default function DashboardPage() {
                         </div>
                         <div>
                             <div className="text-2xl md:text-3xl font-bold text-gray-900">{credits}</div>
-                            <div className="text-xs md:text-sm text-muted-foreground">Songs Available</div>
+                            <div className="text-xs md:text-sm text-muted-foreground">
+                                {credits === 0 ? 'No Songs Available' : credits === 1 ? '1 Song Available' : `${credits} Songs Available`}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

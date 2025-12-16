@@ -97,7 +97,12 @@ export function Sidebar() {
                         <p className="text-xs md:text-sm font-semibold text-gray-900 truncate">{session?.user?.name || session?.user?.email?.split('@')[0] || 'User'}</p>
                         <p className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1">
                             <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500"></span>
-                            {(session?.user as any)?.credits || 0} Songs Available
+                            {(() => {
+                                const credits = (session?.user as any)?.credits || 0;
+                                if (credits === 0) return 'No songs available';
+                                if (credits === 1) return '1 song available';
+                                return `${credits} songs available`;
+                            })()}
                         </p>
                     </div>
                 </button>

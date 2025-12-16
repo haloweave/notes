@@ -11,26 +11,37 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     typescript: true,
 });
 
+// This is critical for Stripe webhooks - we need the raw body for signature verification
+export const runtime = 'nodejs';
+
+
 export async function POST(req: NextRequest) {
     const body = await req.text();
-    const signature = req.headers.get("stripe-signature") as string;
+    const signature = req.headers.get("stripe-signature");
+
+    if (!signature) {
+        console.error("No stripe-signature header found in request");
+        return NextResponse.json({ error: "No signature header" }, { status: 400 });
+    }
+
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        console.error("STRIPE_WEBHOOK_SECRET is not configured in environment variables");
+        return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
+    }
 
     let event: Stripe.Event;
 
     try {
-        if (!process.env.STRIPE_WEBHOOK_SECRET) {
-            console.warn("STRIPE_WEBHOOK_SECRET is not set. Webhook signature verification skipped (UNSAFE FOR PRODUCTION).");
-            // In production, you MUST use the webhook secret
-            // event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
-            // For now, we will try to parse the body directly if secret is missing to allow local testing without CLI if user insists
-            // BUT for correctness, we should fail or require it.
-            // Let's assume the user will set it. If not, this throws.
-            event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
-        } else {
-            event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
-        }
+        event = stripe.webhooks.constructEvent(
+            body,
+            signature,
+            process.env.STRIPE_WEBHOOK_SECRET
+        );
+        console.log(`✅ Webhook verified: ${event.type}`);
     } catch (err: any) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
+        console.error(`❌ Webhook signature verification failed: ${err.message}`);
+        console.error(`Signature received: ${signature.substring(0, 20)}...`);
+        console.error(`Body length: ${body.length} bytes`);
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
 

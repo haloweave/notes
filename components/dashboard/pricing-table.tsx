@@ -35,7 +35,7 @@ export function PricingTable() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
             {/* Solo Serenade */}
-            <Card className="border-0 shadow-xl transition-all cursor-pointer relative overflow-visible text-left bg-white">
+            <Card className="border-0 shadow-xl transition-all cursor-pointer relative overflow-visible text-left bg-white flex flex-col">
                 {/* Decorative circles */}
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-2">
                     <div className="w-12 h-12 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}></div>
@@ -53,9 +53,9 @@ export function PricingTable() {
                     </CardTitle>
                     <CardDescription className="italic text-slate-600">Perfect for one special person</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
                     <div className="text-5xl font-bold text-slate-700 text-center">€37</div>
-                    <ul className="space-y-2.5 text-sm text-slate-600">
+                    <ul className="space-y-2.5 text-sm text-slate-600 flex-1">
                         <li className="flex items-start gap-2">
                             <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#2F5A8E' }} />
                             <span>1 custom personalised song</span>
@@ -100,7 +100,7 @@ export function PricingTable() {
             </Card>
 
             {/* Holiday Hamper */}
-            <Card className="border-0 shadow-xl transition-all cursor-pointer relative overflow-visible text-left bg-white">
+            <Card className="border-0 shadow-xl transition-all cursor-pointer relative overflow-visible text-left bg-white flex flex-col">
                 {/* Decorative circles */}
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex gap-2">
                     <div className="w-12 h-12 rounded-full" style={{ background: 'linear-gradient(to bottom right, #fae8b4, #f5d98f)' }}></div>
@@ -128,14 +128,14 @@ export function PricingTable() {
                     </CardTitle>
                     <CardDescription className="italic text-slate-600">Save with family/friends bundle</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
                     <div className="text-5xl font-bold text-slate-700 text-center">€87</div>
                     <div className="text-center">
                         <span className="text-sm font-semibold" style={{ color: '#2F5A8E' }}>
                             Save €98 (53% off!)
                         </span>
                     </div>
-                    <ul className="space-y-2.5 text-sm text-slate-600">
+                    <ul className="space-y-2.5 text-sm text-slate-600 flex-1">
                         <li className="flex items-start gap-2">
                             <CheckCircleIcon className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#d4a574' }} />
                             <span>Up to 5 custom personalised songs</span>

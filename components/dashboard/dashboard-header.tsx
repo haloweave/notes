@@ -29,7 +29,9 @@ export function DashboardHeader({ title, description, children }: DashboardHeade
                         className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-3 py-1.5 rounded-full text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap shadow-sm hover:shadow-md hover:border-emerald-300 hover:bg-emerald-50 transition-all cursor-pointer"
                     >
                         <Coins01Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span>{credits} Songs Available</span>
+                        <span>
+                            {credits === 0 ? 'No songs available' : credits === 1 ? '1 song available' : `${credits} songs available`}
+                        </span>
                     </button>
                 </div>
                 {children && (

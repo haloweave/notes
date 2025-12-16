@@ -224,8 +224,8 @@ export function SongCard({ item, currentPlayingId, onPlay, onUpdate }: SongCardP
                                 {new Date(item.createdAt).toLocaleDateString()}
                             </div>
                         </div>
-                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || 'Untitled'}>
-                            {item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || 'Untitled Composition'}
+                        <h3 className="font-bold text-gray-900 text-base md:text-lg leading-tight truncate pr-2 md:pr-4" title={item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || 'Generating your music...'}>
+                            {item.customTitle || (selectedVersion === 'v1' ? item.title1 : item.title2) || 'Generating your music...'}
                         </h3>
                         {isProcessing && (
                             <p className="text-[10px] md:text-xs text-muted-foreground mt-1 animate-pulse">
