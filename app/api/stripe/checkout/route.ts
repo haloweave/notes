@@ -11,15 +11,25 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: NextRequest) {
     try {
+        console.log("Starting checkout process...");
+        const body = await req.json();
+        const { packageId, selectedVariation, formData, generatedPrompt, formId } = body;
+
         const session = await auth.api.getSession({
             headers: await headers()
         });
 
-        if (!session?.user) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // Determine user identity: Session user OR Guest email
+        let customerEmail = session?.user?.email;
+        let userId = session?.user?.id;
+
+        if (!customerEmail && formData?.senderEmail) {
+            customerEmail = formData.senderEmail;
         }
 
-        const { packageId } = await req.json();
+        if (!customerEmail) {
+            return NextResponse.json({ error: "Unauthorized: Please login or provide an email in the form." }, { status: 401 });
+        }
 
         let priceData;
         let credits = 0;
@@ -51,6 +61,38 @@ export async function POST(req: NextRequest) {
 
         const origin = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "http://localhost:3000";
 
+        // Prepare metadata
+        const metadata: any = {
+            credits: credits.toString(),
+            packageId: packageId,
+            isGuest: (!userId).toString()
+        };
+
+        if (userId) {
+            metadata.userId = userId;
+        }
+
+        // Add variation data if provided
+        if (selectedVariation) {
+            metadata.selectedVariation = selectedVariation.toString();
+        }
+        if (generatedPrompt) {
+            metadata.generatedPrompt = generatedPrompt;
+        }
+        if (formId) {
+            metadata.formId = formId;
+        }
+        if (formData) {
+            // Store essential form data (Stripe metadata has size limits)
+            metadata.recipientName = formData.recipientName || '';
+            metadata.senderName = formData.senderName || '';
+            metadata.theme = formData.theme || '';
+            // Store sender email in metadata as well for guest checkout reference
+            if (!userId) {
+                metadata.guestEmail = formData.senderEmail;
+            }
+        }
+
         const checkoutSession = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
             line_items: [
@@ -60,17 +102,14 @@ export async function POST(req: NextRequest) {
                 },
             ],
             mode: "payment",
-            success_url: `${origin}/dashboard/orders?success=true&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/dashboard/orders?canceled=true`,
-            customer_email: session.user.email,
-            metadata: {
-                userId: session.user.id,
-                credits: credits.toString(),
-                packageId: packageId
-            },
+            success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${origin}/create?canceled=true`,
+            customer_email: customerEmail,
+            metadata: metadata,
         });
 
         return NextResponse.json({ url: checkoutSession.url });
+
     } catch (error) {
         console.error("Stripe Checkout Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -49,13 +49,47 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
 
         // Retrieve metadata
-        const userId = session.metadata?.userId;
+        let userId = session.metadata?.userId;
         const creditsStr = session.metadata?.credits;
         const packageId = session.metadata?.packageId;
+        const guestEmail = session.metadata?.guestEmail;
+        const senderName = session.metadata?.senderName || 'Guest User';
 
-        if (!userId || !creditsStr) {
-            console.error("Missing metadata in Stripe session");
+        if (!creditsStr) {
+            console.error("Missing credits in metadata");
             return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
+        }
+
+        // Handle Guest User: Find or Create User
+        if (!userId && guestEmail) {
+            try {
+                // 1. Check if user exists with this email
+                const existingUsers = await db.select().from(user).where(eq(user.email, guestEmail));
+
+                if (existingUsers.length > 0) {
+                    userId = existingUsers[0].id;
+                    console.log(`Found existing user for guest email: ${userId}`);
+                } else {
+                    // 2. Create new user
+                    userId = nanoid();
+                    await db.insert(user).values({
+                        id: userId,
+                        name: senderName,
+                        email: guestEmail,
+                        emailVerified: false,
+                        credits: 0
+                    });
+                    console.log(`Created new user for guest: ${userId}`);
+                }
+            } catch (err) {
+                console.error("Error finding/creating user:", err);
+                return NextResponse.json({ error: "User creation failed" }, { status: 500 });
+            }
+        }
+
+        if (!userId) {
+            console.error("No userId found and could not create one from guestEmail");
+            return NextResponse.json({ error: "User identification failed" }, { status: 400 });
         }
 
         const creditsToAdd = parseInt(creditsStr, 10);

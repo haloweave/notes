@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PremiumButton } from '@/components/ui/premium-button';
 import { Lora } from 'next/font/google';
-import { PlayIcon, CheckmarkCircle01Icon, Loading01Icon } from 'hugeicons-react';
+import { PlayIcon, CheckmarkCircle01Icon, Loading01Icon, ArrowLeft01Icon } from 'hugeicons-react';
 import Image from 'next/image';
 
 const lora = Lora({ subsets: ['latin'] });
@@ -65,12 +66,64 @@ export default function VariationsPage() {
     };
 
     const handleContinue = async () => {
+        if (!selectedVariation) {
+            alert('Please select a variation first');
+            return;
+        }
+
         setLoading(true);
-        // TODO: Submit the selected variation and generate the final song
-        // For now, redirect to dashboard
-        setTimeout(() => {
-            router.push('/dashboard');
-        }, 2000);
+
+        try {
+            // Get form data and prompt from sessionStorage
+            const formData = sessionStorage.getItem('songFormData');
+            const generatedPrompt = sessionStorage.getItem('generatedPrompt');
+            const formId = sessionStorage.getItem('currentFormId');
+
+            // Update localStorage with selected variation
+            if (formId) {
+                const savedData = localStorage.getItem(`songForm_${formId}`);
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    const updatedData = {
+                        ...parsedData,
+                        selectedVariationId: selectedVariation,
+                        selectedVariationStyle: variations.find(v => v.id === selectedVariation)?.style || '',
+                        status: 'payment_initiated',
+                        lastUpdated: new Date().toISOString()
+                    };
+                    localStorage.setItem(`songForm_${formId}`, JSON.stringify(updatedData));
+                    console.log('[FRONTEND] Updated local storage with variation selection:', updatedData);
+                }
+            }
+
+            // Call Stripe checkout API
+            const response = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    packageId: 'solo-serenade', // Single song for €37
+                    selectedVariation,
+                    formData: formData ? JSON.parse(formData) : null,
+                    generatedPrompt,
+                    formId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.url) {
+                // Redirect to Stripe checkout
+                window.location.href = data.url;
+            } else {
+                console.error('Checkout error:', data.error);
+                alert('Failed to create checkout session. Please try again.');
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error('Error creating checkout:', error);
+            alert('An error occurred. Please try again.');
+            setLoading(false);
+        }
     };
 
     return (
@@ -102,9 +155,18 @@ export default function VariationsPage() {
                 </div>
             </div>
 
+            {/* Back Button - Fixed to left edge */}
+            <button
+                onClick={() => router.push('/create')}
+                className="fixed left-4 top-8 z-20 p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg text-white"
+            >
+                <ArrowLeft01Icon className="w-5 h-5" />
+            </button>
+
             {/* Header */}
-            <div className="relative z-10 max-w-6xl mx-auto mb-8 text-center pt-8 px-4">
-                <div className="mb-6">
+            <div className="relative z-10 max-w-6xl mx-auto mb-8 pt-8 px-4">
+                {/* Logo */}
+                <div className="mb-6 text-center">
                     <Image
                         src="/huggnote bespoke logo.png"
                         alt="Huggnote"
@@ -114,7 +176,9 @@ export default function VariationsPage() {
                         priority
                     />
                 </div>
-                <h1 className={`text-3xl md:text-4xl font-bold mb-4 drop-shadow-xl ${lora.className}`} style={{ color: '#E7DBBF', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+
+                {/* Title */}
+                <h1 className={`text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-2xl md:text-3xl lg:text-3xl font-normal mb-4 drop-shadow-xl text-center ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
                     Listen to each variation and select your favorite
                 </h1>
             </div>
@@ -126,51 +190,70 @@ export default function VariationsPage() {
                     {variations.map((variation) => (
                         <Card
                             key={variation.id}
-                            className={`shadow-2xl backdrop-blur-xl border-2 transition-all ${selectedVariation === variation.id
-                                ? 'bg-white/20 border-[#E7DBBF]'
-                                : 'bg-white/10 border-white/20'
+                            className={`bg-white/5 backdrop-blur-md rounded-2xl border-2 shadow-lg transition-all duration-200 relative overflow-hidden ${selectedVariation === variation.id
+                                ? 'border-[#F5E6B8] shadow-[0_8px_30px_rgba(245,230,184,0.5)] bg-[#F5E6B8]/10'
+                                : 'border-white/20 shadow-[0_4px_15px_rgba(255,255,255,0.1)]'
                                 }`}
                         >
-                            <CardContent className="p-6 space-y-4">
+                            <CardContent className="p-6">
                                 {/* Variation Header */}
-                                <div className="text-center">
-                                    <h3 className={`text-xl font-semibold mb-2 ${lora.className}`} style={{ color: '#E7DBBF' }}>
-                                        Variation {variation.id}
-                                    </h3>
-                                    <p className="text-white font-semibold">{variation.style}</p>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${selectedVariation === variation.id ? 'text-[#F5E6B8]' : 'text-white/70'}`}>
+                                            <path d="M9 18V5l12-2v13"></path>
+                                            <circle cx="6" cy="18" r="3"></circle>
+                                            <circle cx="18" cy="16" r="3"></circle>
+                                        </svg>
+                                        <h3 className={`text-lg font-medium ${selectedVariation === variation.id ? 'text-[#F5E6B8]' : 'text-white'}`}>
+                                            Variation {variation.id}
+                                        </h3>
+                                    </div>
+                                    {selectedVariation === variation.id && (
+                                        <div className="bg-[#F5E6B8] text-[#1a3d5f] rounded-full p-1">
+                                            <CheckmarkCircle01Icon className="w-4 h-4" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Style Badge */}
+                                <div className="mb-3">
+                                    <span className="text-xs text-[#87CEEB] bg-[#87CEEB]/10 px-3 py-1 rounded-full">
+                                        {variation.style}
+                                    </span>
                                 </div>
 
                                 {/* Play Button */}
-                                <Button
-                                    onClick={() => handlePlay(variation.id)}
-                                    className="w-full h-12 flex items-center justify-center gap-2"
-                                >
-                                    {playingId === variation.id ? (
-                                        <>
-                                            <div className="w-5 h-5 flex items-center justify-center">
-                                                <div className="flex gap-1">
-                                                    <div className="w-1 h-4 bg-white animate-pulse"></div>
-                                                    <div className="w-1 h-4 bg-white animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                                                    <div className="w-1 h-4 bg-white animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                                <div className="mb-4">
+                                    <Button
+                                        onClick={() => handlePlay(variation.id)}
+                                        className="w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white shadow-[0_4px_20px_rgba(135,206,235,0.4)] hover:shadow-[0_6px_25px_rgba(135,206,235,0.5)] border-0"
+                                    >
+                                        {playingId === variation.id ? (
+                                            <>
+                                                <div className="w-5 h-5 flex items-center justify-center">
+                                                    <div className="flex gap-1">
+                                                        <div className="w-1 h-4 bg-white animate-pulse"></div>
+                                                        <div className="w-1 h-4 bg-white animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                                                        <div className="w-1 h-4 bg-white animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            Playing...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <PlayIcon className="w-5 h-5" />
-                                            Play
-                                        </>
-                                    )}
-                                </Button>
+                                                <span className="font-medium">Playing...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <PlayIcon className="w-5 h-5" />
+                                                <span className="font-medium">Play</span>
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
 
                                 {/* Lyrics Preview */}
-                                <div className="space-y-2">
-                                    <h4 className="text-white/80 font-semibold text-sm">Lyrics Preview</h4>
-                                    <div className="bg-white/5 rounded-lg p-4 border border-white/20">
-                                        <p className="text-white/90 text-sm whitespace-pre-line italic">
-                                            {variation.lyricsPreview}
-                                        </p>
+                                <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
+                                    <h4 className="text-[#87CEEB] text-sm font-medium mb-2">Lyrics Preview</h4>
+                                    <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line italic max-h-32 overflow-y-auto custom-scrollbar">
+                                        {variation.lyricsPreview}
+
                                         <p className="text-white/50 text-xs mt-3 italic">
                                             "Sample preview - final lyrics will be fully customized"
                                         </p>
@@ -179,22 +262,18 @@ export default function VariationsPage() {
 
                                 {/* Select Button */}
                                 {selectedVariation === variation.id ? (
-                                    <Button
-                                        className="w-full h-12 flex items-center justify-center gap-2"
-                                        variant="secondary"
-                                        disabled
+                                    <button
+                                        className="w-full py-3 rounded-xl font-medium transition-all duration-200 bg-[#F5E6B8] text-[#1a3d5f] shadow-lg hover:bg-[#F5E6B8] border-0 pointer-events-none font-semibold"
                                     >
-                                        <CheckmarkCircle01Icon className="w-5 h-5" />
                                         Selected ✓
-                                    </Button>
+                                    </button>
                                 ) : (
-                                    <Button
+                                    <button
                                         onClick={() => handleSelectVariation(variation.id)}
-                                        className="w-full h-12 bg-white/10 hover:bg-white/20 border border-white/30 text-white"
-                                        variant="outline"
+                                        className="w-full py-3 rounded-xl font-medium transition-all duration-200 bg-white/10 hover:bg-white/20 border border-white/30 text-white"
                                     >
                                         Select This Version
-                                    </Button>
+                                    </button>
                                 )}
                             </CardContent>
                         </Card>
@@ -202,12 +281,10 @@ export default function VariationsPage() {
                 </div>
 
                 {/* Continue Button */}
-                <div className="mt-8">
-                    <Button
+                <div className="mt-8 flex justify-center">
+                    <PremiumButton
                         onClick={handleContinue}
                         disabled={loading}
-                        variant="secondary"
-                        className="w-full h-14 text-lg flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
                     >
                         {loading ? (
                             <>
@@ -215,11 +292,9 @@ export default function VariationsPage() {
                                 Generating Your Song...
                             </>
                         ) : (
-                            <>
-                                Proceed to Payment
-                            </>
+                            "Proceed to Payment"
                         )}
-                    </Button>
+                    </PremiumButton>
                 </div>
             </div>
 
@@ -252,6 +327,31 @@ export default function VariationsPage() {
                         transform: translateY(110vh) rotate(360deg);
                         opacity: 0.3;
                     }
+                }
+
+                /* Custom Scrollbar Styles */
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(135, 206, 235, 0.3);
+                    border-radius: 10px;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(135, 206, 235, 0.5);
+                }
+
+                /* Firefox */
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(135, 206, 235, 0.3) rgba(255, 255, 255, 0.05);
                 }
 
                 .snowflake:nth-child(1) {

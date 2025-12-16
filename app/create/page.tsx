@@ -7,6 +7,7 @@ const lora = Lora({ subsets: ['latin'] });
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PremiumButton } from '@/components/ui/premium-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -71,21 +72,6 @@ export default function CreatePage() {
     const [credits, setCredits] = useState<number | null>(null);
     const [showCreditsDialog, setShowCreditsDialog] = useState(false);
 
-    useEffect(() => {
-        const fetchCredits = async () => {
-            try {
-                const res = await fetch('/api/credits');
-                if (res.ok) {
-                    const data = await res.json();
-                    setCredits(data.credits);
-                }
-            } catch (e) {
-                console.error("Failed to fetch credits", e);
-            }
-        };
-        fetchCredits();
-    }, []);
-
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -107,6 +93,53 @@ export default function CreatePage() {
         },
     });
 
+    // Load saved form data on mount
+    useEffect(() => {
+        // Try to get current form ID from sessionStorage
+        const currentFormId = sessionStorage.getItem('currentFormId');
+
+        if (currentFormId) {
+            // Load from localStorage using form ID
+            const savedFormData = localStorage.getItem(`songForm_${currentFormId}`);
+            if (savedFormData) {
+                try {
+                    const parsed = JSON.parse(savedFormData);
+                    console.log('[FRONTEND] Restoring form data from localStorage:', parsed);
+                    form.reset(parsed.formData);
+                } catch (e) {
+                    console.error('[FRONTEND] Error parsing saved form data:', e);
+                }
+            }
+        } else {
+            // Fallback to sessionStorage
+            const sessionFormData = sessionStorage.getItem('songFormData');
+            if (sessionFormData) {
+                try {
+                    const parsed = JSON.parse(sessionFormData);
+                    console.log('[FRONTEND] Restoring form data from sessionStorage:', parsed);
+                    form.reset(parsed);
+                } catch (e) {
+                    console.error('[FRONTEND] Error parsing session form data:', e);
+                }
+            }
+        }
+    }, [form]);
+
+    useEffect(() => {
+        const fetchCredits = async () => {
+            try {
+                const res = await fetch('/api/credits');
+                if (res.ok) {
+                    const data = await res.json();
+                    setCredits(data.credits);
+                }
+            } catch (e) {
+                console.error("Failed to fetch credits", e);
+            }
+        };
+        fetchCredits();
+    }, []);
+
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         if (credits !== null && credits < 1) {
             setShowCreditsDialog(true);
@@ -114,20 +147,74 @@ export default function CreatePage() {
         }
 
         setLoading(true);
-        setStatus('Preparing your variations...');
+        setStatus('Creating your personalized song prompt...');
+        setError('');
 
-        // Store form data in sessionStorage for the variations page
-        sessionStorage.setItem('songFormData', JSON.stringify(values));
+        try {
+            // Generate unique form ID
+            const formId = `form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            console.log('[FRONTEND] Generated form ID:', formId);
 
-        // Redirect to variations page with key data in URL
-        setTimeout(() => {
-            const params = new URLSearchParams({
-                recipient: values.recipientName,
-                relationship: values.relationship,
-                theme: values.theme,
+            // Generate prompt using Groq API
+            console.log('[FRONTEND] Generating prompt with form data:', values);
+            const response = await fetch('/api/create-song-prompt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(values)
             });
-            router.push(`/variations?${params.toString()}`);
-        }, 1000);
+
+            const data = await response.json();
+            console.log('[FRONTEND] Prompt generation response:', data);
+
+            if (data.success && data.prompt) {
+                console.log('[FRONTEND] Generated prompt:', data.prompt);
+
+                // Create complete form data object with metadata
+                const formDataWithMetadata = {
+                    formId,
+                    timestamp: new Date().toISOString(),
+                    formData: values,
+                    generatedPrompt: data.prompt,
+                    status: 'prompt_generated'
+                };
+
+                // Save to localStorage with unique form ID
+                localStorage.setItem(`songForm_${formId}`, JSON.stringify(formDataWithMetadata));
+
+                // Also save to a list of all form IDs for easy retrieval
+                const existingFormIds = JSON.parse(localStorage.getItem('songFormIds') || '[]');
+                existingFormIds.push(formId);
+                localStorage.setItem('songFormIds', JSON.stringify(existingFormIds));
+
+                // Store in sessionStorage for immediate use
+                sessionStorage.setItem('songFormData', JSON.stringify(values));
+                sessionStorage.setItem('generatedPrompt', data.prompt);
+                sessionStorage.setItem('currentFormId', formId);
+
+                console.log('[FRONTEND] Form data saved to localStorage with ID:', formId);
+
+                setStatus('Preparing your variations...');
+
+                // Redirect to variations page with key data in URL
+                setTimeout(() => {
+                    const params = new URLSearchParams({
+                        recipient: values.recipientName,
+                        relationship: values.relationship,
+                        theme: values.theme,
+                        formId: formId, // Include form ID in URL
+                    });
+                    router.push(`/variations?${params.toString()}`);
+                }, 1000);
+            } else {
+                console.error('[FRONTEND] Failed to generate prompt:', data.message);
+                setError(data.message || 'Failed to generate song prompt. Please try again.');
+                setLoading(false);
+            }
+        } catch (err: any) {
+            console.error('[FRONTEND] Error generating prompt:', err);
+            setError('Error generating song prompt. Please try again.');
+            setLoading(false);
+        }
     };
 
     return (
@@ -510,10 +597,9 @@ export default function CreatePage() {
 
                     {/* Submit Button */}
                     <div className="pt-6 flex justify-center">
-                        <Button
+                        <PremiumButton
                             type="submit"
                             disabled={loading}
-                            className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full max-w-md bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] active:shadow-[0_0_40px_rgba(135,206,235,0.8),0_0_20px_rgba(135,206,235,0.6),0_8px_30px_rgba(135,206,235,0.5)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 active:scale-105 transition-all duration-200 text-xl"
                         >
                             {loading ? (
                                 <>
@@ -523,7 +609,7 @@ export default function CreatePage() {
                             ) : (
                                 "I'm Ready! Compose My Song"
                             )}
-                        </Button>
+                        </PremiumButton>
                     </div>
                 </form>
             </Form>
