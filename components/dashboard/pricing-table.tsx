@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { MusicNote01Icon, CheckmarkCircle01Icon as CheckCircleIcon, Loading01Icon } from 'hugeicons-react';
 import { useRouter } from 'next/navigation';
+import { Playfair_Display } from 'next/font/google';
+
+const playfair = Playfair_Display({ subsets: ['latin'] });
 
 export function PricingTable() {
     const router = useRouter();
@@ -84,7 +87,7 @@ export function PricingTable() {
                 </CardContent>
                 <CardFooter className="pb-6">
                     <button
-                        className="w-full text-slate-900 font-bold py-6 rounded-xl shadow-lg hover:scale-105 transition-all border-2"
+                        className={`w-full font-bold py-6 rounded-xl shadow-lg hover:scale-105 transition-all border-2 text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-3xl md:text-3xl lg:text-4xl ${playfair.className}`}
                         style={{
                             background: '#fae8b4',
                             borderColor: '#fae8b4'
@@ -164,7 +167,7 @@ export function PricingTable() {
                 </CardContent>
                 <CardFooter className="pb-6">
                     <button
-                        className="w-full text-white font-bold py-6 rounded-xl shadow-lg hover:opacity-90 transition-all"
+                        className={`w-full font-bold py-6 rounded-xl shadow-lg hover:opacity-90 transition-all text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-3xl md:text-3xl lg:text-4xl ${playfair.className}`}
                         style={{ background: 'linear-gradient(to right, #2F5A8E, #86CCEA)' }}
                         onClick={() => handlePurchase(5, 'holiday-hamper')}
                         disabled={!!isPurchasing}

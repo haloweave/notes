@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { FavouriteIcon, GiftIcon, SparklesIcon } from 'hugeicons-react';
+import { useState } from 'react';
 
 
 
 export default function LandingPage() {
+  const router = useRouter();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   return (
@@ -87,10 +89,10 @@ export default function LandingPage() {
         {/* Action Buttons */}
         <div className="flex flex-col md:flex-row gap-5 animate-in slide-in-from-bottom-5 duration-1000 delay-300 fill-mode-backwards items-center">
           <button
-            onClick={() => setIsAuthOpen(true)}
+            onClick={() => router.push('/create')}
             className="px-8 py-4 rounded-full bg-[#fae8b4] text-slate-900 font-bold text-lg md:text-xl hover:bg-[#fff5d6] hover:scale-105 transition-all shadow-[0_0_20px_rgba(250,232,180,0.5)] border-2 border-[#fae8b4] hover:border-[#fff5d6]"
           >
-            Create My Huggnote
+            Create Bespoke Song
           </button>
 
           <button
