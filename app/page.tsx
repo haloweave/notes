@@ -90,7 +90,7 @@ export default function LandingPage() {
         {/* Action Buttons */}
         <div className="flex flex-col md:flex-row gap-5 animate-in slide-in-from-bottom-5 duration-1000 delay-300 fill-mode-backwards items-center justify-center">
           <PremiumButton
-            onClick={() => router.push('/select-package')}
+            onClick={() => router.push('/compose/select-package')}
           >
             Create Bespoke Song
           </PremiumButton>
