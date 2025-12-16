@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Lora } from 'next/font/google';
 import Image from 'next/image';
-import { Loading01Icon } from 'hugeicons-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -66,7 +66,7 @@ function ShareContent() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
-                <Loading01Icon className="w-10 h-10 animate-spin text-white" />
+                <LoadingSpinner size="lg" variant="dots" color="primary" />
             </div>
         );
     }
@@ -146,15 +146,19 @@ export default function SharePage() {
     return (
         <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 overflow-x-hidden font-sans" style={{ backgroundColor: '#1a3d5f' }}>
             {/* Background Image Layer */}
-            <div
-                className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40"
-                style={{ backgroundImage: "url('/web background image.png')" }}
+            <Image
+                src="/web background image.png"
+                alt="Background"
+                fill
+                className="object-cover opacity-40 z-0"
+                priority
+                quality={100}
             />
 
             {/* Content */}
             <Suspense fallback={
                 <div className="relative z-10 flex min-h-screen items-center justify-center text-white">
-                    <Loading01Icon className="w-8 h-8 animate-spin" />
+                    <LoadingSpinner size="lg" variant="dots" color="primary" />
                 </div>
             }>
                 <ShareContent />

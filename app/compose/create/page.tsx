@@ -12,7 +12,8 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loading01Icon, PlusSignIcon } from 'hugeicons-react';
+import { PlusSignIcon } from 'hugeicons-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PricingTable } from '@/components/dashboard/pricing-table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Image from 'next/image';
@@ -454,7 +455,7 @@ export default function CreatePage() {
                     )}
 
                     {/* Submit Button */}
-                    <div className="flex justify-center pt-8">
+                    <div className="flex justify-center pt-4">
                         <PremiumButton
                             type="submit"
                             disabled={loading}
@@ -462,7 +463,7 @@ export default function CreatePage() {
                         >
                             {loading ? (
                                 <>
-                                    <Loading01Icon className="h-6 w-6 animate-spin" />
+                                    <LoadingSpinner size="md" variant="dots" color="primary" />
                                     Processing...
                                 </>
                             ) : (

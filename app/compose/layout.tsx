@@ -34,9 +34,13 @@ export default function ComposeLayout({
     return (
         <div className="relative min-h-screen w-full flex flex-col font-sans" style={{ backgroundColor: '#1a3d5f' }}>
             {/* Background Image Layer - Fixed */}
-            <div
-                className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40"
-                style={{ backgroundImage: "url('/web background image.png')" }}
+            <Image
+                src="/web background image.png"
+                alt="Background"
+                fill
+                className="object-cover opacity-40 z-0"
+                priority
+                quality={100}
             />
 
             {/* Dark Overlay */}

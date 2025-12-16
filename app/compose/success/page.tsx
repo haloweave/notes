@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Lora } from 'next/font/google';
 import { Button } from '@/components/ui/button';
-import { Loading01Icon, MusicNote01Icon } from 'hugeicons-react';
+import { MusicNote01Icon } from 'hugeicons-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PremiumButton } from '@/components/ui/premium-button';
 
 const lora = Lora({ subsets: ['latin'] });
@@ -53,8 +54,8 @@ function SuccessContent() {
             <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#F5E6B8] p-8 md:p-12 shadow-[0_8px_30px_rgba(245,230,184,0.2)]">
                 {loading ? (
                     <div className="space-y-6">
-                        <div className="w-20 h-20 mx-auto text-[#F5E6B8] animate-spin">
-                            <Loading01Icon className="w-full h-full" />
+                        <div className="w-20 h-20 mx-auto">
+                            <LoadingSpinner size="lg" variant="dots" color="primary" className="w-full h-full" />
                         </div>
                         <h1 className={`text-2xl md:text-3xl font-medium text-[#E8DCC0] ${lora.className}`}>
                             Confirming your order...
@@ -104,7 +105,7 @@ export default function SuccessPage() {
     return (
         <Suspense fallback={
             <div className="flex min-h-screen items-center justify-center text-white">
-                <Loading01Icon className="w-8 h-8 animate-spin" />
+                <LoadingSpinner size="lg" variant="dots" color="primary" />
             </div>
         }>
             <SuccessContent />

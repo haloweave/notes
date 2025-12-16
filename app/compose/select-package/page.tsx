@@ -134,7 +134,7 @@ export default function SelectPackagePage() {
                     {/* Merry Medley Column */}
                     <div className="flex flex-col relative">
                         {/* Best Value Badge */}
-                        <div className="absolute -top-3 right-4 z-20 flex items-center gap-2 bg-[#f5ecd4] text-[#1a3d5f] px-4 py-2 rounded-full shadow-xl transform rotate-3 border border-[#1a3d5f]/10">
+                        <div className="absolute -top-6 right-4 z-20 flex items-center gap-2 bg-[#f5ecd4] text-[#1a3d5f] px-4 py-2 rounded-full shadow-xl transform rotate-3 border border-[#1a3d5f]/10">
                             <StarIcon className="w-4 h-4 fill-[#1a3d5f]" />
                             <span className={`text-sm font-bold uppercase tracking-wide`}>Best Value</span>
                         </div>

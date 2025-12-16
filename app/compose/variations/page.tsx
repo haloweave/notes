@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PremiumButton } from '@/components/ui/premium-button';
 import { Lora } from 'next/font/google';
-import { PlayIcon, CheckmarkCircle01Icon, Loading01Icon } from 'hugeicons-react';
+import { PlayIcon, CheckmarkCircle01Icon } from 'hugeicons-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -199,7 +200,7 @@ function VariationsContent() {
     if (songs.length === 0 && !loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loading01Icon className="w-8 h-8 text-[#F5E6B8] animate-spin" />
+                <LoadingSpinner size="lg" variant="dots" color="primary" />
             </div>
         );
     }
@@ -293,7 +294,7 @@ function VariationsContent() {
                                     >
                                         {playingId === variation.id ? (
                                             <>
-                                                <Loading01Icon className="w-5 h-5 animate-spin" />
+                                                <LoadingSpinner size="sm" variant="dots" color="white" />
                                                 <span className="font-medium">Playing...</span>
                                             </>
                                         ) : (
@@ -337,7 +338,7 @@ function VariationsContent() {
                 </div>
 
                 {/* Continue Button */}
-                <div className="mt-8 flex justify-center">
+                <div className="mt-6 flex justify-center">
                     <PremiumButton
                         onClick={handleContinue}
                         disabled={loading}
@@ -345,7 +346,7 @@ function VariationsContent() {
                     >
                         {loading ? (
                             <>
-                                <Loading01Icon className="h-6 w-6 animate-spin" />
+                                <LoadingSpinner size="md" variant="dots" color="primary" />
                                 Generating Your Song...
                             </>
                         ) : (
@@ -369,7 +370,7 @@ export default function VariationsPage() {
     return (
         <Suspense fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loading01Icon className="w-8 h-8 text-[#F5E6B8] animate-spin" />
+                <LoadingSpinner size="lg" variant="dots" color="primary" />
             </div>
         }>
             <VariationsContent />
