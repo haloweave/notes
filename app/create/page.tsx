@@ -1,68 +1,66 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { Lora } from 'next/font/google';
 
 const lora = Lora({ subsets: ['latin'] });
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { PremiumButton } from '@/components/ui/premium-button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { Loading01Icon, SparklesIcon, GiftIcon, KissingIcon, StarIcon, HeartCheckIcon, Tree07Icon } from 'hugeicons-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Loading01Icon, PlusSignIcon } from 'hugeicons-react';
 import { PricingTable } from '@/components/dashboard/pricing-table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import Image from 'next/image';
+import { SongForm } from '@/components/create/song-form';
 
-const formSchema = z.object({
-    // Sender Info
-    senderName: z.string().min(1, "Please enter your name"),
-    senderEmail: z.string().email("Please enter a valid email"),
-    senderPhone: z.string().min(1, "Please enter your phone number"),
-    senderMessage: z.string().min(1, "Please add a short message"),
-
-    // Recipient Info
+const songSchema = z.object({
     recipientName: z.string().min(1, "Please enter the recipient's name"),
     recipientNickname: z.string().optional(),
     relationship: z.string().min(1, "Please specify the relationship"),
     pronunciation: z.string().optional(),
 
-    // Song Details
+    senderMessage: z.string().min(1, "Please add a short message"),
+
     theme: z.string().min(1, "Please select a theme"),
     aboutThem: z.string().min(10, "Please tell us more about them (at least 10 characters)"),
     moreInfo: z.string().optional(),
 
-    // Musical Preferences
     voiceType: z.string().optional(),
     genreStyle: z.string().optional(),
     instrumentPreferences: z.string().optional(),
 
-    // Overall Vibe
     vibe: z.string().min(1, "Please select an overall vibe"),
 });
 
-const themes = [
-    { value: "merry-christmas", label: "Merry Christmas", description: "Traditional, Festive and Joyful", icon: Tree07Icon },
-    { value: "happy-holidays", label: "Happy Holidays", description: "Fun, Happy, Playful", icon: GiftIcon },
-    { value: "mistletoe-kisses", label: "Mistletoe Kisses", description: "Romantic or Flirty", icon: HeartCheckIcon },
-    { value: "christmas-wish", label: "A Christmas Wish", description: "Loving, Emotional, but Hopeful", icon: StarIcon },
-    { value: "happy-new-year", label: "Happy New Year", description: "Celebratory, Hopeful, Fun", icon: SparklesIcon },
-    { value: "new-years-wish", label: "New Year's Wish", description: "Emotional, Sentimental, Heartfelt", icon: StarIcon },
-];
+const formSchema = z.object({
+    // Sender Info (Global)
+    senderName: z.string().min(1, "Please enter your name"),
+    senderEmail: z.string().email("Please enter a valid email"),
+    senderPhone: z.string().min(1, "Please enter your phone number"),
 
-const vibes = [
-    { value: "loving", label: "Loving", description: "All the Feels" },
-    { value: "friendly-fun", label: "Friendly/Fun", description: "Lighthearted & Upbeat" },
-    { value: "formal", label: "Formal", description: "Best for Acquaintances/Colleagues" },
-];
+    // Songs
+    songs: z.array(songSchema).min(1),
+});
+
+const defaultSongValues = {
+    recipientName: "",
+    recipientNickname: "",
+    relationship: "",
+    pronunciation: "",
+    senderMessage: "",
+    theme: "",
+    aboutThem: "",
+    moreInfo: "",
+    voiceType: "",
+    genreStyle: "",
+    instrumentPreferences: "",
+    vibe: "",
+};
 
 export default function CreatePage() {
     const router = useRouter();
@@ -71,27 +69,53 @@ export default function CreatePage() {
     const [status, setStatus] = useState('');
     const [credits, setCredits] = useState<number | null>(null);
     const [showCreditsDialog, setShowCreditsDialog] = useState(false);
+    const [isBundle, setIsBundle] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
+
+    // Cache for avoiding regeneration
+    const cachedPrompts = useRef<string[]>([]);
+    const lastSubmittedData = useRef<z.infer<typeof formSchema> | null>(null);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
+        shouldUnregister: false, // Keep values when switching tabs
         defaultValues: {
             senderName: "",
             senderEmail: "",
             senderPhone: "",
-            senderMessage: "",
-            recipientName: "",
-            recipientNickname: "",
-            relationship: "",
-            pronunciation: "",
-            theme: "",
-            aboutThem: "",
-            moreInfo: "",
-            voiceType: "",
-            genreStyle: "",
-            instrumentPreferences: "",
-            vibe: "",
+            songs: [defaultSongValues],
         },
     });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "songs",
+    });
+
+    // Check selected package on mount
+    useEffect(() => {
+        const pkg = sessionStorage.getItem('selectedPackageId');
+        if (pkg === 'holiday-hamper') {
+            setIsBundle(true);
+        } else {
+            setIsBundle(false);
+        }
+    }, []);
+
+    const handleAddSong = () => {
+        if (fields.length < 5) {
+            append(defaultSongValues);
+            setActiveTab(fields.length); // Switch to the new tab (length is next index)
+        }
+    };
+
+    const handleRemoveSong = (index: number) => {
+        remove(index);
+        // Adjust active tab if we removed the current one or one before it
+        if (activeTab >= index && activeTab > 0) {
+            setActiveTab(activeTab - 1);
+        }
+    };
 
     // Load saved form data on mount
     useEffect(() => {
@@ -105,21 +129,49 @@ export default function CreatePage() {
                 try {
                     const parsed = JSON.parse(savedFormData);
                     console.log('[FRONTEND] Restoring form data from localStorage:', parsed);
-                    form.reset(parsed.formData);
+
+                    // Create migration logic
+                    let formDataToReset = parsed.formData;
+
+                    // Migration logic: if old flat format, convert to nested
+                    if (parsed.formData && !parsed.formData.songs) {
+                        const migrated = {
+                            senderName: parsed.formData.senderName,
+                            senderEmail: parsed.formData.senderEmail,
+                            senderPhone: parsed.formData.senderPhone,
+                            songs: [{
+                                recipientName: parsed.formData.recipientName,
+                                recipientNickname: parsed.formData.recipientNickname,
+                                relationship: parsed.formData.relationship,
+                                pronunciation: parsed.formData.pronunciation,
+                                senderMessage: parsed.formData.senderMessage,
+                                theme: parsed.formData.theme,
+                                aboutThem: parsed.formData.aboutThem,
+                                moreInfo: parsed.formData.moreInfo,
+                                voiceType: parsed.formData.voiceType,
+                                genreStyle: parsed.formData.genreStyle,
+                                instrumentPreferences: parsed.formData.instrumentPreferences,
+                                vibe: parsed.formData.vibe,
+                            }]
+                        };
+                        formDataToReset = migrated;
+                    }
+
+                    if (formDataToReset) {
+                        form.reset(formDataToReset);
+                        // Store for cache comparison
+                        lastSubmittedData.current = formDataToReset;
+                    }
+
+                    // Restore prompts cache if available
+                    if (parsed.allPrompts && Array.isArray(parsed.allPrompts)) {
+                        cachedPrompts.current = parsed.allPrompts;
+                    } else if (parsed.generatedPrompt) {
+                        cachedPrompts.current = [parsed.generatedPrompt];
+                    }
+
                 } catch (e) {
                     console.error('[FRONTEND] Error parsing saved form data:', e);
-                }
-            }
-        } else {
-            // Fallback to sessionStorage
-            const sessionFormData = sessionStorage.getItem('songFormData');
-            if (sessionFormData) {
-                try {
-                    const parsed = JSON.parse(sessionFormData);
-                    console.log('[FRONTEND] Restoring form data from sessionStorage:', parsed);
-                    form.reset(parsed);
-                } catch (e) {
-                    console.error('[FRONTEND] Error parsing session form data:', e);
                 }
             }
         }
@@ -147,72 +199,132 @@ export default function CreatePage() {
         }
 
         setLoading(true);
-        setStatus('Creating your personalized song prompt...');
+        setStatus('Initializing your masterpiece...');
         setError('');
 
         try {
-            // Generate unique form ID
-            const formId = `form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            console.log('[FRONTEND] Generated form ID:', formId);
+            // Check if we can reuse the existing form ID or generate a new one?
+            // Usually valid to keep same ID if just updating, but creating new ensures fresh start.
+            // However, to allow "add song and come back", let's keep using the one in session if valid.
+            let formId = sessionStorage.getItem('currentFormId');
+            if (!formId) {
+                formId = `form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                console.log('[FRONTEND] Generated new form ID:', formId);
+            } else {
+                console.log('[FRONTEND] Reusing form ID:', formId);
+            }
 
-            // Generate prompt using Groq API
-            console.log('[FRONTEND] Generating prompt with form data:', values);
-            const response = await fetch('/api/create-song-prompt', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values)
-            });
+            const generatedPrompts = [];
 
-            const data = await response.json();
-            console.log('[FRONTEND] Prompt generation response:', data);
+            // Loop through songs and generate prompts
+            for (let i = 0; i < values.songs.length; i++) {
+                const song = values.songs[i];
 
-            if (data.success && data.prompt) {
-                console.log('[FRONTEND] Generated prompt:', data.prompt);
+                // Smart Caching Check
+                let shouldUseCached = false;
+                if (
+                    lastSubmittedData.current &&
+                    lastSubmittedData.current.songs &&
+                    lastSubmittedData.current.songs[i] &&
+                    cachedPrompts.current[i]
+                ) {
+                    // Compare fields relevant to prompt generation
+                    const prevSong = lastSubmittedData.current.songs[i];
+                    const prevGlobal = {
+                        senderName: lastSubmittedData.current.senderName,
+                        senderEmail: lastSubmittedData.current.senderEmail,
+                    };
 
-                // Create complete form data object with metadata
+                    // Deep comparison of song fields + relevant global sender fields
+                    const isSongSame = JSON.stringify(song) === JSON.stringify(prevSong);
+                    const isGlobalSame = values.senderName === prevGlobal.senderName && values.senderEmail === prevGlobal.senderEmail;
+
+                    if (isSongSame && isGlobalSame) {
+                        shouldUseCached = true;
+                    }
+                }
+
+                if (shouldUseCached) {
+                    console.log(`[FRONTEND] Using cached prompt for song ${i + 1}`);
+                    setStatus(`Using cached result for song ${i + 1}...`);
+                    generatedPrompts.push(cachedPrompts.current[i]);
+                    // Artificial delay for UX flow
+                    await new Promise(r => setTimeout(r, 500));
+                } else {
+                    setStatus(`Composing song ${i + 1} of ${values.songs.length}...`);
+
+                    // Construct payload for API
+                    const apiPayload = {
+                        ...song,
+                        senderName: values.senderName,
+                        senderEmail: values.senderEmail,
+                        senderPhone: values.senderPhone,
+                    };
+
+                    console.log(`[FRONTEND] Generating prompt for song ${i + 1}:`, apiPayload);
+                    const response = await fetch('/api/create-song-prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(apiPayload)
+                    });
+
+                    const data = await response.json();
+                    if (data.success && data.prompt) {
+                        generatedPrompts.push(data.prompt);
+                    } else {
+                        throw new Error(data.message || `Failed to generate prompt for song ${i + 1}`);
+                    }
+                }
+            }
+
+            if (generatedPrompts.length > 0) {
+                console.log('[FRONTEND] Generated/Cached prompts:', generatedPrompts);
+
                 const formDataWithMetadata = {
                     formId,
                     timestamp: new Date().toISOString(),
                     formData: values,
-                    generatedPrompt: data.prompt,
+                    generatedPrompt: generatedPrompts[0],
+                    allPrompts: generatedPrompts,
                     status: 'prompt_generated'
                 };
 
-                // Save to localStorage with unique form ID
+                // Save to localStorage
                 localStorage.setItem(`songForm_${formId}`, JSON.stringify(formDataWithMetadata));
 
-                // Also save to a list of all form IDs for easy retrieval
+                // Update caches
+                cachedPrompts.current = generatedPrompts;
+                lastSubmittedData.current = values;
+
+                // Also save to a list of all form IDs if new
                 const existingFormIds = JSON.parse(localStorage.getItem('songFormIds') || '[]');
-                existingFormIds.push(formId);
-                localStorage.setItem('songFormIds', JSON.stringify(existingFormIds));
+                if (!existingFormIds.includes(formId)) {
+                    existingFormIds.push(formId);
+                    localStorage.setItem('songFormIds', JSON.stringify(existingFormIds));
+                }
 
-                // Store in sessionStorage for immediate use
+                // Store in sessionStorage
                 sessionStorage.setItem('songFormData', JSON.stringify(values));
-                sessionStorage.setItem('generatedPrompt', data.prompt);
+                sessionStorage.setItem('generatedPrompt', generatedPrompts[0]);
+                sessionStorage.setItem('allPrompts', JSON.stringify(generatedPrompts)); // Added for symmetry
                 sessionStorage.setItem('currentFormId', formId);
-
-                console.log('[FRONTEND] Form data saved to localStorage with ID:', formId);
 
                 setStatus('Preparing your variations...');
 
-                // Redirect to variations page with key data in URL
+                // Redirect logic
                 setTimeout(() => {
                     const params = new URLSearchParams({
-                        recipient: values.recipientName,
-                        relationship: values.relationship,
-                        theme: values.theme,
-                        formId: formId, // Include form ID in URL
+                        recipient: values.songs[0].recipientName,
+                        relationship: values.songs[0].relationship,
+                        theme: values.songs[0].theme,
+                        formId: formId,
                     });
                     router.push(`/variations?${params.toString()}`);
                 }, 1000);
-            } else {
-                console.error('[FRONTEND] Failed to generate prompt:', data.message);
-                setError(data.message || 'Failed to generate song prompt. Please try again.');
-                setLoading(false);
             }
         } catch (err: any) {
             console.error('[FRONTEND] Error generating prompt:', err);
-            setError('Error generating song prompt. Please try again.');
+            setError(err.message || 'Error generating song prompt. Please try again.');
             setLoading(false);
         }
     };
@@ -231,23 +343,24 @@ export default function CreatePage() {
             {/* Snowfall Effect - Fixed */}
             <div className="fixed inset-0 z-[5] pointer-events-none overflow-hidden">
                 <div className="snowflakes" aria-hidden="true">
-                    <div className="snowflake">❅</div>
-                    <div className="snowflake">❅</div>
-                    <div className="snowflake">❆</div>
-                    <div className="snowflake">❄</div>
-                    <div className="snowflake">❅</div>
-                    <div className="snowflake">❆</div>
-                    <div className="snowflake">❄</div>
-                    <div className="snowflake">❅</div>
-                    <div className="snowflake">❆</div>
-                    <div className="snowflake">❄</div>
-                    <div className="snowflake">❅</div>
-                    <div className="snowflake">❆</div>
+                    {[...Array(12)].map((_, i) => (
+                        <div key={i} className="snowflake">❅</div>
+                    ))}
                 </div>
             </div>
 
             {/* Header */}
             <div className="relative z-10 max-w-4xl mx-auto mb-8 text-center pt-8 px-4">
+                <div className="flex justify-start mb-4">
+                    <button
+                        onClick={() => router.push('/select-package')}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:bg-white/10 h-9 px-4 py-2 text-white/80 hover:text-white"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg>
+                        Back
+                    </button>
+                </div>
+
                 <div className="mb-6">
                     <Image
                         src="/huggnote bespoke logo.png"
@@ -258,6 +371,11 @@ export default function CreatePage() {
                         priority
                     />
                 </div>
+                {isBundle && (
+                    <h2 className={`text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-2xl md:text-3xl font-normal mb-2 drop-shadow-xl ${lora.className}`}>
+                        Merry Medley
+                    </h2>
+                )}
                 <h1 className={`text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-2xl md:text-3xl lg:text-3xl font-normal mb-2 drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
                     Compose Your Masterpiece
                 </h1>
@@ -266,7 +384,7 @@ export default function CreatePage() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto px-4 pb-8 relative z-10">
 
-                    {/* Card 1: Sender Information */}
+                    {/* Global Sender Information (Only once) */}
                     <Card>
                         <CardContent>
                             <h2 className={`text-xl md:text-2xl text-[#E8DCC0] ${lora.className}`}>Who's sending the Song?</h2>
@@ -315,272 +433,57 @@ export default function CreatePage() {
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="senderMessage"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Add a short message <span className="text-[#87CEEB]">*</span></FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                placeholder="A personal message to accompany your song..."
-                                                rows={3}
-                                                className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm resize-none"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </CardContent>
                     </Card>
 
-                    {/* Card 2: Recipient Information */}
-                    <Card>
-                        <CardContent>
-                            <h2 className={`text-xl md:text-2xl text-[#E8DCC0] ${lora.className}`}>Who is this song for?</h2>
+                    {/* Song Bundle Tabs */}
+                    {isBundle && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
+                            {fields.map((field, index) => (
+                                <button
+                                    key={field.id}
+                                    type="button"
+                                    onClick={() => setActiveTab(index)}
+                                    className={`
+                                        relative flex items-center justify-center gap-2 px-6 py-3 rounded-t-xl font-medium transition-all duration-200 min-w-[120px]
+                                        ${activeTab === index
+                                            ? 'bg-[#1e293b]/80 text-[#F5E6B8] border-t-2 border-x-2 border-[#F5E6B8] shadow-[0_-4px_20px_rgba(245,230,184,0.1)] z-10 translate-y-[2px]'
+                                            : 'bg-white/5 text-[#87CEEB]/70 border-t-2 border-x-2 border-transparent hover:bg-white/10 hover:text-[#87CEEB]'
+                                        }
+                                    `}
+                                >
+                                    <span className={`${lora.className} text-sm md:text-base whitespace-nowrap`}>Song {index + 1}</span>
+                                </button>
+                            ))}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                <FormField
-                                    control={form.control}
-                                    name="recipientName"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="block text-[#87CEEB] mb-2">Name <span className="text-[#87CEEB]">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Name" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                            {fields.length < 5 && (
+                                <button
+                                    type="button"
+                                    onClick={handleAddSong}
+                                    className="flex items-center justify-center p-3 rounded-full bg-[#87CEEB]/10 text-[#87CEEB] hover:bg-[#87CEEB]/20 hover:text-[#F5E6B8] border-2 border-[#87CEEB]/30 hover:border-[#87CEEB]/60 transition-all duration-200 ml-2 shadow-lg backdrop-blur-sm"
+                                    title="Add another song"
+                                >
+                                    <PlusSignIcon className="w-5 h-5" />
+                                </button>
+                            )}
+                        </div>
+                    )}
 
-                                <FormField
-                                    control={form.control}
-                                    name="recipientNickname"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="block text-[#87CEEB] mb-2">What do you call them?</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Petnames / nicknames etc." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
+                    {/* Active Song Form */}
+                    <div className={isBundle ? "bg-[#1e293b]/20 rounded-b-xl rounded-tr-xl border-t-2 border-[#F5E6B8]/20 -mt-6 pt-6" : ""}>
+                        {/* We render ALL forms but hide inactive ones to preserve state properly with RHF */}
+                        {fields.map((field, index) => (
+                            <div key={field.id} className={index === activeTab ? "block animate-in fade-in zoom-in-95 duration-300" : "hidden"}>
+                                <SongForm
+                                    index={index}
+                                    title={isBundle ? `Song ${index + 1} Details` : "Who is this song for?"}
+                                    namePrefix={`songs.${index}`}
+                                    canRemove={isBundle && fields.length > 1}
+                                    onRemove={() => handleRemoveSong(index)}
                                 />
                             </div>
-
-                            <FormField
-                                control={form.control}
-                                name="relationship"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Relationship <span className="text-[#87CEEB]">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Mum, Dad, Son, Daughter, Girlfriend, Boyfriend, Wife, Husband, Friend, Sister, Brother..." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="pronunciation"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Pronunciation</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Write phonetically if complicated spelling" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* Card 3: Theme Selection */}
-                    <Card>
-                        <CardContent>
-                            <FormField
-                                control={form.control}
-                                name="theme"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={`text-lg ${lora.className}`} style={{ color: '#E7DBBF' }}>Choose a theme *</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                {themes.map((theme) => {
-                                                    const IconComponent = theme.icon;
-                                                    return (
-                                                        <div key={theme.value} className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all duration-150 text-center cursor-pointer will-change-transform ${field.value === theme.value
-                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105 z-0'
-                                                            : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/40 shadow-[0_8px_30px_rgba(135,206,235,0.3)] hover:border-[#87CEEB]/80 hover:shadow-[0_8px_30px_rgba(135,206,235,0.5)] hover:z-10'
-                                                            }`}>
-                                                            <RadioGroupItem value={theme.value} id={theme.value} className="sr-only" />
-                                                            <Label htmlFor={theme.value} className="flex flex-col items-center text-center cursor-pointer w-full gap-3">
-                                                                <IconComponent className="w-16 h-16 text-[#87CEEB] flex-shrink-0" />
-                                                                <div className="flex-1">
-                                                                    <div className="mb-1 text-[#F5E6B8] font-semibold text-base">{theme.label}</div>
-                                                                    <div className="text-xs text-[#87CEEB]/80">{theme.description}</div>
-                                                                </div>
-                                                            </Label>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* Card 4: About Them */}
-                    <Card>
-                        <CardContent>
-                            <FormField
-                                control={form.control}
-                                name="aboutThem"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">About Them <span className="text-[#87CEEB]">*</span></FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                placeholder="What do you admire most about them?"
-                                                rows={4}
-                                                className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm resize-none"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="moreInfo"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">More Info</FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                placeholder="Story, phrase or keywords you want to include"
-                                                rows={3}
-                                                className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm resize-none"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* Card 5: Musical Preferences */}
-                    <Card>
-                        <CardContent>
-                            <h2 className={`text-xl md:text-2xl text-[#E8DCC0] ${lora.className}`}>Musical Preferences (Optional)</h2>
-
-                            <FormField
-                                control={form.control}
-                                name="voiceType"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Voice Type</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div
-                                                    onClick={() => field.onChange('male')}
-                                                    className={`flex flex-col items-center justify-center gap-3 p-5 rounded-xl border-2 transition-all duration-150 text-center cursor-pointer will-change-transform ${field.value === 'male'
-                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105'
-                                                        : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/40 shadow-[0_8px_30px_rgba(135,206,235,0.3)] hover:border-[#87CEEB]/80 hover:shadow-[0_8px_30px_rgba(135,206,235,0.5)]'
-                                                        }`}>
-                                                    <div className="font-semibold text-[#F5E6B8]">Male Voice</div>
-                                                </div>
-                                                <div
-                                                    onClick={() => field.onChange('female')}
-                                                    className={`flex flex-col items-center justify-center gap-3 p-5 rounded-xl border-2 transition-all duration-150 text-center cursor-pointer will-change-transform ${field.value === 'female'
-                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105'
-                                                        : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/40 shadow-[0_8px_30px_rgba(135,206,235,0.3)] hover:border-[#87CEEB]/80 hover:shadow-[0_8px_30px_rgba(135,206,235,0.5)]'
-                                                        }`}>
-                                                    <div className="font-semibold text-[#F5E6B8]">Female Voice</div>
-                                                </div>
-                                                <div
-                                                    onClick={() => field.onChange('no-preference')}
-                                                    className={`flex flex-col items-center justify-center gap-3 p-5 rounded-xl border-2 transition-all duration-150 text-center cursor-pointer will-change-transform ${field.value === 'no-preference'
-                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105'
-                                                        : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/40 shadow-[0_8px_30px_rgba(135,206,235,0.3)] hover:border-[#87CEEB]/80 hover:shadow-[0_8px_30px_rgba(135,206,235,0.5)]'
-                                                        }`}>
-                                                    <div className="font-semibold text-[#F5E6B8]">No Preference</div>
-                                                </div>
-                                            </RadioGroup>
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="genreStyle"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Genre Style</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g., Pop, Country, R&B, Acoustic, Jazz, Rock..." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="instrumentPreferences"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Instrument Preferences</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g., Piano, Guitar, Strings, Upbeat drums..." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* Card 6: Overall Vibe */}
-                    <Card>
-                        <CardContent>
-                            <FormField
-                                control={form.control}
-                                name="vibe"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={`text-xl md:text-2xl text-[#E8DCC0] ${lora.className}`}>One last thing...select overall vibe? <span className="text-[#87CEEB]">*</span></FormLabel>
-                                        <FormControl>
-                                            <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                {vibes.map((vibe) => (
-                                                    <div
-                                                        key={vibe.value}
-                                                        onClick={() => field.onChange(vibe.value)}
-                                                        className={`flex flex-col items-center justify-center gap-3 p-5 rounded-xl border-2 transition-all duration-150 text-center cursor-pointer will-change-transform ${field.value === vibe.value
-                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105'
-                                                            : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/40 shadow-[0_8px_30px_rgba(135,206,235,0.3)] hover:border-[#87CEEB]/80 hover:shadow-[0_8px_30px_rgba(135,206,235,0.5)]'
-                                                            }`}>
-                                                        <div className="font-semibold text-[#F5E6B8]">{vibe.label}</div>
-                                                        <div className="text-xs text-[#87CEEB]/80">{vibe.description}</div>
-                                                    </div>
-                                                ))}
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
+                        ))}
+                    </div>
 
                     {/* Status Messages */}
                     {status && (
@@ -607,7 +510,7 @@ export default function CreatePage() {
                                     Processing...
                                 </>
                             ) : (
-                                "I'm Ready! Compose My Song"
+                                "I'm Ready! Compose My Song" + (isBundle ? "s" : "")
                             )}
                         </PremiumButton>
                     </div>

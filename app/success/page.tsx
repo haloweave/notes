@@ -95,9 +95,17 @@ function SuccessContent() {
                         </div>
 
                         <div className="pt-4">
-                            <PremiumButton onClick={() => router.push('/')}>
-                                Return Home
+                            <PremiumButton onClick={() => router.push(`/share?session_id=${sessionId}`)} className="w-full">
+                                View & Share Your Song
                             </PremiumButton>
+
+                            <Button
+                                variant="ghost"
+                                className="w-full text-[#F5E6B8] hover:text-[#F5E6B8]/80 hover:bg-[#F5E6B8]/10"
+                                onClick={() => router.push('/')}
+                            >
+                                Return Home
+                            </Button>
                         </div>
                     </div>
                 )}

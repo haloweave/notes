@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     try {
         console.log("Starting checkout process...");
         const body = await req.json();
-        const { packageId, selectedVariation, formData, generatedPrompt, formId } = body;
+        const { packageId, selectedVariation, selections, formData, generatedPrompt, formId } = body;
 
         const session = await auth.api.getSession({
             headers: await headers()
@@ -73,9 +73,12 @@ export async function POST(req: NextRequest) {
         }
 
         // Add variation data if provided
-        if (selectedVariation) {
+        if (selections) {
+            metadata.selections = JSON.stringify(selections);
+        } else if (selectedVariation) {
             metadata.selectedVariation = selectedVariation.toString();
         }
+
         if (generatedPrompt) {
             metadata.generatedPrompt = generatedPrompt;
         }
@@ -84,9 +87,16 @@ export async function POST(req: NextRequest) {
         }
         if (formData) {
             // Store essential form data (Stripe metadata has size limits)
-            metadata.recipientName = formData.recipientName || '';
+            // If bundle, we just store the first one's name or a generic label
+            if (formData.songs && Array.isArray(formData.songs) && formData.songs.length > 0) {
+                metadata.recipientName = formData.songs[0].recipientName || 'Bundle Recipient';
+                metadata.theme = formData.songs[0].theme || 'Various';
+            } else {
+                metadata.recipientName = formData.recipientName || '';
+                metadata.theme = formData.theme || '';
+            }
             metadata.senderName = formData.senderName || '';
-            metadata.theme = formData.theme || '';
+
             // Store sender email in metadata as well for guest checkout reference
             if (!userId) {
                 metadata.guestEmail = formData.senderEmail;
