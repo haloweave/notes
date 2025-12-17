@@ -64,22 +64,35 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET /api/compose/forms?formId=xxx - Get a specific form
+// GET /api/compose/forms?formId=xxx OR ?stripeSessionId=xxx - Get a specific form
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const formId = searchParams.get('formId');
+        const stripeSessionId = searchParams.get('stripeSessionId');
 
-        if (!formId) {
+        if (!formId && !stripeSessionId) {
             return NextResponse.json(
-                { success: false, message: 'formId is required' },
+                { success: false, message: 'formId or stripeSessionId is required' },
                 { status: 400 }
             );
         }
 
-        const form = await db.query.composeForms.findFirst({
-            where: eq(composeForms.id, formId),
-        });
+        let form;
+
+        if (stripeSessionId) {
+            // Query by Stripe session ID
+            const forms = await db.select()
+                .from(composeForms)
+                .where(eq(composeForms.stripeSessionId, stripeSessionId))
+                .limit(1);
+            form = forms[0];
+        } else {
+            // Query by form ID
+            form = await db.query.composeForms.findFirst({
+                where: eq(composeForms.id, formId!),
+            });
+        }
 
         if (!form) {
             return NextResponse.json(

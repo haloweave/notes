@@ -14,53 +14,79 @@ function ShareContent() {
     const sessionId = searchParams.get('session_id');
     const [recipientName, setRecipientName] = useState('Someone Special');
     const [loading, setLoading] = useState(true);
-    const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
     // Initial Load & Data Processing
     useEffect(() => {
-        if (sessionId) {
-            // 1. Get Form Data (for name)
-            const formDataStr = sessionStorage.getItem('songFormData');
-            if (formDataStr) {
-                const formData = JSON.parse(formDataStr);
-                if (formData.recipientName) {
+        const fetchFormData = async () => {
+            if (!sessionId) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // Fetch compose form by session ID
+                const response = await fetch(`/api/compose/forms?stripeSessionId=${sessionId}`);
+                if (!response.ok) {
+                    console.error('[SHARE] Failed to fetch form data');
+                    setLoading(false);
+                    return;
+                }
+
+                const forms = await response.json();
+                const form = forms[0]; // Get first matching form
+
+                if (!form) {
+                    console.error('[SHARE] No form found for session:', sessionId);
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('[SHARE] Form data:', form);
+
+                // Get recipient name from form data
+                const formData = form.formData;
+                if (formData?.recipientName) {
                     setRecipientName(formData.recipientName);
+                } else if (formData?.songs?.[0]?.recipientName) {
+                    setRecipientName(formData.songs[0].recipientName);
                 }
-            }
 
-            // 2. Get Selected Variation (for playback)
-            const formId = sessionStorage.getItem('currentFormId');
-            if (formId) {
-                const savedData = localStorage.getItem(`songForm_${formId}`);
-                if (savedData) {
-                    const parsedData = JSON.parse(savedData);
+                // Get selected variation task ID
+                const selectedVariations = form.selectedVariations || {};
+                const variationTaskIds = form.variationTaskIds || {};
 
-                    // Update Local Storage Status
-                    const updatedData = {
-                        ...parsedData,
-                        status: 'payment_successful',
-                        subStatus: 'composing',
-                        stripeSessionId: sessionId,
-                        lastUpdated: new Date().toISOString()
-                    };
-                    localStorage.setItem(`songForm_${formId}`, JSON.stringify(updatedData));
+                // For solo-serenade, get the first (and only) song's selected variation
+                const songIndex = 0;
+                const selectedVariationId = selectedVariations[songIndex];
+                const taskIdsForSong = variationTaskIds[songIndex];
 
-                    // Save style for playback
-                    if (parsedData.selectedVariationId) {
-                        setSelectedStyle(parsedData.selectedVariationId.toString());
-                    }
+                if (selectedVariationId && taskIdsForSong && taskIdsForSong[selectedVariationId - 1]) {
+                    const taskId = taskIdsForSong[selectedVariationId - 1];
+                    setSelectedTaskId(taskId);
+                    console.log('[SHARE] Selected task ID:', taskId);
+                } else {
+                    console.warn('[SHARE] No task ID found for selected variation');
                 }
-            }
 
-            setLoading(false);
-        }
+            } catch (error) {
+                console.error('[SHARE] Error fetching form data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFormData();
     }, [sessionId]);
 
     const handleOpenGift = () => {
-        // Navigate to the play page with the demo variation
-        // If we have a selected style/variation from localStorage, use that
-        const variationId = selectedStyle || '1';
-        router.push(`/play/demo-variation-${variationId}`);
+        if (selectedTaskId) {
+            console.log('[SHARE] Opening song:', selectedTaskId);
+            router.push(`/play/${selectedTaskId}`);
+        } else {
+            console.error('[SHARE] No task ID available');
+            alert('Song not ready yet. Please try again in a moment.');
+        }
     };
 
     if (loading) {
