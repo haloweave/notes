@@ -316,6 +316,60 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                 />
             </div>
 
+            {/* Delivery Speed Selection Card */}
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)]">
+                <FormField
+                    control={control}
+                    name={getFieldName("deliverySpeed")}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className={`block text-[#F5E6B8] mb-6 text-xl md:text-2xl ${lora.className}`}>Choose Your Delivery Speed</FormLabel>
+                            <FormControl>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Standard Option */}
+                                    <div
+                                        onClick={() => field.onChange('standard')}
+                                        className={`flex flex-col p-6 rounded-xl border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === 'standard' || !field.value
+                                                ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_8px_30px_rgba(135,206,235,0.5)] scale-105'
+                                                : 'border-[#F5E6B8]/30 bg-white/5 hover:border-[#F5E6B8] hover:bg-white/10 hover:scale-102'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-[#87CEEB]">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                            <div className={`text-xl text-white ${lora.className}`}>Standard</div>
+                                        </div>
+                                        <div className="text-sm text-white/90">Within 24 hours</div>
+                                        <div className="mt-2 text-lg text-[#87CEEB]">Included</div>
+                                    </div>
+
+                                    {/* Express Option */}
+                                    <div
+                                        onClick={() => field.onChange('express')}
+                                        className={`flex flex-col p-6 rounded-xl border-2 transition-all duration-200 transform text-left cursor-pointer relative ${field.value === 'express'
+                                                ? 'border-[#F5E6B8] bg-[#F5E6B8]/20 shadow-[0_8px_30px_rgba(245,230,184,0.5)] scale-105'
+                                                : 'border-[#F5E6B8]/30 bg-white/5 hover:border-[#F5E6B8] hover:bg-white/10 hover:scale-102'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-[#F5E6B8]/70">
+                                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                            </svg>
+                                            <div className={`text-xl text-[#F5E6B8] ${lora.className}`}>Express ⚡</div>
+                                        </div>
+                                        <div className="text-sm text-[#87CEEB]/80">Within 1 hour</div>
+                                        <div className="mt-2 text-lg text-[#F5E6B8]">+€10</div>
+                                    </div>
+                                </div>
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+            </div>
+
+
             {/* Divider line between song forms */}
             <div className="py-8">
                 <div className="h-px bg-gradient-to-r from-transparent via-[#87CEEB]/30 to-transparent"></div>

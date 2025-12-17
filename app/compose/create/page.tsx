@@ -36,6 +36,7 @@ const songSchema = z.object({
     instrumentPreferences: z.string().optional(),
 
     vibe: z.string().min(1, "Please select an overall vibe"),
+    deliverySpeed: z.string().optional(),
 });
 
 const formSchema = z.object({
@@ -61,6 +62,7 @@ const defaultSongValues = {
     genreStyle: "",
     instrumentPreferences: "",
     vibe: "",
+    deliverySpeed: "standard",
 };
 
 export default function CreatePage() {

@@ -4,132 +4,445 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { PremiumButton } from '@/components/ui/premium-button';
-import { FavouriteIcon, GiftIcon, SparklesIcon } from 'hugeicons-react';
+import { Heart, Gift, Sparkles, Play, Menu, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { Lora } from 'next/font/google';
 
-
+const lora = Lora({ subsets: ['latin'] });
 
 export default function LandingPage() {
   const router = useRouter();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const testimonials = [
+    {
+      name: "Lorraine",
+      location: "Ireland",
+      text: "What better way of making someone's day, then a beautiful Huggnote. I've made so many people smile just by sending a Huggnote. Big fan of Huggnote.",
+      rating: 5
+    },
+    {
+      name: "Alson",
+      location: "Ireland",
+      text: "Absolutely Beautiful, Love this",
+      rating: 5
+    },
+    {
+      name: "Yvonne",
+      location: "Ireland",
+      text: "I am hooked, love it! Sent lots of huggnotes in the last 24 hours!",
+      rating: 5
+    }
+  ];
+
+  const sampleSongs = [
+    {
+      title: "A Christmas Love Song",
+      recipient: "For Sarah",
+      description: "A romantic ballad celebrating 10 years together",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    },
+    {
+      title: "Mum's Christmas Wish",
+      recipient: "For Mom",
+      description: "A heartfelt tribute to an amazing mother",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    },
+    {
+      title: "Best Friend Forever",
+      recipient: "For Emma",
+      description: "Celebrating a lifelong friendship",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    }
+  ];
+
+  const faqs = [
+    {
+      question: "How long does it take to create my bespoke song?",
+      answer: "Your personalized song is typically ready within minutes! Our AI technology works quickly to craft a unique musical experience based on your inputs."
+    },
+    {
+      question: "Can I request changes to the song?",
+      answer: "Yes! We offer variations during the creation process so you can choose the version that resonates most with you."
+    },
+    {
+      question: "What information do you need to create the song?",
+      answer: "We'll ask you about the recipient, the occasion, their personality, and your preferred musical style. The more details you provide, the more personalized your song will be!"
+    },
+    {
+      question: "How will the song be delivered?",
+      answer: "Your song will be delivered through a beautiful, shareable link with an immersive experience that includes falling snow, your custom message, and the ability to play the song."
+    },
+    {
+      question: "What genres and styles are available?",
+      answer: "We offer a wide range of styles including pop, ballad, upbeat, acoustic, and more. You can choose the vibe that best fits your recipient's taste!"
+    },
+    {
+      question: "Is my data secure and private?",
+      answer: "Absolutely! We take privacy seriously and are fully GDPR compliant. Your data is encrypted and never shared with third parties."
+    }
+  ];
 
   return (
-    <div className="relative h-screen w-full flex flex-col overflow-x-hidden overflow-y-auto font-sans text-slate-900" style={{ backgroundColor: '#2A374F' }}>
-      {/* Background Image Layer */}
-      <Image
-        src="/web background image.png"
-        alt="Background"
-        fill
-        className="object-cover z-0 fixed"
-        priority
-        quality={100}
-      />
+    <div className="min-h-screen relative flex flex-col" style={{
+      backgroundImage: 'url("/web background image.png")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center center',
+      backgroundAttachment: 'fixed'
+    }}>
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/50 via-[#0f1e30]/45 to-[#1a2a3f]/50"></div>
 
       {/* Snowfall Effect */}
-      <div className="fixed inset-0 z-[5] pointer-events-none overflow-hidden">
-        <div className="snowflakes" aria-hidden="true">
-          <div className="snowflake">❅</div>
-          <div className="snowflake">❅</div>
-          <div className="snowflake">❆</div>
-          <div className="snowflake">❄</div>
-          <div className="snowflake">❅</div>
-          <div className="snowflake">❆</div>
-          <div className="snowflake">❄</div>
-          <div className="snowflake">❅</div>
-          <div className="snowflake">❆</div>
-          <div className="snowflake">❄</div>
-          <div className="snowflake">❅</div>
-          <div className="snowflake">❆</div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute animate-fall"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: '-10px',
+              animationDuration: `${8 + Math.random() * 7}s`,
+              animationDelay: `${Math.random() * 5}s`,
+              opacity: Math.random() * 0.5 + 0.2,
+              width: `${2 + Math.random() * 4}px`,
+              height: `${2 + Math.random() * 4}px`,
+              backgroundColor: 'white',
+              borderRadius: '50%',
+              boxShadow: '0 0 3px rgba(255, 255, 255, 0.8)'
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Mobile Menu Button */}
+      <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
+          aria-label="Menu"
+        >
+          <Menu className="w-7 h-7 md:w-9 md:h-9 text-[#E0F4FF]" />
+        </button>
+      </div>
+
+      {/* Mobile Menu Sidebar */}
+      <div
+        className={`fixed top-0 right-0 h-full w-64 md:w-80 bg-gradient-to-br from-[#1a3d5f] to-[#0f2438] shadow-2xl z-40 border-l border-[#E0F4FF]/20 transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+      >
+        <div className="flex flex-col h-full pt-20 px-6">
+          <nav className="flex flex-col gap-4">
+            <a href="#home" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
+              Home
+            </a>
+            <a href="#samples" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
+              Sample Songs
+            </a>
+            <a href="#testimonials" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
+              Testimonials
+            </a>
+            <a href="#faq" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
+              FAQ
+            </a>
+          </nav>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-8 text-center min-h-full">
-
-        {/* Hero Logo */}
-        <div className="mb-4 md:mb-6 animate-in fade-in zoom-in duration-1000">
-          <Image
-            src="/huggnote bespoke logo.png"
-            alt="Huggnote"
-            width={600}
-            height={200}
-            className="w-[250px] md:w-[400px] lg:w-[500px] h-auto drop-shadow-md"
-            priority
-          />
-        </div>
-
-        {/* Headlines & Copy */}
-        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6 mb-6 md:mb-8 animate-in slide-in-from-bottom-5 duration-1000 delay-150 fill-mode-backwards">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-normal tracking-tight text-white/90 drop-shadow-xl" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-            The most magical gift they&apos;ll get this holiday!
-          </h1>
-
-          {/* Feature Icons */}
-          <div className="flex flex-wrap justify-center gap-6 md:gap-10 lg:gap-20 py-2 md:py-4">
-            <div className="flex flex-col items-center gap-2">
-              <FavouriteIcon className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-white drop-shadow-lg stroke-[1.5]" />
-              <span className="font-medium text-[#fae8b4] drop-shadow-md text-sm md:text-base lg:text-lg tracking-wide">Personalized</span>
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Hero Section */}
+        <div className="flex-1 flex items-center justify-center px-6 md:p-8" id="home">
+          <div className="text-center max-w-4xl mx-auto mt-8 md:mt-0">
+            {/* Hero Logo - Original Sizing */}
+            <div className="mb-4 md:mb-6 animate-in fade-in zoom-in duration-1000">
+              <Image
+                src="/huggnote bespoke logo.png"
+                alt="Huggnote"
+                width={600}
+                height={200}
+                className="w-[250px] md:w-[400px] lg:w-[500px] h-auto drop-shadow-md mx-auto"
+                priority
+              />
             </div>
-            <div className="flex flex-col items-center gap-2">
-              <GiftIcon className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-white drop-shadow-lg stroke-[1.5]" />
-              <span className="font-medium text-[#fae8b4] drop-shadow-md text-sm md:text-base lg:text-lg tracking-wide">Beautiful Delivery</span>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <SparklesIcon className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-white drop-shadow-lg stroke-[1.5]" />
-              <span className="font-medium text-[#fae8b4] drop-shadow-md text-sm md:text-base lg:text-lg tracking-wide">Magical Experience</span>
-            </div>
-          </div>
 
-          <div className="space-y-2 text-white/90 text-base md:text-lg lg:text-xl drop-shadow-md leading-relaxed max-w-2xl mx-auto font-normal">
-            <p>
-              The perfect gift for those you love most. <br className="hidden md:block" />
-              Their own Christmas song — giftwrapped in emotion.
-            </p>
-            <p className="text-sm md:text-base lg:text-lg opacity-80">
-              Ready in minutes and delivered in a magical festive experience
+            <h1 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl text-center mb-12 md:mb-14 lg:mb-16 ${lora.className}`}>
+              The Gift They'll<br className="md:hidden" /> Never Forget
+            </h1>
+
+            {/* Action Buttons - Original Sizing */}
+            <div className="flex flex-col md:flex-row gap-4 md:gap-5 animate-in slide-in-from-bottom-5 duration-1000 delay-300 fill-mode-backwards items-center justify-center pb-4 md:pb-0">
+              <button
+                onClick={() => router.push('/compose/select-package')}
+                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-8 py-4 text-lg rounded-xl bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(135,206,235,0.5),0_0_40px_rgba(135,206,235,0.3)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.7),0_0_60px_rgba(135,206,235,0.5)] hover:-translate-y-0.5 transition-all duration-200 ${lora.className}`}
+              >
+                Create Bespoke Song
+              </button>
+
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="px-8 py-4 rounded-full bg-black/20 backdrop-blur-md border border-white/30 text-white font-medium text-lg hover:bg-black/40 hover:-translate-y-0.5 transition-all"
+              >
+                Login
+              </button>
+            </div>
+
+            <p className={`text-[#87CEEB] text-base md:text-lg lg:text-xl mt-6 italic ${lora.className}`}>
+              Bespoke Songs, Giftwrapped in Emotion
             </p>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-5 animate-in slide-in-from-bottom-5 duration-1000 delay-300 fill-mode-backwards items-center justify-center pb-4 md:pb-0">
-          <PremiumButton
-            onClick={() => router.push('/compose/select-package')}
-          >
-            Create Bespoke Song
-          </PremiumButton>
+        {/* Features Section */}
+        <div className="relative z-10 -mt-48 md:mt-0 pt-16 pb-16 md:py-20">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-4xl mx-auto">
+              <p className="text-slate-100 leading-relaxed text-center mb-8 md:mb-20 lg:mb-24">
+                <span className="text-xl md:text-2xl lg:text-3xl block text-[#E8DCC0]">
+                  The most magical gift they'll get this holiday!
+                </span>
+              </p>
 
-          <button
-            onClick={() => setIsAuthOpen(true)}
-            className="px-8 py-4 rounded-full bg-black/20 backdrop-blur-md border border-white/30 text-white font-medium text-lg hover:bg-black/40 hover:-translate-y-0.5 transition-all"
-          >
-            Login
-          </button>
+              {/* Feature Icons */}
+              <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-md md:max-w-3xl mx-auto mb-12 md:mb-20 lg:mb-24 md:mt-10 lg:mt-12">
+                <div className="text-center">
+                  <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 flex items-center justify-center mb-2 md:mb-3 mx-auto">
+                    <Heart className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 text-[#A8D8F0]" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-[#E8DCC0] mb-1 md:mb-2 text-sm md:text-base lg:text-lg">Personalised</h3>
+                  <p className="hidden md:block text-white/80 italic text-xs lg:text-sm">Crafted uniquely for them</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 flex items-center justify-center mb-2 md:mb-3 mx-auto">
+                    <Gift className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 text-[#A8D8F0]" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-[#E8DCC0] mb-1 md:mb-2 text-sm md:text-base lg:text-lg">Thoughtful</h3>
+                  <p className="hidden md:block text-white/80 italic text-xs lg:text-sm">A gift from the heart</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 flex items-center justify-center mb-2 md:mb-3 mx-auto">
+                    <Sparkles className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 text-[#A8D8F0]" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-[#E8DCC0] mb-1 md:mb-2 text-sm md:text-base lg:text-lg">Magical</h3>
+                  <p className="hidden md:block text-white/80 italic text-xs lg:text-sm">An unforgettable moment</p>
+                </div>
+              </div>
+
+              <p className="text-slate-100 leading-relaxed text-center px-6 md:px-0 mb-10 md:mb-16 lg:mb-20">
+                <span className="text-base md:text-lg lg:text-xl block mb-2">
+                  The perfect gift for those you love most. Their own Christmas song - giftwrapped in emotion.
+                </span>
+                <span className="text-base md:text-lg lg:text-xl block">
+                  Ready in minutes and delivered in a magical festive experience.
+                </span>
+              </p>
+
+              <div className="text-center">
+                <button
+                  onClick={() => router.push('/compose/select-package')}
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-8 md:px-12 py-4 md:py-6 text-lg md:text-2xl rounded-xl bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(135,206,235,0.5),0_0_40px_rgba(135,206,235,0.3)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.7),0_0_60px_rgba(135,206,235,0.5)] transform hover:scale-105 transition-all duration-200 ${lora.className}`}
+                >
+                  Create Your Bespoke Song
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Sample Songs Section */}
+        <div className="relative z-10 py-16 md:py-24" id="samples">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-6xl mx-auto">
+              <h2 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl mb-6 md:mb-8 ${lora.className}`}>
+                Listen to Sample Songs
+              </h2>
+              <p className="text-white/80 text-base md:text-lg mb-12 md:mb-16 max-w-2xl mx-auto">
+                Hear the magic of personalised bespoke songs created for real customers
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                {sampleSongs.map((song, index) => (
+                  <div
+                    key={index}
+                    className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:bg-white/15 transition-all duration-200"
+                  >
+                    <h3 className={`text-[#E8DCC0] text-xl mb-2 font-semibold ${lora.className}`}>
+                      {song.title}
+                    </h3>
+                    <p className="text-[#87CEEB] text-sm mb-1">{song.recipient}</p>
+                    <p className="text-white/70 text-sm mb-4 leading-relaxed">{song.description}</p>
+                    <button className="w-full bg-gradient-to-br from-[#87CEEB] to-[#1a3d5f] text-white px-6 py-3 rounded-lg hover:opacity-90 transition-all duration-200 flex items-center justify-center gap-2 font-semibold">
+                      <Play className="w-5 h-5" />
+                      Play Sample
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Testimonials Section */}
+        <div className="relative z-10 py-16 md:py-24" id="testimonials">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-6xl mx-auto">
+              <h2 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl mb-6 md:mb-8 ${lora.className}`}>
+                What Our Customers Say
+              </h2>
+              <p className="text-white/80 text-base md:text-lg mb-12 md:mb-16 max-w-2xl mx-auto">
+                Real stories from people who've gifted the unforgettable
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                {testimonials.map((testimonial, index) => (
+                  <div
+                    key={index}
+                    className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20"
+                  >
+                    <div className="mb-6">
+                      <div className="flex gap-1 mb-4 justify-center">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <span key={i} className="text-[#F5E6B8] text-xl">★</span>
+                        ))}
+                      </div>
+                      <p className="text-white/90 italic leading-relaxed mb-4">
+                        "{testimonial.text}"
+                      </p>
+                    </div>
+                    <div className="border-t border-white/20 pt-4">
+                      <p className="text-[#E8DCC0] font-semibold">{testimonial.name}</p>
+                      <p className="text-white/60 text-sm">{testimonial.location}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="relative z-10 py-16 md:py-24" id="faq">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-4xl mx-auto">
+              <h2 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl mb-6 md:mb-8 ${lora.className}`}>
+                Frequently Asked Questions
+              </h2>
+              <p className="text-white/80 text-base md:text-lg mb-12 md:mb-16">
+                Everything you need to know about Huggnote Bespoke
+              </p>
+
+              <div className="space-y-4 text-left">
+                {faqs.map((faq, index) => (
+                  <div
+                    key={index}
+                    className="bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 overflow-hidden"
+                  >
+                    <button
+                      onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                      className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/5 transition-all duration-200"
+                    >
+                      <span className="text-[#E8DCC0] text-lg pr-4 font-semibold">
+                        {faq.question}
+                      </span>
+                      <ChevronDown
+                        className={`w-6 h-6 text-[#87CEEB] flex-shrink-0 transition-transform duration-200 ${expandedFaq === index ? 'rotate-180' : ''
+                          }`}
+                      />
+                    </button>
+                    {expandedFaq === index && (
+                      <div className="px-6 pb-5">
+                        <p className="text-white/80 leading-relaxed">{faq.answer}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy Section */}
+        <div className="relative z-10 py-16 md:py-24">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 md:p-12 border border-white/20">
+                <h2 className={`text-[#E8DCC0] text-2xl md:text-3xl mb-6 font-semibold ${lora.className}`}>
+                  Privacy & GDPR Compliance
+                </h2>
+
+                <div className="space-y-6 text-white/80 leading-relaxed">
+                  <p>
+                    At Huggnote, we take your privacy seriously. We are fully compliant with the General Data Protection Regulation (GDPR) and are committed to protecting your personal information.
+                  </p>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">What Data We Collect</h3>
+                    <p>
+                      We collect only the information necessary to create your bespoke song and deliver it to you. This includes your name, email address, payment information, and the details you provide about the song recipient.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">How We Use Your Data</h3>
+                    <p>
+                      Your personal information is used solely to create and deliver your personalised song. We never sell, rent, or share your data with third parties for marketing purposes. All data is encrypted and stored securely on EU-based servers.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">Your Rights</h3>
+                    <p>
+                      Under GDPR, you have the right to access, correct, or delete your personal data at any time. You can also request a copy of all data we hold about you. To exercise these rights, please contact us at{' '}
+                      <a href="mailto:privacy@huggnote.com" className="text-[#87CEEB] hover:text-[#F5E6B8] underline">
+                        privacy@huggnote.com
+                      </a>
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">Data Retention</h3>
+                    <p>
+                      We retain your personal information only for as long as necessary to provide our services and comply with legal obligations. You can request deletion of your data at any time.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/20">
+                    <p className="text-sm text-white/60">
+                      Last updated: December 2024 | For our full privacy policy, please contact{' '}
+                      <a href="mailto:privacy@huggnote.com" className="text-[#87CEEB] hover:text-[#F5E6B8] underline">
+                        privacy@huggnote.com
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Final CTA */}
+        <div className="relative z-10 pb-24">
+          <div className="container mx-auto px-4">
+            <div className="text-center">
+              <button
+                onClick={() => router.push('/compose/select-package')}
+                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-8 md:px-12 py-4 md:py-6 text-lg md:text-2xl rounded-xl bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(135,206,235,0.5),0_0_40px_rgba(135,206,235,0.3)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.7),0_0_60px_rgba(135,206,235,0.5)] transform hover:scale-105 transition-all duration-200 ${lora.className}`}
+              >
+                Create Your Bespoke Song
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* Snowfall CSS */}
+      {/* Snowfall Animation CSS */}
       <style jsx>{`
-        .snowflakes {
-          position: absolute;
-          top: -10%;
-          width: 100%;
-          height: 110%;
-        }
-
-        .snowflake {
-          position: absolute;
-          top: -10%;
-          color: #fff;
-          font-size: 1em;
-          font-family: Arial, sans-serif;
-          text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-          animation: fall linear infinite;
-          opacity: 0.8;
-        }
-
         @keyframes fall {
           0% {
             transform: translateY(0) rotate(0deg);
@@ -141,89 +454,8 @@ export default function LandingPage() {
           }
         }
 
-        /* Individual snowflake animations with different speeds and positions */
-        .snowflake:nth-child(1) {
-          left: 10%;
-          animation-duration: 10s;
-          animation-delay: 0s;
-          font-size: 1.2em;
-        }
-
-        .snowflake:nth-child(2) {
-          left: 20%;
-          animation-duration: 12s;
-          animation-delay: 2s;
-          font-size: 0.8em;
-        }
-
-        .snowflake:nth-child(3) {
-          left: 30%;
-          animation-duration: 15s;
-          animation-delay: 4s;
-          font-size: 1em;
-        }
-
-        .snowflake:nth-child(4) {
-          left: 40%;
-          animation-duration: 11s;
-          animation-delay: 0s;
-          font-size: 1.5em;
-        }
-
-        .snowflake:nth-child(5) {
-          left: 50%;
-          animation-duration: 13s;
-          animation-delay: 3s;
-          font-size: 0.9em;
-        }
-
-        .snowflake:nth-child(6) {
-          left: 60%;
-          animation-duration: 14s;
-          animation-delay: 1s;
-          font-size: 1.1em;
-        }
-
-        .snowflake:nth-child(7) {
-          left: 70%;
-          animation-duration: 16s;
-          animation-delay: 5s;
-          font-size: 1.3em;
-        }
-
-        .snowflake:nth-child(8) {
-          left: 80%;
-          animation-duration: 12s;
-          animation-delay: 2s;
-          font-size: 0.7em;
-        }
-
-        .snowflake:nth-child(9) {
-          left: 90%;
-          animation-duration: 11s;
-          animation-delay: 4s;
-          font-size: 1em;
-        }
-
-        .snowflake:nth-child(10) {
-          left: 15%;
-          animation-duration: 13s;
-          animation-delay: 1s;
-          font-size: 1.4em;
-        }
-
-        .snowflake:nth-child(11) {
-          left: 35%;
-          animation-duration: 14s;
-          animation-delay: 3s;
-          font-size: 0.8em;
-        }
-
-        .snowflake:nth-child(12) {
-          left: 55%;
-          animation-duration: 15s;
-          animation-delay: 0s;
-          font-size: 1.2em;
+        .animate-fall {
+          animation: fall linear infinite;
         }
       `}</style>
     </div>
