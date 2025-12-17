@@ -461,6 +461,10 @@ function VariationsContent() {
                         localStorage.setItem(`songForm_${formIdParam}`, JSON.stringify(parsed));
                     }
 
+                    // Count lyrics and audio separately
+                    const lyricsCount = variationLyrics[songIndex] ? Object.keys(variationLyrics[songIndex]).length : 0;
+                    const audioCount = completedCount;
+
                     // Check if all variations are ready (expecting 3)
                     if (completedCount >= 3) {
                         console.log('[VARIATIONS] All variations ready!');
@@ -468,7 +472,12 @@ function VariationsContent() {
                         setGenerationProgress('All variations ready! Click play to listen.');
                         return; // Stop checking
                     } else {
-                        setGenerationProgress(`${completedCount} of 3 variations ready...`);
+                        // Show detailed progress
+                        if (lyricsCount > audioCount) {
+                            setGenerationProgress(`${lyricsCount} lyrics ready • ${audioCount} of 3 audio ready...`);
+                        } else {
+                            setGenerationProgress(`${completedCount} of 3 variations ready...`);
+                        }
                     }
                 }
 
@@ -975,6 +984,42 @@ function VariationsContent() {
                                     </span>
                                 </div>
 
+                                {/* Status Indicator */}
+                                <div className="mb-3">
+                                    {!lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
+                                        <div className="flex items-center gap-2 text-sm text-white/60">
+                                            <LoadingSpinner size="xs" variant="dots" color="primary" />
+                                            <span>Generating your song...</span>
+                                        </div>
+                                    )}
+                                    {lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <span className="text-green-400">✓</span>
+                                            <span className="text-green-400">Lyrics ready</span>
+                                            <span className="text-white/40">•</span>
+                                            <LoadingSpinner size="xs" variant="dots" color="primary" />
+                                            <span className="text-white/60">Generating audio...</span>
+                                        </div>
+                                    )}
+                                    {audioUrls[activeTab]?.[variation.id] && (
+                                        <div className="flex items-center gap-2 text-sm text-green-400">
+                                            <span>✓</span>
+                                            <span>Ready to play!</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Lyrics Preview - Show even if audio isn't ready */}
+                                {lyrics[activeTab]?.[variation.id] && (
+                                    <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
+                                        <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Lyrics Preview</h4>
+                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto custom-scrollbar">
+                                            {lyrics[activeTab][variation.id].split('\n').slice(0, 8).join('\n')}
+                                            {lyrics[activeTab][variation.id].split('\n').length > 8 && '\n...'}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Play Button */}
                                 <div className="mb-4">
                                     <Button
@@ -988,7 +1033,7 @@ function VariationsContent() {
                                         {!audioUrls[activeTab]?.[variation.id] ? (
                                             <>
                                                 <LoadingSpinner size="sm" variant="dots" color="white" />
-                                                <span className="font-medium">Generating...</span>
+                                                <span className="font-medium">Audio Generating...</span>
                                             </>
                                         ) : playingId === variation.id ? (
                                             <>
@@ -1024,16 +1069,6 @@ function VariationsContent() {
                                         </div>
                                     )}
                                 </div>
-
-                                {/* Actual Lyrics */}
-                                {lyrics[activeTab]?.[variation.id] && (
-                                    <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
-                                        <h4 className="text-[#87CEEB] text-sm font-medium mb-2">Lyrics Preview</h4>
-                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto custom-scrollbar">
-                                            {lyrics[activeTab][variation.id]}
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Select Button */}
                                 {isCurrentSelected(variation.id) ? (
