@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-11-17.clover", // Using a recent API version string, or we can omit to use default
+    apiVersion: "2025-12-15.clover",
     typescript: true
 });
 

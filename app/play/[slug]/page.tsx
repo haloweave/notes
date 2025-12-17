@@ -114,8 +114,11 @@ export default function PlayPage() {
                     title: data.title,
                     hasLyrics: !!data.lyrics,
                     hasTimestampedLyrics: !!data.lyricsTimestamped,
-                    version: data.version
+                    version: data.version,
+                    customMessage: data.customMessage,
+                    hasCustomMessage: !!data.customMessage
                 });
+                console.log('🔍 [DEBUG] Full song data:', data);
                 if (data.lyricsTimestamped) {
                     console.log('🎯 [LYRICS] Timestamped lyrics found! Synced lyrics will be enabled.');
                 } else if (data.lyrics) {
@@ -345,8 +348,8 @@ export default function PlayPage() {
                                 {song.customTitle || song.title || song.generatedPrompt || 'Untitled Song'}
                             </h1>
                             {song.customMessage && (
-                                <p className="text-sm md:text-base text-white/80 max-w-2xl mx-auto px-4 whitespace-pre-wrap">
-                                    {song.customMessage}
+                                <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto px-4 whitespace-pre-wrap italic">
+                                    "{song.customMessage}"
                                 </p>
                             )}
                         </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { musicGenerations } from "@/lib/db/schema";
+import { musicGenerations, composeForms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
@@ -86,6 +86,46 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Handle music_ai subtype webhooks (these have conversion_path directly in payload)
+        if (body.subtype === 'music_ai' && (body.conversion_path || body.conversion_id)) {
+            console.log('🎯 [WEBHOOK] music_ai subtype webhook received');
+            console.log(`📌 [WEBHOOK] Conversion ID: ${body.conversion_id}`);
+            console.log(`📌 [WEBHOOK] Conversion Path: ${body.conversion_path}`);
+
+            const currentRecord = await db.query.musicGenerations.findFirst({
+                where: eq(musicGenerations.taskId, task_id),
+            });
+
+            if (currentRecord) {
+                // Match conversion_id to determine if this is V1 or V2
+                if (currentRecord.conversionId1 === body.conversion_id) {
+                    if (body.conversion_path) updateData.audioUrl1 = body.conversion_path;
+                    if (body.conversion_path_wav) updateData.audioUrlWav1 = body.conversion_path_wav;
+                    if (body.title) updateData.title1 = body.title;
+                    if (body.lyrics) updateData.lyrics1 = body.lyrics;
+                    if (body.lyrics_timestamped) updateData.lyricsTimestamped1 = body.lyrics_timestamped;
+                    if (body.conversion_duration) updateData.duration1 = Math.round(body.conversion_duration);
+                    console.log('✅ [WEBHOOK] Updating V1 with music_ai data');
+                } else if (currentRecord.conversionId2 === body.conversion_id) {
+                    if (body.conversion_path) updateData.audioUrl2 = body.conversion_path;
+                    if (body.conversion_path_wav) updateData.audioUrlWav2 = body.conversion_path_wav;
+                    if (body.title) updateData.title2 = body.title;
+                    if (body.lyrics) updateData.lyrics2 = body.lyrics;
+                    if (body.lyrics_timestamped) updateData.lyricsTimestamped2 = body.lyrics_timestamped;
+                    if (body.conversion_duration) updateData.duration2 = Math.round(body.conversion_duration);
+                    console.log('✅ [WEBHOOK] Updating V2 with music_ai data');
+                }
+
+                // Mark as completed if we have audio URL
+                if (body.conversion_path) {
+                    updateData.status = 'completed';
+                    updateData.completedAt = new Date();
+                    dbStatus = 'completed';
+                    console.log('✅ [WEBHOOK] Marking song as completed (music_ai)');
+                }
+            }
+        }
+
         if (dbStatus === 'completed') {
             // Extract fields based on available data (MusicGPT payload structure can vary)
             // User sample payload has 'audio_url', but conversion object might have more details
@@ -150,6 +190,102 @@ export async function POST(request: NextRequest) {
             .where(eq(musicGenerations.taskId, task_id));
 
         console.log("[WEBHOOK] Database updated successfully");
+
+        // ALSO UPDATE COMPOSE_FORMS if this task_id is part of a preview generation
+        // Check if we have audio URL (either from status=COMPLETED or from conversion_path in payload)
+        const hasAudioUrl = conversion?.conversion_path_1 || body.conversion_path;
+
+        if (hasAudioUrl) {
+            try {
+                console.log('[WEBHOOK] Audio URL detected - checking if task belongs to a compose form...');
+
+                // Find all compose forms that have this task_id in their variationTaskIds
+                const allForms = await db.query.composeForms.findMany({
+                    where: eq(composeForms.status, 'variations_generating'),
+                });
+
+                for (const form of allForms) {
+                    const variationTaskIds = form.variationTaskIds as any || {};
+                    let foundTaskId = false;
+                    let songIndex = -1;
+                    let variationIndex = -1;
+
+                    // Search for this task_id in the variationTaskIds structure
+                    Object.keys(variationTaskIds).forEach(songIndexStr => {
+                        const taskIdsForSong = variationTaskIds[songIndexStr];
+                        if (Array.isArray(taskIdsForSong)) {
+                            const index = taskIdsForSong.indexOf(task_id);
+                            if (index !== -1) {
+                                foundTaskId = true;
+                                songIndex = parseInt(songIndexStr);
+                                variationIndex = index + 1; // 1-indexed
+                            }
+                        }
+                    });
+
+                    if (foundTaskId) {
+                        console.log(`[WEBHOOK] Found task in compose form ${form.id}, song ${songIndex}, variation ${variationIndex}`);
+
+                        // Update the variationAudioUrls
+                        const currentAudioUrls = form.variationAudioUrls as any || {};
+                        const currentLyrics = form.variationLyrics as any || {};
+
+                        if (!currentAudioUrls[songIndex]) {
+                            currentAudioUrls[songIndex] = {};
+                        }
+                        if (!currentLyrics[songIndex]) {
+                            currentLyrics[songIndex] = {};
+                        }
+
+                        // Use the audio URL from either conversion object or body
+                        const audioUrl = conversion?.conversion_path_1 || body.conversion_path;
+                        const lyrics = conversion?.lyrics_1 || body.lyrics;
+
+                        // IMPORTANT: Since we're using the same task ID for all 3 variations (single song mode),
+                        // we need to apply this audio URL to ALL variations that have this task ID
+                        const taskIdsForSong = variationTaskIds[songIndex];
+                        if (Array.isArray(taskIdsForSong)) {
+                            taskIdsForSong.forEach((tid, index) => {
+                                if (tid === task_id) {
+                                    const varId = index + 1; // 1-indexed
+                                    currentAudioUrls[songIndex][varId] = audioUrl;
+                                    if (lyrics) {
+                                        currentLyrics[songIndex][varId] = lyrics;
+                                    }
+                                    console.log(`[WEBHOOK] Applied audio URL to variation ${varId}`);
+                                }
+                            });
+                        }
+
+                        // Check if all variations for this song are complete
+                        const expectedVariations = 3;
+                        const completedVariations = Object.keys(currentAudioUrls[songIndex] || {}).length;
+
+                        let newStatus = form.status;
+                        if (completedVariations >= expectedVariations) {
+                            newStatus = 'variations_ready';
+                            console.log(`[WEBHOOK] All variations complete for form ${form.id}`);
+                        }
+
+                        await db.update(composeForms)
+                            .set({
+                                variationAudioUrls: currentAudioUrls,
+                                variationLyrics: currentLyrics,
+                                status: newStatus,
+                                updatedAt: new Date(),
+                            })
+                            .where(eq(composeForms.id, form.id));
+
+                        console.log(`[WEBHOOK] ✅ Updated compose form ${form.id} with audio URL for ${completedVariations} variations`);
+                        break; // Found the form, no need to continue
+                    }
+                }
+            } catch (error) {
+                console.error('[WEBHOOK] Error updating compose_forms:', error);
+                // Don't fail the webhook if compose_forms update fails
+            }
+        }
+
         return NextResponse.json({ success: true });
 
     } catch (error) {

@@ -2,12 +2,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
-import { user, orders } from "@/lib/db/schema";
+import { user, orders, composeForms } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { sendSongDeliveryEmail } from "@/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-11-17.clover",
+    apiVersion: "2025-12-15.clover",
     typescript: true,
 });
 
@@ -125,6 +126,152 @@ export async function POST(req: NextRequest) {
                 .where(eq(user.id, userId));
 
             console.log(`Successfully added ${creditsToAdd} credits to user ${userId} for session ${session.id}`);
+
+            // 3. Send Email with Song Links
+            try {
+                const formId = session.metadata?.formId;
+                console.log('[EMAIL] ==================== EMAIL SENDING START ====================');
+                console.log('[EMAIL] Session ID:', session.id);
+                console.log('[EMAIL] Form ID from metadata:', formId);
+
+                if (formId) {
+                    console.log(`[EMAIL] 📧 Step 1: Fetching compose form ${formId} from database...`);
+
+                    // Fetch the compose form from database
+                    const composeForm = await db.query.composeForms.findFirst({
+                        where: eq(composeForms.id, formId),
+                    });
+
+                    if (composeForm) {
+                        console.log(`[EMAIL] ✅ Step 1 Complete: Form found in database`);
+                        console.log('[EMAIL] Form status:', composeForm.status);
+                        console.log('[EMAIL] Package type:', composeForm.packageType);
+
+                        const formData = composeForm.formData as any;
+                        const selectedVariations = composeForm.selectedVariations as any || {};
+                        const variationTaskIds = composeForm.variationTaskIds as any || {};
+
+                        console.log('[EMAIL] 📋 Step 2: Extracting form data...');
+                        console.log('[EMAIL] Sender name:', formData.senderName);
+                        console.log('[EMAIL] Sender email:', formData.senderEmail);
+                        console.log('[EMAIL] Selected variations:', JSON.stringify(selectedVariations));
+                        console.log('[EMAIL] Variation task IDs:', JSON.stringify(variationTaskIds));
+
+                        // Update compose form with Stripe session ID for resend functionality
+                        await db.update(composeForms)
+                            .set({
+                                stripeSessionId: session.id,
+                                updatedAt: new Date(),
+                            })
+                            .where(eq(composeForms.id, formId));
+                        console.log('[EMAIL] ✅ Updated form with Stripe session ID');
+
+                        // Build song links array
+                        const songLinks = [];
+                        const songs = formData.songs || [formData]; // Handle both bundle and single
+                        console.log(`[EMAIL] Number of songs: ${songs.length}`);
+
+                        console.log('[EMAIL] 🔗 Step 3: Building song links...');
+                        for (let i = 0; i < songs.length; i++) {
+                            const song = songs[i];
+                            const selectedVariationId = selectedVariations[i];
+                            const taskIdsForSong = variationTaskIds[i];
+
+                            console.log(`[EMAIL]   Song ${i + 1}:`);
+                            console.log(`[EMAIL]     - Recipient: ${song.recipientName}`);
+                            console.log(`[EMAIL]     - Theme: ${song.theme}`);
+                            console.log(`[EMAIL]     - Selected variation: ${selectedVariationId}`);
+                            console.log(`[EMAIL]     - Task IDs for song: ${JSON.stringify(taskIdsForSong)}`);
+
+                            if (selectedVariationId && taskIdsForSong && taskIdsForSong[selectedVariationId - 1]) {
+                                const taskId = taskIdsForSong[selectedVariationId - 1];
+                                console.log(`[EMAIL]     - Selected task ID: ${taskId}`);
+
+                                // Generate share URL (we'll use the task ID as the slug for now)
+                                // In production, you might want to create proper share slugs
+                                const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://huggnote.com'}/play/${taskId}`;
+                                console.log(`[EMAIL]     - Share URL: ${shareUrl}`);
+
+                                songLinks.push({
+                                    songNumber: i + 1,
+                                    recipientName: song.recipientName || 'Your Loved One',
+                                    theme: song.theme || 'Special Occasion',
+                                    shareUrl: shareUrl,
+                                });
+                                console.log(`[EMAIL]     ✅ Song link added`);
+                            } else {
+                                console.warn(`[EMAIL]     ⚠️ Missing data for song ${i + 1} - skipping`);
+                                console.warn(`[EMAIL]        selectedVariationId: ${selectedVariationId}`);
+                                console.warn(`[EMAIL]        taskIdsForSong: ${JSON.stringify(taskIdsForSong)}`);
+                            }
+                        }
+
+                        console.log(`[EMAIL] ✅ Step 3 Complete: Built ${songLinks.length} song links`);
+
+                        if (songLinks.length > 0) {
+                            console.log('[EMAIL] 📨 Step 4: Preparing email...');
+                            const emailData = {
+                                recipientEmail: 'haloweavedev@gmail.com', // Hardcoded for testing
+                                senderName: formData.senderName || 'Customer',
+                                recipientName: songs[0]?.recipientName || 'Recipient',
+                                songLinks: songLinks,
+                                packageType: composeForm.packageType as 'solo-serenade' | 'holiday-hamper',
+                            };
+
+                            console.log('[EMAIL] Email data:');
+                            console.log('[EMAIL]   - To:', emailData.recipientEmail, '(HARDCODED FOR TESTING)');
+                            console.log('[EMAIL]   - Sender name:', emailData.senderName);
+                            console.log('[EMAIL]   - Recipient name:', emailData.recipientName);
+                            console.log('[EMAIL]   - Package type:', emailData.packageType);
+                            console.log('[EMAIL]   - Number of song links:', emailData.songLinks.length);
+
+                            console.log('[EMAIL] 🚀 Step 5: Sending email via Resend...');
+                            const emailResult = await sendSongDeliveryEmail(emailData);
+
+                            if (emailResult.success) {
+                                console.log(`[EMAIL] ✅ Step 5 Complete: Email sent successfully!`);
+                                console.log('[EMAIL] Resend response:', JSON.stringify(emailResult.data));
+
+                                console.log('[EMAIL] 💾 Step 6: Updating form status to "delivered"...');
+                                // Update compose form status to 'delivered'
+                                await db.update(composeForms)
+                                    .set({
+                                        status: 'delivered',
+                                        updatedAt: new Date(),
+                                    })
+                                    .where(eq(composeForms.id, formId));
+
+                                console.log('[EMAIL] ✅ Step 6 Complete: Form status updated');
+                                console.log('[EMAIL] ==================== EMAIL SENDING SUCCESS ====================');
+                            } else {
+                                console.error(`[EMAIL] ❌ Step 5 Failed: Email sending failed`);
+                                console.error(`[EMAIL] Error details:`, emailResult.error);
+                                console.error('[EMAIL] ==================== EMAIL SENDING FAILED ====================');
+                            }
+                        } else {
+                            console.warn(`[EMAIL] ⚠️ No song links found for form ${formId}`);
+                            console.warn('[EMAIL] This might mean:');
+                            console.warn('[EMAIL]   - No variations were selected');
+                            console.warn('[EMAIL]   - Task IDs are missing');
+                            console.warn('[EMAIL]   - Form data is incomplete');
+                            console.warn('[EMAIL] ==================== EMAIL SENDING SKIPPED ====================');
+                        }
+                    } else {
+                        console.warn(`[EMAIL] ⚠️ Compose form ${formId} not found in database`);
+                        console.warn('[EMAIL] This might be a legacy order or the form was deleted');
+                        console.warn('[EMAIL] ==================== EMAIL SENDING SKIPPED ====================');
+                    }
+                } else {
+                    console.log('[EMAIL] ℹ️ No formId in metadata, skipping email (legacy order)');
+                    console.log('[EMAIL] ==================== EMAIL SENDING SKIPPED ====================');
+                }
+            } catch (emailError) {
+                console.error('[EMAIL] ❌ CRITICAL ERROR in email sending process:');
+                console.error('[EMAIL] Error:', emailError);
+                console.error('[EMAIL] Stack:', (emailError as Error).stack);
+                console.error('[EMAIL] ==================== EMAIL SENDING ERROR ====================');
+                // Don't fail the webhook if email fails - payment was successful
+            }
 
         } catch (error) {
             console.error("Error processing webhook:", error);

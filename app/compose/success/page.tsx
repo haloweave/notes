@@ -15,6 +15,9 @@ function SuccessContent() {
     const router = useRouter();
     const sessionId = searchParams.get('session_id');
     const [loading, setLoading] = useState(true);
+    const [resending, setResending] = useState(false);
+    const [resendStatus, setResendStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [resendMessage, setResendMessage] = useState('');
 
     useEffect(() => {
         if (sessionId) {
@@ -49,6 +52,37 @@ function SuccessContent() {
         }
     }, [sessionId]);
 
+    const handleResendEmail = async () => {
+        if (!sessionId) return;
+
+        setResending(true);
+        setResendStatus('idle');
+        setResendMessage('');
+
+        try {
+            const response = await fetch('/api/resend-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setResendStatus('success');
+                setResendMessage('Email sent successfully! Check your inbox.');
+            } else {
+                setResendStatus('error');
+                setResendMessage(data.message || 'Failed to send email. Please try again.');
+            }
+        } catch (error) {
+            setResendStatus('error');
+            setResendMessage('Failed to send email. Please try again.');
+        } finally {
+            setResending(false);
+        }
+    };
+
     return (
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
             <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#F5E6B8] p-8 md:p-12 shadow-[0_8px_30px_rgba(245,230,184,0.2)]">
@@ -78,13 +112,45 @@ function SuccessContent() {
                                 <p className="text-white/90">
                                     You will receive an email shortly with the link to your song once it's ready.
                                 </p>
+
+                                {/* Resend Email Status */}
+                                {/* COMMENTED OUT FOR PRODUCTION
+                                {resendStatus === 'success' && (
+                                    <p className="mt-3 text-green-400 text-sm">
+                                        ✅ {resendMessage}
+                                    </p>
+                                )}
+                                {resendStatus === 'error' && (
+                                    <p className="mt-3 text-red-400 text-sm">
+                                        ❌ {resendMessage}
+                                    </p>
+                                )}
+                                */}
                             </div>
                         </div>
 
-                        <div className="pt-4">
+                        <div className="pt-4 space-y-3">
                             <PremiumButton onClick={() => router.push(`/share?session_id=${sessionId}`)} className="w-full">
                                 View & Share Your Song
                             </PremiumButton>
+
+                            {/* Resend Email Button - COMMENTED OUT FOR PRODUCTION
+                            <Button
+                                variant="outline"
+                                className="w-full border-[#F5E6B8]/30 text-[#F5E6B8] hover:bg-[#F5E6B8]/10 hover:border-[#F5E6B8]"
+                                onClick={handleResendEmail}
+                                disabled={resending}
+                            >
+                                {resending ? (
+                                    <>
+                                        <LoadingSpinner size="sm" className="mr-2" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    '📧 Resend Email'
+                                )}
+                            </Button>
+                            */}
 
                             <Button
                                 variant="ghost"

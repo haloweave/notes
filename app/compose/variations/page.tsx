@@ -25,6 +25,7 @@ interface SongData {
     theme: string;
     aboutThem: string;
     moreInfo?: string;
+    senderMessage?: string;
 }
 
 function VariationsContent() {
@@ -43,7 +44,7 @@ function VariationsContent() {
     const [taskIds, setTaskIds] = useState<Record<number, string[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
     const [audioUrls, setAudioUrls] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: audioUrl } }
     const [lyrics, setLyrics] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: lyrics } }
-    const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'polling' | 'ready' | 'error'>('idle');
+    const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'polling' | 'waiting' | 'ready' | 'error'>('idle');
     const [generationProgress, setGenerationProgress] = useState<string>('');
     const [audioRefs, setAudioRefs] = useState<Record<number, HTMLAudioElement | null>>({});
     const [audioProgress, setAudioProgress] = useState<Record<number, { currentTime: number; duration: number }>>({});
@@ -106,9 +107,9 @@ function VariationsContent() {
                             const songIndex = parseInt(songIndexStr);
                             const taskIdList = parsed.variationTaskIds[songIndex];
                             if (taskIdList && taskIdList.length > 0) {
-                                setGenerationStatus('polling');
+                                setGenerationStatus('waiting');
                                 setGenerationProgress('Checking status of existing variations...');
-                                pollForAudio(songIndex, taskIdList);
+                                checkDatabaseForUpdates(songIndex);
                             }
                         });
                     }
@@ -143,8 +144,70 @@ function VariationsContent() {
 
             // Check if we already have task IDs for the current active tab (from localStorage or state)
             if (taskIds[activeTab] && taskIds[activeTab].length > 0) {
-                console.log('[VARIATIONS] Task IDs already exist for song', activeTab, '- skipping generation');
+                console.log('[VARIATIONS] Task IDs already exist in state for song', activeTab, '- skipping generation');
                 return;
+            }
+
+            // IMPORTANT: Check database for existing task IDs before generating
+            // This prevents wasteful regeneration on page refresh
+            if (formIdParam) {
+                console.log('[VARIATIONS] Checking database for existing task IDs...');
+                try {
+                    const response = await fetch(`/api/compose/forms?formId=${formIdParam}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.form) {
+                            const existingTaskIds = data.form.variationTaskIds as any || {};
+                            const existingAudioUrls = data.form.variationAudioUrls as any || {};
+                            const existingLyrics = data.form.variationLyrics as any || {};
+
+                            // Check if we have task IDs for this song in the database
+                            if (existingTaskIds[activeTab] && existingTaskIds[activeTab].length > 0) {
+                                console.log('[VARIATIONS] ✅ Found existing task IDs in database for song', activeTab);
+                                console.log('[VARIATIONS] Task IDs:', existingTaskIds[activeTab]);
+
+                                // Load them into state
+                                setTaskIds(existingTaskIds);
+
+                                // Also load audio URLs and lyrics if available
+                                if (existingAudioUrls[activeTab]) {
+                                    console.log('[VARIATIONS] ✅ Found existing audio URLs in database');
+                                    setAudioUrls(existingAudioUrls);
+                                    setGenerationStatus('ready');
+                                    setGenerationProgress('All variations ready! Click play to listen.');
+                                } else {
+                                    console.log('[VARIATIONS] Task IDs found but no audio yet - will check database periodically');
+                                    setGenerationStatus('waiting');
+                                    setGenerationProgress('Generating your song... This may take 2-3 minutes.');
+                                    checkDatabaseForUpdates(activeTab);
+                                }
+
+                                if (existingLyrics[activeTab]) {
+                                    setLyrics(existingLyrics);
+                                }
+
+                                // Save to localStorage
+                                if (formIdParam) {
+                                    const savedData = localStorage.getItem(`songForm_${formIdParam}`);
+                                    if (savedData) {
+                                        const parsed = JSON.parse(savedData);
+                                        parsed.variationTaskIds = existingTaskIds;
+                                        parsed.variationAudioUrls = existingAudioUrls;
+                                        parsed.variationLyrics = existingLyrics;
+                                        localStorage.setItem(`songForm_${formIdParam}`, JSON.stringify(parsed));
+                                    }
+                                }
+
+                                return; // Don't generate - we already have task IDs!
+                            } else {
+                                console.log('[VARIATIONS] No existing task IDs found in database - will generate');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('[VARIATIONS] Error checking database:', error);
+                    // Continue to generation if database check fails
+                }
             }
 
             const allPrompts = JSON.parse(sessionStorage.getItem('allPrompts') || '[]');
@@ -157,11 +220,14 @@ function VariationsContent() {
 
             console.log('[VARIATIONS] Starting music generation for song', activeTab);
             setGenerationStatus('generating');
-            setGenerationProgress('Generating 3 unique songs...');
+            setGenerationProgress('Generating your song...');
 
             try {
-                // Create 3 completely different songs with unique creative directions
-                // Keep modifiers SHORT to stay under 300 char limit
+                // TEMPORARY: Generate only ONE song and use it for all 3 variations
+                // This saves API calls and credits during testing
+                // TODO: Re-enable 3 different variations later
+
+                /* COMMENTED OUT: Original 3 variations code
                 const songVariations = [
                     {
                         id: 1,
@@ -179,9 +245,71 @@ function VariationsContent() {
                         modifier: 'with heartfelt emotional style, acoustic'
                     }
                 ];
+                */
 
                 const newTaskIds: string[] = [];
 
+                // Generate ONLY ONE song
+                setGenerationProgress('Creating your song...');
+
+                console.log(`[VARIATIONS] Generating single song with prompt:`, currentPrompt);
+
+                let retries = 0;
+                let success = false;
+                let taskId = null;
+
+                while (!success && retries < 2) {
+                    try {
+                        const response = await fetch('/api/generate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                prompt: currentPrompt,
+                                make_instrumental: false,
+                                wait_audio: false,
+                                preview_mode: true,  // Bypass credit check for preview
+                                custom_message: songs[activeTab]?.senderMessage || null  // Add sender message
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.status === 429) {
+                            console.warn(`[VARIATIONS] Rate limited, waiting 5s before retry...`);
+                            retries++;
+                            if (retries < 2) {
+                                await new Promise(resolve => setTimeout(resolve, 5000));
+                                continue;
+                            }
+                        }
+
+                        console.log(`[VARIATIONS] Song response:`, data);
+
+                        if (data.task_id) {
+                            taskId = data.task_id;
+                            success = true;
+                        } else {
+                            console.error(`[VARIATIONS] No task_id received`);
+                            break;
+                        }
+                    } catch (error) {
+                        console.error(`[VARIATIONS] Error generating song:`, error);
+                        retries++;
+                        if (retries < 2) {
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        }
+                    }
+                }
+
+                if (taskId) {
+                    // Use the SAME task ID for all 3 variations
+                    newTaskIds.push(taskId);
+                    newTaskIds.push(taskId);
+                    newTaskIds.push(taskId);
+                    console.log('[VARIATIONS] Using same task ID for all 3 variations:', taskId);
+                }
+
+                /* COMMENTED OUT: Original loop for 3 different songs
                 for (let i = 0; i < songVariations.length; i++) {
                     setGenerationProgress(`Creating song ${i + 1} of 3...`);
 
@@ -244,6 +372,7 @@ function VariationsContent() {
                         await new Promise(resolve => setTimeout(resolve, 5000));
                     }
                 }
+                */
 
                 // Store task IDs for this song
                 setTaskIds(prev => ({
@@ -297,11 +426,13 @@ function VariationsContent() {
                 }
 
                 console.log('[VARIATIONS] All variations submitted. Task IDs:', newTaskIds);
-                setGenerationStatus('polling');
-                setGenerationProgress('Waiting for audio to be ready...');
+                setGenerationStatus('waiting');
+                setGenerationProgress('Generating your song... This may take 2-3 minutes.');
 
-                // Start polling for completion
-                pollForAudio(activeTab, newTaskIds);
+                // DISABLED POLLING - Using webhooks instead!
+                // The MusicGPT webhook will update the compose_forms table when the song is ready
+                // We'll check the database periodically instead of polling the API
+                checkDatabaseForUpdates(activeTab);
 
             } catch (error) {
                 console.error('[VARIATIONS] Error generating variations:', error);
@@ -342,7 +473,85 @@ function VariationsContent() {
         },
     ];
 
-    // Poll for audio completion
+    // Check database for webhook updates (instead of polling API)
+    const checkDatabaseForUpdates = async (songIndex: number) => {
+        console.log('[VARIATIONS] Starting database check for song', songIndex);
+
+        const checkDatabase = async () => {
+            if (!formIdParam) return;
+
+            try {
+                const response = await fetch(`/api/compose/forms?formId=${formIdParam}`);
+                if (!response.ok) {
+                    console.error('[VARIATIONS] Failed to fetch form data');
+                    return;
+                }
+
+                const data = await response.json();
+                if (!data.success || !data.form) {
+                    console.error('[VARIATIONS] No form data received');
+                    return;
+                }
+
+                const form = data.form;
+                const variationAudioUrls = form.variationAudioUrls || {};
+                const variationLyrics = form.variationLyrics || {};
+
+                // Check if we have audio URLs for this song
+                if (variationAudioUrls[songIndex]) {
+                    const urls = variationAudioUrls[songIndex];
+                    const completedCount = Object.keys(urls).length;
+
+                    console.log(`[VARIATIONS] Found ${completedCount} completed variations in database`);
+
+                    // Update state
+                    setAudioUrls(prev => ({
+                        ...prev,
+                        [songIndex]: urls
+                    }));
+
+                    if (variationLyrics[songIndex]) {
+                        setLyrics(prev => ({
+                            ...prev,
+                            [songIndex]: variationLyrics[songIndex]
+                        }));
+                    }
+
+                    // Also update localStorage
+                    const savedData = localStorage.getItem(`songForm_${formIdParam}`);
+                    if (savedData) {
+                        const parsed = JSON.parse(savedData);
+                        parsed.variationAudioUrls = variationAudioUrls;
+                        parsed.variationLyrics = variationLyrics;
+                        localStorage.setItem(`songForm_${formIdParam}`, JSON.stringify(parsed));
+                    }
+
+                    // Check if all variations are ready (expecting 3)
+                    if (completedCount >= 3) {
+                        console.log('[VARIATIONS] All variations ready!');
+                        setGenerationStatus('ready');
+                        setGenerationProgress('All variations ready! Click play to listen.');
+                        return; // Stop checking
+                    } else {
+                        setGenerationProgress(`${completedCount} of 3 variations ready...`);
+                    }
+                }
+
+                // Continue checking every 15 seconds
+                setTimeout(checkDatabase, 15000);
+
+            } catch (error) {
+                console.error('[VARIATIONS] Error checking database:', error);
+                setTimeout(checkDatabase, 15000); // Retry on error
+            }
+        };
+
+        // Start first check after 10 seconds (give webhook time to process)
+        setTimeout(checkDatabase, 10000);
+    };
+
+    // COMMENTED OUT: Old polling function (replaced with webhook-based approach)
+    /* 
     const pollForAudio = async (songIndex: number, taskIdList: string[]) => {
         console.log('[VARIATIONS] Starting polling for song', songIndex, 'with task IDs:', taskIdList);
 
@@ -353,38 +562,42 @@ function VariationsContent() {
             const newAudioUrls = { ...currentAudioUrls };
             const newLyrics = { ...currentLyrics };
 
-            for (let i = 0; i < taskIdList.length; i++) {
-                const taskId = taskIdList[i];
-                const variationId = i + 1; // Direct 1-to-1 mapping: task 0 → variation 1, task 1 → variation 2, etc.
+            // OPTIMIZED: Since all 3 variations use the same task ID now,
+            // we only need to poll once and apply to all variations
+            const uniqueTaskIds = [...new Set(taskIdList)]; // Remove duplicates
 
-                // Skip if we already have this audio URL
-                if (newAudioUrls[variationId]) {
-                    continue;
-                }
-
+            for (const taskId of uniqueTaskIds) {
                 try {
                     const response = await fetch(`/api/status/${taskId}`);
                     const data = await response.json();
 
-                    console.log(`[VARIATIONS] Status for song ${variationId}:`, data.status);
+                    console.log(`[VARIATIONS] Status for task ${taskId}:`, data.status);
 
                     if (data.status === 'COMPLETED' || data.status === 'PARTIAL_COMPLETED') {
                         // Each task generates one complete song - use conversion_path_1
                         if (data.conversion?.conversion_path_1) {
-                            console.log(`[VARIATIONS] Song ${variationId} completed!`, data.conversion.conversion_path_1);
-                            newAudioUrls[variationId] = data.conversion.conversion_path_1;
+                            console.log(`[VARIATIONS] Song completed!`, data.conversion.conversion_path_1);
 
-                            // Also store lyrics if available
-                            if (data.conversion?.lyrics_1) {
-                                newLyrics[variationId] = data.conversion.lyrics_1;
-                                console.log(`[VARIATIONS] Lyrics for song ${variationId} stored`);
-                            }
+                            // Apply the same audio URL to ALL variations that use this task ID
+                            taskIdList.forEach((tid, index) => {
+                                if (tid === taskId) {
+                                    const variationId = index + 1;
+                                    newAudioUrls[variationId] = data.conversion.conversion_path_1;
+
+                                    // Also store lyrics if available
+                                    if (data.conversion?.lyrics_1) {
+                                        newLyrics[variationId] = data.conversion.lyrics_1;
+                                    }
+                                }
+                            });
+
+                            console.log(`[VARIATIONS] Applied audio to all variations using task ${taskId}`);
                         }
                     } else if (data.status === 'FAILED') {
-                        console.error(`[VARIATIONS] Song ${variationId} failed`);
+                        console.error(`[VARIATIONS] Task ${taskId} failed`);
                     }
                 } catch (error) {
-                    console.error(`[VARIATIONS] Error checking status for song ${variationId}:`, error);
+                    console.error(`[VARIATIONS] Error checking status for task ${taskId}:`, error);
                 }
             }
 
@@ -489,6 +702,8 @@ function VariationsContent() {
         // Start first check after 5 seconds (give API time to process)
         setTimeout(checkStatus, 5000);
     };
+    */
+
 
     const handlePlay = (id: number) => {
         const currentSongAudioUrls = audioUrls[activeTab] || {};
@@ -621,6 +836,28 @@ function VariationsContent() {
                     };
                     localStorage.setItem(`songForm_${formId}`, JSON.stringify(updatedData));
                 }
+
+                // Save selections to database
+                try {
+                    const response = await fetch('/api/compose/forms', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            formId: formId,
+                            selectedVariations: selections,
+                            status: 'payment_initiated'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        console.error('[VARIATIONS] Failed to save selections to database');
+                    } else {
+                        console.log('[VARIATIONS] ✅ Saved selections to database');
+                    }
+                } catch (dbError) {
+                    console.error('[VARIATIONS] Error saving selections:', dbError);
+                    // Continue anyway - localStorage has the data
+                }
             }
 
             const selectedPackage = sessionStorage.getItem('selectedPackageId') || (songs.length > 1 ? 'holiday-hamper' : 'solo-serenade');
@@ -686,35 +923,41 @@ function VariationsContent() {
     return (
         <div className="w-full">
             {/* Generation Progress Banner */}
-            {generationStatus !== 'idle' && generationStatus !== 'ready' && (
-                <div className="max-w-6xl mx-auto px-4 mb-6">
-                    <div className="bg-[#1e293b]/80 border-2 border-[#87CEEB]/40 rounded-xl p-4 text-center backdrop-blur-sm">
-                        <div className="flex items-center justify-center gap-3">
-                            <LoadingSpinner size="sm" variant="dots" color="primary" />
-                            <p className="text-[#87CEEB] font-medium">{generationProgress}</p>
+            {
+                generationStatus !== 'idle' && generationStatus !== 'ready' && (
+                    <div className="max-w-6xl mx-auto px-4 mb-6">
+                        <div className="bg-[#1e293b]/80 border-2 border-[#87CEEB]/40 rounded-xl p-4 text-center backdrop-blur-sm">
+                            <div className="flex items-center justify-center gap-3">
+                                <LoadingSpinner size="sm" variant="dots" color="primary" />
+                                <p className="text-[#87CEEB] font-medium">{generationProgress}</p>
+                            </div>
+                            <p className="text-white/60 text-sm mt-2">
+                                This may take 2-3 minutes. You can listen to songs as they become ready.
+                            </p>
                         </div>
-                        <p className="text-white/60 text-sm mt-2">
-                            This may take 2-3 minutes. You can listen to songs as they become ready.
-                        </p>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {generationStatus === 'ready' && (
-                <div className="max-w-6xl mx-auto px-4 mb-6">
-                    <div className="bg-[#1e293b]/80 border-2 border-[#F5E6B8]/60 rounded-xl p-4 text-center backdrop-blur-sm">
-                        <p className="text-[#F5E6B8] font-medium">✨ {generationProgress}</p>
+            {
+                generationStatus === 'ready' && (
+                    <div className="max-w-6xl mx-auto px-4 mb-6">
+                        <div className="bg-[#1e293b]/80 border-2 border-[#F5E6B8]/60 rounded-xl p-4 text-center backdrop-blur-sm">
+                            <p className="text-[#F5E6B8] font-medium">✨ {generationProgress}</p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            {generationStatus === 'error' && (
-                <div className="max-w-6xl mx-auto px-4 mb-6">
-                    <div className="bg-red-900/20 border-2 border-red-500/40 rounded-xl p-4 text-center backdrop-blur-sm">
-                        <p className="text-red-300 font-medium">❌ {generationProgress}</p>
+            {
+                generationStatus === 'error' && (
+                    <div className="max-w-6xl mx-auto px-4 mb-6">
+                        <div className="bg-red-900/20 border-2 border-red-500/40 rounded-xl p-4 text-center backdrop-blur-sm">
+                            <p className="text-red-300 font-medium">❌ {generationProgress}</p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Title */}
             <div className="text-center mb-8">
@@ -730,30 +973,32 @@ function VariationsContent() {
             </div>
 
             {/* Tabs for Bundle */}
-            {isBundle && (
-                <div className="max-w-6xl mx-auto px-4 mb-6">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {songs.map((song, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setActiveTab(index)}
-                                className={`
+            {
+                isBundle && (
+                    <div className="max-w-6xl mx-auto px-4 mb-6">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            {songs.map((song, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setActiveTab(index)}
+                                    className={`
                                     relative flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 min-w-[120px] justify-center border-2
                                     ${activeTab === index
-                                        ? 'bg-[#1e293b]/90 text-[#F5E6B8] border-[#F5E6B8] shadow-lg'
-                                        : selections[index]
-                                            ? 'bg-[#1e293b]/60 text-[#87CEEB] border-[#87CEEB]/50'
-                                            : 'bg-white/5 text-white/60 border-transparent hover:bg-white/10'
-                                    }
+                                            ? 'bg-[#1e293b]/90 text-[#F5E6B8] border-[#F5E6B8] shadow-lg'
+                                            : selections[index]
+                                                ? 'bg-[#1e293b]/60 text-[#87CEEB] border-[#87CEEB]/50'
+                                                : 'bg-white/5 text-white/60 border-transparent hover:bg-white/10'
+                                        }
                                 `}
-                            >
-                                <span className={lora.className}>Song {index + 1}</span>
-                                {selections[index] && <CheckmarkCircle01Icon className="w-4 h-4 text-[#87CEEB]" />}
-                            </button>
-                        ))}
+                                >
+                                    <span className={lora.className}>Song {index + 1}</span>
+                                    {selections[index] && <CheckmarkCircle01Icon className="w-4 h-4 text-[#87CEEB]" />}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Variations Grid */}
             <div className="max-w-6xl mx-auto px-4 pb-8">
@@ -900,7 +1145,7 @@ function VariationsContent() {
                 .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(135, 206, 235, 0.3); border-radius: 10px; }
             `}</style>
-        </div>
+        </div >
     );
 }
 
