@@ -107,7 +107,7 @@
 ### Environment Variables
 ```env
 # Already added:
-RESEND_API_KEY=re_7rJLCp1J_NsZWeuWKZg9bVAeEA3XNuwKJ
+RESEND_API_KEY=re_xxxxxxxxxxxxx  # ⚠️ NEVER commit real API keys!
 
 # Make sure these exist:
 NEXT_PUBLIC_APP_URL=https://huggnote.com
