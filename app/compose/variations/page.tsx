@@ -223,11 +223,7 @@ function VariationsContent() {
             setGenerationProgress('Generating your song...');
 
             try {
-                // TEMPORARY: Generate only ONE song and use it for all 3 variations
-                // This saves API calls and credits during testing
-                // TODO: Re-enable 3 different variations later
-
-                /* COMMENTED OUT: Original 3 variations code
+                // Generate 3 DIFFERENT variations with unique styles
                 const songVariations = [
                     {
                         id: 1,
@@ -245,77 +241,16 @@ function VariationsContent() {
                         modifier: 'with heartfelt emotional style, acoustic'
                     }
                 ];
-                */
 
                 const newTaskIds: string[] = [];
 
-                // Generate ONLY ONE song
-                setGenerationProgress('Creating your song...');
-
-                console.log(`[VARIATIONS] Generating single song with prompt:`, currentPrompt);
-
-                let retries = 0;
-                let success = false;
-                let taskId = null;
-
-                while (!success && retries < 2) {
-                    try {
-                        const response = await fetch('/api/generate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                prompt: currentPrompt,
-                                make_instrumental: false,
-                                wait_audio: false,
-                                preview_mode: true,  // Bypass credit check for preview
-                                custom_message: songs[activeTab]?.senderMessage || null  // Add sender message
-                            })
-                        });
-
-                        const data = await response.json();
-
-                        if (response.status === 429) {
-                            console.warn(`[VARIATIONS] Rate limited, waiting 5s before retry...`);
-                            retries++;
-                            if (retries < 2) {
-                                await new Promise(resolve => setTimeout(resolve, 5000));
-                                continue;
-                            }
-                        }
-
-                        console.log(`[VARIATIONS] Song response:`, data);
-
-                        if (data.task_id) {
-                            taskId = data.task_id;
-                            success = true;
-                        } else {
-                            console.error(`[VARIATIONS] No task_id received`);
-                            break;
-                        }
-                    } catch (error) {
-                        console.error(`[VARIATIONS] Error generating song:`, error);
-                        retries++;
-                        if (retries < 2) {
-                            await new Promise(resolve => setTimeout(resolve, 5000));
-                        }
-                    }
-                }
-
-                if (taskId) {
-                    // Use the SAME task ID for all 3 variations
-                    newTaskIds.push(taskId);
-                    newTaskIds.push(taskId);
-                    newTaskIds.push(taskId);
-                    console.log('[VARIATIONS] Using same task ID for all 3 variations:', taskId);
-                }
-
-                /* COMMENTED OUT: Original loop for 3 different songs
+                // Generate 3 different songs with unique prompts
                 for (let i = 0; i < songVariations.length; i++) {
-                    setGenerationProgress(`Creating song ${i + 1} of 3...`);
+                    setGenerationProgress(`Creating variation ${i + 1} of 3...`);
 
                     // Create a unique prompt for each song variation
                     const uniquePrompt = `${currentPrompt} ${songVariations[i].modifier}`;
-                    console.log(`[VARIATIONS] Generating song ${i + 1} (${songVariations[i].name}):`, uniquePrompt);
+                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${songVariations[i].name}):`, uniquePrompt);
 
                     let retries = 0;
                     let success = false;
@@ -330,14 +265,15 @@ function VariationsContent() {
                                     prompt: uniquePrompt,
                                     make_instrumental: false,
                                     wait_audio: false,
-                                    preview_mode: true  // Bypass credit check for preview
+                                    preview_mode: true,  // Bypass credit check for preview
+                                    custom_message: songs[activeTab]?.senderMessage || null  // Add sender message
                                 })
                             });
 
                             const data = await response.json();
 
                             if (response.status === 429) {
-                                console.warn(`[VARIATIONS] Rate limited on song ${i + 1}, waiting 5s before retry...`);
+                                console.warn(`[VARIATIONS] Rate limited on variation ${i + 1}, waiting 5s before retry...`);
                                 retries++;
                                 if (retries < 2) {
                                     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -345,17 +281,17 @@ function VariationsContent() {
                                 }
                             }
 
-                            console.log(`[VARIATIONS] Song ${i + 1} response:`, data);
+                            console.log(`[VARIATIONS] Variation ${i + 1} response:`, data);
 
                             if (data.task_id) {
                                 taskId = data.task_id;
                                 success = true;
                             } else {
-                                console.error(`[VARIATIONS] No task_id for song ${i + 1}`);
+                                console.error(`[VARIATIONS] No task_id for variation ${i + 1}`);
                                 break; // Break if no task_id and not a 429
                             }
                         } catch (error) {
-                            console.error(`[VARIATIONS] Error on song ${i + 1}:`, error);
+                            console.error(`[VARIATIONS] Error on variation ${i + 1}:`, error);
                             retries++;
                             if (retries < 2) {
                                 await new Promise(resolve => setTimeout(resolve, 5000));
@@ -367,12 +303,11 @@ function VariationsContent() {
                         newTaskIds.push(taskId);
                     }
 
-                    // Delay between requests to avoid rate limiting (5 seconds for different songs)
+                    // Delay between requests to avoid rate limiting (5 seconds between variations)
                     if (i < songVariations.length - 1) {
                         await new Promise(resolve => setTimeout(resolve, 5000));
                     }
                 }
-                */
 
                 // Store task IDs for this song
                 setTaskIds(prev => ({
@@ -427,7 +362,7 @@ function VariationsContent() {
 
                 console.log('[VARIATIONS] All variations submitted. Task IDs:', newTaskIds);
                 setGenerationStatus('waiting');
-                setGenerationProgress('Generating your song... This may take 2-3 minutes.');
+                setGenerationProgress('Generating 3 variations... This may take 2-3 minutes per variation.');
 
                 // DISABLED POLLING - Using webhooks instead!
                 // The MusicGPT webhook will update the compose_forms table when the song is ready

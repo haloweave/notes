@@ -33,14 +33,15 @@ function ShareContent() {
                     return;
                 }
 
-                const forms = await response.json();
-                const form = forms[0]; // Get first matching form
+                const data = await response.json();
 
-                if (!form) {
+                if (!data.success || !data.form) {
                     console.error('[SHARE] No form found for session:', sessionId);
                     setLoading(false);
                     return;
                 }
+
+                const form = data.form; // API returns {success: true, form: {...}}
 
                 console.log('[SHARE] Form data:', form);
 
@@ -56,17 +57,28 @@ function ShareContent() {
                 const selectedVariations = form.selectedVariations || {};
                 const variationTaskIds = form.variationTaskIds || {};
 
+                console.log('[SHARE] Selected variations:', selectedVariations);
+                console.log('[SHARE] Variation task IDs:', variationTaskIds);
+
                 // For solo-serenade, get the first (and only) song's selected variation
                 const songIndex = 0;
                 const selectedVariationId = selectedVariations[songIndex];
                 const taskIdsForSong = variationTaskIds[songIndex];
 
+                console.log('[SHARE] Song index:', songIndex);
+                console.log('[SHARE] Selected variation ID:', selectedVariationId);
+                console.log('[SHARE] Task IDs for song:', taskIdsForSong);
+
                 if (selectedVariationId && taskIdsForSong && taskIdsForSong[selectedVariationId - 1]) {
                     const taskId = taskIdsForSong[selectedVariationId - 1];
                     setSelectedTaskId(taskId);
-                    console.log('[SHARE] Selected task ID:', taskId);
+                    console.log('[SHARE] ✅ Selected task ID:', taskId);
                 } else {
-                    console.warn('[SHARE] No task ID found for selected variation');
+                    console.warn('[SHARE] ⚠️ No task ID found for selected variation');
+                    console.warn('[SHARE] This might mean:');
+                    console.warn('[SHARE]   - No variation was selected yet');
+                    console.warn('[SHARE]   - Variations are still generating');
+                    console.warn('[SHARE]   - Data structure mismatch');
                 }
 
             } catch (error) {
@@ -85,7 +97,7 @@ function ShareContent() {
             router.push(`/play/${selectedTaskId}`);
         } else {
             console.error('[SHARE] No task ID available');
-            alert('Song not ready yet. Please try again in a moment.');
+            alert('🎵 Your song is still being prepared! Please check back in a few minutes. We\'ll send you an email when it\'s ready.');
         }
     };
 
