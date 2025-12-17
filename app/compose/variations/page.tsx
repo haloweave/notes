@@ -249,8 +249,27 @@ function VariationsContent() {
                     setGenerationProgress(`Creating variation ${i + 1} of 3...`);
 
                     // Create a unique prompt for each song variation
-                    const uniquePrompt = `${currentPrompt} ${songVariations[i].modifier}`;
-                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${songVariations[i].name}):`, uniquePrompt);
+                    // IMPORTANT: MusicGPT has a 300-character limit!
+                    const modifier = songVariations[i].modifier;
+                    let basePrompt = currentPrompt;
+
+                    // Calculate combined length and truncate base if needed
+                    const maxBaseLength = 300 - modifier.length - 1; // -1 for the space
+                    if (basePrompt.length > maxBaseLength) {
+                        basePrompt = basePrompt.substring(0, maxBaseLength - 3) + '...';
+                        console.log(`[VARIATIONS] Truncated base prompt to ${basePrompt.length} chars to fit modifier`);
+                    }
+
+                    const uniquePrompt = `${basePrompt} ${modifier}`;
+
+                    // Final safety check
+                    const finalPrompt = uniquePrompt.length > 300
+                        ? uniquePrompt.substring(0, 297) + '...'
+                        : uniquePrompt;
+
+                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${songVariations[i].name})`);
+                    console.log(`[VARIATIONS] Prompt length: ${finalPrompt.length}/300 chars`);
+                    console.log(`[VARIATIONS] Prompt: ${finalPrompt}`);
 
                     let retries = 0;
                     let success = false;
@@ -262,7 +281,7 @@ function VariationsContent() {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                    prompt: uniquePrompt,
+                                    prompt: finalPrompt,
                                     make_instrumental: false,
                                     wait_audio: false,
                                     preview_mode: true,  // Bypass credit check for preview
