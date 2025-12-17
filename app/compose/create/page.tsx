@@ -282,7 +282,7 @@ export default function CreatePage() {
                 console.log('[FRONTEND] Generated/Cached prompts:', generatedPrompts);
                 const formDataWithMetadata = {
                     formId,
-                    timestamp: new Date().toISOString(),
+                    timestamp: Date.now(), // Numeric timestamp for easier sorting
                     formData: values,
                     generatedPrompt: generatedPrompts[0],
                     allPrompts: generatedPrompts,
@@ -301,6 +301,34 @@ export default function CreatePage() {
                 if (!existingFormIds.includes(formId)) {
                     existingFormIds.push(formId);
                     localStorage.setItem('songFormIds', JSON.stringify(existingFormIds));
+                }
+
+                // Save to database (BLOCKING - must succeed before proceeding)
+                try {
+                    setStatus('Saving to database...');
+                    const dbResponse = await fetch('/api/compose/forms', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            formId,
+                            packageType: isBundle ? 'holiday-hamper' : 'solo-serenade',
+                            songCount: values.songs.length,
+                            formData: values,
+                            generatedPrompts: generatedPrompts
+                        })
+                    });
+
+                    if (!dbResponse.ok) {
+                        const errorData = await dbResponse.json();
+                        throw new Error(errorData.message || 'Failed to save to database');
+                    }
+
+                    console.log('[FRONTEND] ✅ Saved form to database');
+                } catch (dbError: any) {
+                    console.error('[FRONTEND] ❌ Database save failed:', dbError);
+                    setError(`Failed to save to database: ${dbError.message}. Please try again.`);
+                    setLoading(false);
+                    return; // STOP - don't proceed to variations page
                 }
 
                 // Store in sessionStorage

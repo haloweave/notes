@@ -1,0 +1,1 @@
+ALTER TABLE "compose_forms" ADD COLUMN "variation_lyrics" jsonb;

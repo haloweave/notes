@@ -24,29 +24,37 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check authentication and credits BEFORE calling expensive API
+        // Check if this is a preview generation (for compose flow before payment)
+        const isPreviewMode = body.preview_mode === true;
+
+        // Check authentication and credits BEFORE calling expensive API (skip for preview mode)
         const session = await auth.api.getSession({
             headers: await headers()
         });
 
         let userRecord: typeof user.$inferSelect | undefined;
 
-        if (session?.user) {
-            userRecord = await db.query.user.findFirst({
-                where: eq(user.id, session.user.id),
-            });
+        if (!isPreviewMode) {
+            // Normal flow: require authentication and credits
+            if (session?.user) {
+                userRecord = await db.query.user.findFirst({
+                    where: eq(user.id, session.user.id),
+                });
 
-            if (!userRecord || userRecord.credits < 1) {
-                console.log('[GENERATE] Insufficient credits for user:', session.user.id);
-                return NextResponse.json(
-                    { success: false, message: 'Insufficient credits. Please purchase more credits to generate music.' },
-                    { status: 402 }
-                );
+                if (!userRecord || userRecord.credits < 1) {
+                    console.log('[GENERATE] Insufficient credits for user:', session.user.id);
+                    return NextResponse.json(
+                        { success: false, message: 'Insufficient credits. Please purchase more credits to generate music.' },
+                        { status: 402 }
+                    );
+                }
+
+                console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email}) with ${userRecord.credits} credits`);
+            } else {
+                console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
             }
-
-            console.log(`[GENERATE] 👤 Associating generation with user: ${session.user.id} (${session.user.email}) with ${userRecord.credits} credits`);
         } else {
-            console.log('[GENERATE] 👤 No user session found. Generation will be anonymous.');
+            console.log('[GENERATE] 🎵 Preview mode enabled - bypassing credit check');
         }
 
         // Prioritize explicit APP_URL for dev tunnels/localhost
@@ -106,11 +114,14 @@ export async function POST(request: NextRequest) {
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
-            console.log(`[GENERATE] ✅ Successfully saved generation record. Task ID: ${data.task_id}, User ID: ${session?.user?.id || 'null'}`);
+            console.log(`[GENERATE] ✅ Successfully saved generation record. Task ID: ${data.task_id}, User ID: ${session?.user?.id || 'null'}${isPreviewMode ? ' (PREVIEW MODE)' : ''}`);
 
-            if (session?.user && userRecord) {
+            // Only deduct credits if NOT in preview mode
+            if (!isPreviewMode && session?.user && userRecord) {
                 await db.update(user).set({ credits: userRecord.credits - 1 }).where(eq(user.id, session.user.id));
                 console.log(`[GENERATE] 💳 Deducted 1 credit from user ${session.user.id}. Remaining: ${userRecord.credits - 1}`);
+            } else if (isPreviewMode) {
+                console.log(`[GENERATE] 🎵 Preview mode - skipping credit deduction`);
             }
         } catch (dbError) {
             console.error('[GENERATE] ⚠️ Failed to save to database:', dbError);

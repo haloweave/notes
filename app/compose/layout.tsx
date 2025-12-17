@@ -4,6 +4,7 @@ import { Lora } from 'next/font/google';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft01Icon } from 'hugeicons-react';
+import { HistoryMenu } from '@/components/compose/history-menu';
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -72,6 +73,11 @@ export default function ComposeLayout({
                                 className="h-16 md:h-24 w-auto drop-shadow-lg"
                                 priority
                             />
+                        </div>
+
+                        {/* History Menu - Top Right */}
+                        <div className="z-20">
+                            <HistoryMenu />
                         </div>
                     </div>
 

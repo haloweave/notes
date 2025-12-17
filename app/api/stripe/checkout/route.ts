@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     try {
         console.log("Starting checkout process...");
         const body = await req.json();
-        const { packageId, selectedVariation, selections, formData, generatedPrompt, formId } = body;
+        const { packageId, selectedVariation, selections, formData, generatedPrompt, formId, selectedTaskIds } = body;
 
         const session = await auth.api.getSession({
             headers: await headers()
@@ -77,6 +77,12 @@ export async function POST(req: NextRequest) {
             metadata.selections = JSON.stringify(selections);
         } else if (selectedVariation) {
             metadata.selectedVariation = selectedVariation.toString();
+        }
+
+        // Add selected task IDs for enabling sharing after payment
+        if (selectedTaskIds) {
+            metadata.selectedTaskIds = selectedTaskIds;
+            console.log('[CHECKOUT] Storing selectedTaskIds in metadata:', selectedTaskIds);
         }
 
         if (generatedPrompt) {
