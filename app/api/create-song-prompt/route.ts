@@ -40,17 +40,30 @@ Output only the prompt string (max 250 chars). Make it personal and specific to 
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                model: 'llama-3.1-70b-versatile',
+                model: 'llama-3.3-70b-versatile',
                 messages: [{ role: 'user', content: systemPrompt }],
                 temperature: 0.7,
                 max_tokens: 150,
             }),
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[CREATE-SONG-PROMPT] Groq API error:', response.status, errorText);
+            throw new Error(`Groq API error: ${response.status} - ${errorText}`);
+        }
+
         const data = await response.json();
+        console.log('[CREATE-SONG-PROMPT] Full Groq response:', JSON.stringify(data, null, 2));
+
         let generatedPrompt = data.choices?.[0]?.message?.content || '';
         console.log('[CREATE-SONG-PROMPT] Groq raw response:', generatedPrompt);
         console.log('[CREATE-SONG-PROMPT] Initial length:', generatedPrompt.length);
+
+        if (!generatedPrompt || generatedPrompt.trim() === '') {
+            console.error('[CREATE-SONG-PROMPT] Empty prompt received from Groq');
+            throw new Error('Groq API returned an empty prompt');
+        }
 
         // Regeneration mechanism: If prompt is too long, ask AI to make it shorter
         let regenerationAttempts = 0;
@@ -76,7 +89,7 @@ Output ONLY the shortened prompt (max 250 chars):`;
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.1-70b-versatile',
+                    model: 'llama-3.3-70b-versatile',
                     messages: [{ role: 'user', content: shortenPrompt }],
                     temperature: 0.5, // Lower temperature for more focused output
                     max_tokens: 120,
