@@ -83,15 +83,30 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                         name={getFieldName("recipientName")}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">Name <span className="text-[#87CEEB]">*</span></FormLabel>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Recipient's Name <span className="text-[#87CEEB]/60 text-sm">(first name will suffice)</span> <span className="text-[#87CEEB]">*</span></FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Name" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                    <Input placeholder="Recipient's name" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
 
+                    <FormField
+                        control={control}
+                        name={getFieldName("pronunciation")}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Pronunciation</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Write phonetically if complicated spelling" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <div className="mt-4 md:mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <FormField
                         control={control}
                         name={getFieldName("recipientNickname")}
@@ -104,9 +119,7 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                             </FormItem>
                         )}
                     />
-                </div>
 
-                <div className="mt-4 md:mt-6">
                     <FormField
                         control={control}
                         name={getFieldName("relationship")}
@@ -114,24 +127,9 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                             <FormItem>
                                 <FormLabel className="block text-[#87CEEB] mb-2">Relationship <span className="text-[#87CEEB]">*</span></FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Mum, Dad, Son, Daughter, Girlfriend, Boyfriend..." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                    <Input placeholder="Mum, Dad, Son, Daughter, Girlfriend, Boyfriend, Wife, Husband, Friend, Sister, Brother..." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
                                 </FormControl>
                                 <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                <div className="mt-4 md:mt-6">
-                    <FormField
-                        control={control}
-                        name={getFieldName("pronunciation")}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">Pronunciation</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Write phonetically if complicated spelling" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                </FormControl>
                             </FormItem>
                         )}
                     />
@@ -436,14 +434,14 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
 
                 <FormField
                     control={control}
-                    name={getFieldName("senderMessage")}
+                    name="senderName"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">Add a Short Personal Note (which will be added to your theme - e.g. Merry Christmas) <span className="text-[#87CEEB]">*</span></FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">Your Name <span className="text-[#87CEEB]">*</span></FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. Thanks for being my bestie"
+                                    placeholder="Your name"
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
@@ -451,6 +449,66 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                         </FormItem>
                     )}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                    <FormField
+                        control={control}
+                        name="senderEmail"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Email <span className="text-[#87CEEB]">*</span></FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        type="email"
+                                        placeholder="your@email.com"
+                                        className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={control}
+                        name="senderPhone"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Phone Number <span className="text-[#87CEEB]">*</span></FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        type="tel"
+                                        placeholder="+353 86 123 4567"
+                                        className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <div className="mt-4 md:mt-6">
+                    <FormField
+                        control={control}
+                        name={getFieldName("senderMessage")}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Add a Short Personal Note (which will be added to your theme - e.g. Merry Christmas) <span className="text-[#87CEEB]">*</span></FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        placeholder="e.g. Thanks for being my bestie"
+                                        className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
             </div>
 
             {/* Delivery Speed Selection Card */}

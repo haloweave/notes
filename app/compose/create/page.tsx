@@ -401,58 +401,6 @@ export default function CreatePage() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-4xl mx-auto px-4 pb-8 relative z-10">
 
-                    {/* Global Sender Information (Only once) */}
-                    <Card>
-                        <CardContent>
-                            <h2 className={`text-xl md:text-2xl text-[#E8DCC0] ${lora.className}`}>Who's sending the Song?</h2>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                <FormField
-                                    control={form.control}
-                                    name="senderName"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="block text-[#87CEEB] mb-2">From <span className="text-[#87CEEB]">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Your name" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="senderEmail"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="block text-[#87CEEB] mb-2">Email <span className="text-[#87CEEB]">*</span></FormLabel>
-                                            <FormControl>
-                                                <Input type="email" placeholder="your@email.com" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <FormField
-                                control={form.control}
-                                name="senderPhone"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="block text-[#87CEEB] mb-2">Phone Number <span className="text-[#87CEEB]">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="+353 86 123 4567" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                        </CardContent>
-                    </Card>
-
                     {/* Song Bundle Tabs */}
                     {isBundle && (
                         <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
