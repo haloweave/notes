@@ -36,13 +36,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <>
-            <div className="min-h-screen relative font-sans" style={{
-                backgroundImage: 'url("/web background image.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center center',
-                backgroundAttachment: 'fixed'
-            }}>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/45 via-[#0f1e30]/40 to-[#1a2a3f]/45"></div>
+            <div className="min-h-screen relative font-sans">
+                {/* Background Image & Gradient - Fixed Position */}
+                <div className="fixed inset-0 w-full h-full -z-50">
+                    <Image
+                        src="/web background image.png"
+                        alt="Background"
+                        fill
+                        className="object-cover"
+                        priority
+                        quality={90}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/45 via-[#0f1e30]/40 to-[#1a2a3f]/45"></div>
+                </div>
 
                 {/* Snowfall Effect */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -81,10 +87,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         {showBackButton ? (
                             <button
                                 onClick={handleBack}
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:bg-white/20 h-9 px-4 py-2 text-white"
+                                className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
+                                aria-label="Back"
                             >
-                                <ArrowLeft className="w-4 h-4" />
-                                {backLabel}
+                                <ArrowLeft className="w-6 h-6 text-[#E0F4FF]" />
                             </button>
                         ) : <div />}
 
@@ -98,10 +104,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                         {showBackButton && (
                             <button
                                 onClick={handleBack}
-                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:bg-white/20 h-9 px-4 py-2 absolute left-0 text-white"
+                                className="absolute left-8 p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
+                                aria-label="Back"
                             >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                {backLabel}
+                                <ArrowLeft className="w-7 h-7 text-[#E0F4FF]" />
                             </button>
                         )}
 

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Menu01Icon, Delete02Icon, ArrowRight01Icon } from 'hugeicons-react';
+import { Delete02Icon, ArrowRight01Icon } from 'hugeicons-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/auth-client';
 import { useLoginDialog } from '@/contexts/login-dialog-context';
@@ -228,12 +229,13 @@ export function HistoryMenu() {
     return (
         <div className="relative">
             {/* Hamburger Button */}
-            <Button
+            <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="bg-white/10 backdrop-blur-md border-2 border-white/20 hover:bg-white/20 text-white rounded-xl p-3 shadow-lg"
+                className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
+                aria-label="Menu"
             >
-                <Menu01Icon className="w-6 h-6" />
-            </Button>
+                <Menu className="w-6 h-6 md:w-7 md:h-7 text-[#E0F4FF]" />
+            </button>
 
             {/* Dropdown Menu */}
             {isOpen && (

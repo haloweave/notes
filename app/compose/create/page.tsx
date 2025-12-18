@@ -18,6 +18,7 @@ import { PricingTable } from '@/components/dashboard/pricing-table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Image from 'next/image';
 import { SongForm } from '@/components/create/song-form';
+import { Gift, Clock, Zap } from 'lucide-react';
 
 const songSchema = z.object({
     // Recipient Information
@@ -90,17 +91,9 @@ const songSchema = z.object({
         .transform(val => val === "" ? undefined : val)
         .optional(),
 
-    // Vibe and delivery
+    // Vibe
     vibe: z.string()
         .min(1, "Please select an overall vibe"),
-    deliverySpeed: z.string()
-        .min(1, "Please select a delivery speed"),
-
-    // Personal message
-    senderMessage: z.string()
-        .trim()
-        .min(1, "Please add a short message")
-        .max(200, "Personal note must be less than 200 characters"),
 });
 
 const formSchema = z.object({
@@ -120,6 +113,14 @@ const formSchema = z.object({
         .min(1, "Please enter your phone number")
         .regex(/^[\d\s\+\-\(\)]+$/, "Please enter a valid phone number")
         .min(10, "Phone number must be at least 10 characters"),
+
+    // Global Message & Delivery
+    senderMessage: z.string()
+        .trim()
+        .min(1, "Please add a short message")
+        .max(200, "Personal note must be less than 200 characters"),
+    deliverySpeed: z.string()
+        .min(1, "Please select a delivery speed"),
 
     // Songs
     songs: z.array(songSchema).min(1),
@@ -142,8 +143,6 @@ const defaultSongValues = {
     genreStyle: "",
     style: "",
     vibe: "loving",
-    deliverySpeed: "express",
-    senderMessage: "",
 };
 
 export default function CreatePage() {
@@ -169,6 +168,8 @@ export default function CreatePage() {
             senderName: "",
             senderEmail: "",
             senderPhone: "",
+            senderMessage: "",
+            deliverySpeed: "express",
             songs: [defaultSongValues],
         },
     });
@@ -219,29 +220,8 @@ export default function CreatePage() {
                     // Create migration logic
                     let formDataToReset = parsed.formData;
 
-                    // Migration logic: if old flat format, convert to nested
-                    if (parsed.formData && !parsed.formData.songs) {
-                        const migrated = {
-                            senderName: parsed.formData.senderName,
-                            senderEmail: parsed.formData.senderEmail,
-                            senderPhone: parsed.formData.senderPhone,
-                            songs: [{
-                                recipientName: parsed.formData.recipientName,
-                                recipientNickname: parsed.formData.recipientNickname,
-                                relationship: parsed.formData.relationship,
-                                pronunciation: parsed.formData.pronunciation,
-                                senderMessage: parsed.formData.senderMessage,
-                                theme: parsed.formData.theme,
-                                aboutThem: parsed.formData.aboutThem,
-                                moreInfo: parsed.formData.moreInfo,
-                                voiceType: parsed.formData.voiceType,
-                                genreStyle: parsed.formData.genreStyle,
-                                instrumentPreferences: parsed.formData.instrumentPreferences,
-                                vibe: parsed.formData.vibe,
-                            }]
-                        };
-                        formDataToReset = migrated;
-                    }
+                    // Brief migration check if needed (e.g. if senderMessage was previously in songs, move it out)
+                    // For now assuming compatible or fresh reset if structure changed significantly
 
                     if (formDataToReset) {
                         form.reset(formDataToReset);
@@ -286,7 +266,7 @@ export default function CreatePage() {
             song: i + 1,
             vibe: s.vibe,
             theme: s.theme,
-            deliverySpeed: s.deliverySpeed
+            globalDelivery: values.deliverySpeed
         })));
 
         if (credits !== null && credits < 1) {
@@ -299,9 +279,6 @@ export default function CreatePage() {
         setError('');
 
         try {
-            // Check if we can reuse the existing form ID or generate a new one?
-            // Usually valid to keep same ID if just updating, but creating new ensures fresh start.
-            // However, to allow "add song and come back", let's keep using the one in session if valid.
             let formId = sessionStorage.getItem('currentFormId');
             if (!formId) {
                 formId = `form_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -324,16 +301,19 @@ export default function CreatePage() {
                     lastSubmittedData.current.songs[i] &&
                     cachedPrompts.current[i]
                 ) {
-                    // Compare fields relevant to prompt generation
                     const prevSong = lastSubmittedData.current.songs[i];
                     const prevGlobal = {
                         senderName: lastSubmittedData.current.senderName,
                         senderEmail: lastSubmittedData.current.senderEmail,
+                        senderMessage: lastSubmittedData.current.senderMessage, // Included in check
                     };
 
                     // Deep comparison of song fields + relevant global sender fields
                     const isSongSame = JSON.stringify(song) === JSON.stringify(prevSong);
-                    const isGlobalSame = values.senderName === prevGlobal.senderName && values.senderEmail === prevGlobal.senderEmail;
+                    const isGlobalSame =
+                        values.senderName === prevGlobal.senderName &&
+                        values.senderEmail === prevGlobal.senderEmail &&
+                        values.senderMessage === prevGlobal.senderMessage;
 
                     if (isSongSame && isGlobalSame) {
                         shouldUseCached = true;
@@ -344,17 +324,18 @@ export default function CreatePage() {
                     console.log(`[FRONTEND] Using cached prompt for song ${i + 1}`);
                     setStatus(`Using cached result for song ${i + 1}...`);
                     generatedPrompts.push(cachedPrompts.current[i]);
-                    // Artificial delay for UX flow
                     await new Promise(r => setTimeout(r, 500));
                 } else {
                     setStatus(`Composing song ${i + 1} of ${values.songs.length}...`);
 
-                    // Construct payload for API
+                    // Construct payload for API - Inject Global Values
                     const apiPayload = {
                         ...song,
                         senderName: values.senderName,
                         senderEmail: values.senderEmail,
                         senderPhone: values.senderPhone,
+                        senderMessage: values.senderMessage, // Global
+                        deliverySpeed: values.deliverySpeed // Global
                     };
 
                     console.log(`[FRONTEND] Generating prompt for song ${i + 1}:`, apiPayload);
@@ -377,28 +358,24 @@ export default function CreatePage() {
                 console.log('[FRONTEND] Generated/Cached prompts:', generatedPrompts);
                 const formDataWithMetadata = {
                     formId,
-                    timestamp: Date.now(), // Numeric timestamp for easier sorting
-                    formData: values,
+                    timestamp: Date.now(),
+                    formData: values, // Includes global fields
                     generatedPrompt: generatedPrompts[0],
                     allPrompts: generatedPrompts,
                     status: 'prompt_generated'
                 };
 
-                // Save to localStorage
                 localStorage.setItem(`songForm_${formId}`, JSON.stringify(formDataWithMetadata));
 
-                // Update caches
                 cachedPrompts.current = generatedPrompts;
                 lastSubmittedData.current = values;
 
-                // Also save to a list of all form IDs if new
                 const existingFormIds = JSON.parse(localStorage.getItem('songFormIds') || '[]');
                 if (!existingFormIds.includes(formId)) {
                     existingFormIds.push(formId);
                     localStorage.setItem('songFormIds', JSON.stringify(existingFormIds));
                 }
 
-                // Save to database (BLOCKING - must succeed before proceeding)
                 try {
                     setStatus('Saving to database...');
                     const dbResponse = await fetch('/api/compose/forms', {
@@ -408,7 +385,7 @@ export default function CreatePage() {
                             formId,
                             packageType: isBundle ? 'holiday-hamper' : 'solo-serenade',
                             songCount: values.songs.length,
-                            formData: values,
+                            formData: values, // Full values including global
                             generatedPrompts: generatedPrompts
                         })
                     });
@@ -423,18 +400,16 @@ export default function CreatePage() {
                     console.error('[FRONTEND] ❌ Database save failed:', dbError);
                     setError(`Failed to save to database: ${dbError.message}. Please try again.`);
                     setLoading(false);
-                    return; // STOP - don't proceed to variations page
+                    return;
                 }
 
-                // Store in sessionStorage
                 sessionStorage.setItem('songFormData', JSON.stringify(values));
                 sessionStorage.setItem('generatedPrompt', generatedPrompts[0]);
-                sessionStorage.setItem('allPrompts', JSON.stringify(generatedPrompts)); // Added for symmetry
+                sessionStorage.setItem('allPrompts', JSON.stringify(generatedPrompts));
                 sessionStorage.setItem('currentFormId', formId);
 
                 setStatus('Preparing your variations...');
 
-                // Redirect logic
                 setTimeout(() => {
                     const params = new URLSearchParams({
                         recipient: values.songs[0].recipientName,
@@ -442,7 +417,6 @@ export default function CreatePage() {
                         theme: values.songs[0].theme,
                         formId: formId,
                     });
-                    // Navigate to the consolidated variations page
                     router.push(`/compose/variations?${params.toString()}`);
                 }, 1000);
             }
@@ -455,15 +429,13 @@ export default function CreatePage() {
 
     return (
         <div className="w-full">
-            <div className="text-center mb-8 relative z-10 px-4">
-                {isBundle && (
-                    <h2 className={`text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-2xl md:text-3xl font-normal mb-2 drop-shadow-xl ${lora.className}`}>
-                        Merry Medley
-                    </h2>
-                )}
-                <h1 className={`text-white md:text-[#E8DCC0] lg:text-[#E8DCC0] text-2xl md:text-3xl lg:text-3xl font-normal mb-2 drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+            <div className="text-center mb-6 md:mb-8 relative z-10 px-4">
+                <h1 className={`text-[#E8DCC0] text-3xl md:text-3xl lg:text-4xl mb-2 drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
                     Compose Your Masterpiece
                 </h1>
+                <h2 className={`text-[#E8DCC0] text-2xl md:text-3xl lg:text-4xl italic drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                    {isBundle ? "Merry Medley" : "Solo Serenade"}
+                </h2>
             </div>
 
             <Form {...form}>
@@ -504,7 +476,6 @@ export default function CreatePage() {
 
                     {/* Active Song Form */}
                     <div className={isBundle ? "bg-[#1e293b]/20 rounded-b-xl rounded-tr-xl border-t-2 border-[#F5E6B8]/20 -mt-6 pt-6" : ""}>
-                        {/* We render ALL forms but hide inactive ones to preserve state properly with RHF */}
                         {fields.map((field, index) => (
                             <div key={field.id} className={index === activeTab ? "block animate-in fade-in zoom-in-95 duration-300" : "hidden"}>
                                 <SongForm
@@ -518,6 +489,156 @@ export default function CreatePage() {
                         ))}
                     </div>
 
+                    {/* Details and Delivery (Global) */}
+                    <div className="space-y-6">
+                        {/* Your Details Card */}
+                        <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)]">
+                            <FormLabel className={`block text-[#E8DCC0] mb-6 text-xl md:text-2xl ${lora.className}`}>Your Details</FormLabel>
+
+                            <FormField
+                                control={form.control}
+                                name="senderName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="block text-[#87CEEB] mb-2">Your Name <span className="text-[#87CEEB]">*</span></FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="Your name"
+                                                className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
+                                <FormField
+                                    control={form.control}
+                                    name="senderEmail"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="block text-[#87CEEB] mb-2">Email <span className="text-[#87CEEB]">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    type="email"
+                                                    placeholder="your@email.com"
+                                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="senderPhone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="block text-[#87CEEB] mb-2">Phone Number <span className="text-[#87CEEB]">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    type="tel"
+                                                    placeholder="+353 86 123 4567"
+                                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="mt-4 md:mt-6">
+                                <FormField
+                                    control={form.control}
+                                    name="senderMessage"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="block text-[#87CEEB] mb-2">Add a Short Personal Note (which will be added to your theme - e.g. Merry Christmas) <span className="text-[#87CEEB]">*</span></FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    placeholder="e.g. Thanks for being my bestie"
+                                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Delivery Speed Selection Card */}
+                        <div className="bg-white/10 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)]">
+                            <FormField
+                                control={form.control}
+                                name="deliverySpeed"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className={`block text-[#F5E6B8] mb-6 text-xl md:text-2xl ${lora.className}`}>Choose Your Delivery Speed<span className="text-[#F5E6B8]"> *</span></FormLabel>
+                                        <FormControl>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Standard Option */}
+                                                <div
+                                                    onClick={() => field.onChange('standard')}
+                                                    className={`flex flex-col p-6 rounded-xl border-2 text-left cursor-pointer opacity-60 border-[#87CEEB]/30 bg-white/5`}
+                                                >
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <Clock className="w-7 h-7 text-[#87CEEB]/70" />
+                                                        <div className={`text-xl text-[#F5E6B8] ${lora.className}`}>Standard</div>
+                                                    </div>
+                                                    <div className="text-sm text-[#87CEEB]/80">Within 24 hours</div>
+                                                    <div className="mt-2 text-lg text-[#F5E6B8]">Included</div>
+                                                </div>
+
+                                                {/* Express Option with Gifted Badge */}
+                                                <div
+                                                    onClick={() => field.onChange('express')}
+                                                    className="flex flex-col p-6 rounded-xl border-2 text-left cursor-pointer relative border-[#F5E6B8] bg-[#F5E6B8]/10 shadow-[0_8px_30px_rgba(245,230,184,0.4)] scale-105"
+                                                >
+                                                    {/* Gifted Badge */}
+                                                    <div className="absolute -top-3 -right-3 bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] text-[#1a3d5f] px-3 py-1 rounded-full text-xs font-semibold shadow-lg z-20">
+                                                        Gifted
+                                                    </div>
+                                                    {/* Gift Icon */}
+                                                    <Gift className="w-6 h-6 text-[#F5E6B8] absolute top-7 right-12 z-10" />
+
+                                                    <div className="flex items-center gap-3 mb-3 relative z-10">
+                                                        <Zap className="w-7 h-7 text-[#F5E6B8]" />
+                                                        <div className={`text-xl text-white ${lora.className}`}>Express ⚡</div>
+                                                    </div>
+                                                    <div className="text-sm text-white/90 relative z-10">Within 1 hour</div>
+                                                    <div className="mt-2 text-lg text-[#F5E6B8] relative z-10">
+                                                        <span className="line-through opacity-60">+€10</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Promotional Message */}
+                            <div className="mt-6">
+                                <div className="bg-gradient-to-r from-[#87CEEB]/20 to-[#87CEEB]/10 border-2 border-[#87CEEB]/40 rounded-xl p-3 md:p-4 flex items-center justify-center gap-3 md:gap-4 backdrop-blur-sm">
+                                    <Gift className="w-6 h-6 md:w-7 md:h-7 text-[#87CEEB] flex-shrink-0" />
+                                    <div className="text-center">
+                                        <p className={`text-white text-sm md:text-base ${lora.className}`}>
+                                            <span className="text-[#F5E6B8] font-semibold">* Our Gift to You:</span> We're gifting <span className="text-[#87CEEB] font-semibold">Free Express Delivery</span> to all orders before Christmas 🎄
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Status Messages */}
                     {status && (
                         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
@@ -527,10 +648,11 @@ export default function CreatePage() {
 
                     {/* Submit Button */}
                     <div className="flex justify-center pt-4">
-                        <PremiumButton
+                        <button
+                            data-slot="button"
                             type="submit"
                             disabled={loading}
-                            className={`w-full md:w-auto px-12 py-6 text-xl shadow-2xl hover:scale-105 transition-transform duration-300 ${lora.className}`}
+                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full max-w-md bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] active:shadow-[0_0_40px_rgba(135,206,235,0.8),0_0_20px_rgba(135,206,235,0.6),0_8px_30px_rgba(135,206,235,0.5)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 active:scale-105 transition-all duration-200 text-xl ${lora.className}`}
                         >
                             {loading ? (
                                 <>
@@ -540,7 +662,7 @@ export default function CreatePage() {
                             ) : (
                                 "I'm Ready! Compose My Song" + (isBundle ? "s" : "")
                             )}
-                        </PremiumButton>
+                        </button>
                     </div>
 
                     {error && (

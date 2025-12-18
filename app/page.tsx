@@ -87,14 +87,20 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="min-h-screen relative flex flex-col" style={{
-        backgroundImage: 'url("/web background image.png")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center center',
-        backgroundAttachment: 'fixed'
-      }}>
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/50 via-[#0f1e30]/45 to-[#1a2a3f]/50"></div>
+      <div className="min-h-screen relative flex flex-col">
+        {/* Fixed Background Image & Gradient */}
+        <div className="fixed inset-0 w-full h-full -z-50">
+          <Image
+            src="/web background image.png"
+            alt="Background"
+            fill
+            className="object-cover"
+            priority
+            quality={90}
+          />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/50 via-[#0f1e30]/45 to-[#1a2a3f]/50"></div>
+        </div>
 
         {/* Snowfall Effect */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

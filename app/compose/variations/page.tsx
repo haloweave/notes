@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PremiumButton } from '@/components/ui/premium-button';
 import { Lora } from 'next/font/google';
-import { PlayIcon, CheckmarkCircle01Icon, PauseIcon } from 'hugeicons-react';
+import { Play, Pause, Music } from 'lucide-react';
+import { CheckmarkCircle01Icon } from 'hugeicons-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LoginDialog } from '@/components/auth/login-dialog';
 import { useSession } from '@/lib/auth-client';
@@ -47,7 +48,7 @@ function VariationsContent() {
     const [isLoadingSession, setIsLoadingSession] = useState(false);
 
     // Music Generation State
-    const [taskIds, setTaskIds] = useState<Record<number, string[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
+    const [taskIds, setTaskIds] = useState<Record<number, (string | null)[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
     const [audioUrls, setAudioUrls] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: audioUrl } }
     const [lyrics, setLyrics] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: lyrics } }
     const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'polling' | 'waiting' | 'ready' | 'error'>('idle');
@@ -341,7 +342,7 @@ function VariationsContent() {
                     }
                 ];
 
-                const newTaskIds: string[] = [];
+                const newTaskIds: (string | null)[] = [];
 
                 // Generate 3 different songs with unique prompts
                 for (let i = 0; i < songVariations.length; i++) {
@@ -419,6 +420,9 @@ function VariationsContent() {
 
                     if (taskId) {
                         newTaskIds.push(taskId);
+                    } else {
+                        console.warn(`[VARIATIONS] Pushing null for variation ${i + 1} due to failure`);
+                        newTaskIds.push(null);
                     }
 
                     // Delay between requests to avoid rate limiting (5 seconds between variations)
@@ -555,7 +559,16 @@ function VariationsContent() {
                     const urls = variationAudioUrls[songIndex];
                     const completedCount = Object.keys(urls).length;
 
-                    console.log(`[VARIATIONS] Found ${completedCount} completed variations in database`);
+                    // Also check task IDs to know how many we SHOULD expect
+                    // (Some might have failed generation and be null)
+                    const formTaskIds = form.variationTaskIds?.[songIndex] || [];
+                    const validTaskCount = Array.isArray(formTaskIds)
+                        ? formTaskIds.filter(id => id !== null).length
+                        : 3;
+
+                    const expectedCount = validTaskCount > 0 ? validTaskCount : 3;
+
+                    console.log(`[VARIATIONS] Found ${completedCount} completed variations in database (Expected: ${expectedCount})`);
 
                     // Update state
                     setAudioUrls(prev => ({
@@ -583,18 +596,18 @@ function VariationsContent() {
                     const lyricsCount = variationLyrics[songIndex] ? Object.keys(variationLyrics[songIndex]).length : 0;
                     const audioCount = completedCount;
 
-                    // Check if all variations are ready (expecting 3)
-                    if (completedCount >= 3) {
-                        console.log('[VARIATIONS] All variations ready!');
+                    // Check if all variations are ready
+                    if (completedCount >= expectedCount) {
+                        console.log('[VARIATIONS] All valid variations ready!');
                         setGenerationStatus('ready');
                         setGenerationProgress('All variations ready! Click play to listen.');
                         return; // Stop checking
                     } else {
                         // Show detailed progress
                         if (lyricsCount > audioCount) {
-                            setGenerationProgress(`${lyricsCount} lyrics ready • ${audioCount} of 3 audio ready...`);
+                            setGenerationProgress(`${lyricsCount} lyrics ready • ${audioCount} of ${expectedCount} audio ready...`);
                         } else {
-                            setGenerationProgress(`${completedCount} of 3 variations ready...`);
+                            setGenerationProgress(`${completedCount} of ${expectedCount} variations ready...`);
                         }
                     }
                 }
@@ -931,8 +944,9 @@ function VariationsContent() {
                 const variationId = selections[songIndex];
                 const songTaskIds = taskIds[songIndex];
 
-                if (songTaskIds && songTaskIds[variationId - 1]) {
-                    selectedTaskIds[songIndex] = songTaskIds[variationId - 1];
+                const taskId = songTaskIds[variationId - 1];
+                if (songTaskIds && taskId) {
+                    selectedTaskIds[songIndex] = taskId;
                 }
             });
 
@@ -1062,10 +1076,10 @@ function VariationsContent() {
                 )
             }
 
-            {/* Title */}
             <div className="text-center mb-8">
-                <h1 className={`text-white md:text-[#E8DCC0] text-2xl md:text-3xl font-normal mb-2 drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-                    {isBundle ? "Select a style for each song" : "Listen and select your favorite"}
+                <h1 className={`text-[#E8DCC0] text-2xl md:text-3xl lg:text-4xl mb-2 flex flex-col md:flex-row items-center justify-center gap-3 drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+                    <span>{isBundle ? "Select a style for each song" : "Your Songs are Ready"}</span>
+                    <Music className="hidden md:block w-10 lg:w-12 h-10 lg:h-12 text-[#87CEEB]" />
                 </h1>
 
                 {isBundle && (
@@ -1112,21 +1126,22 @@ function VariationsContent() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
                     {variations.map((variation) => (
                         <Card
                             key={variation.id}
                             className={`bg-white/5 backdrop-blur-md rounded-2xl border-2 shadow-lg transition-all duration-200 relative overflow-hidden ${isCurrentSelected(variation.id)
                                 ? 'border-[#F5E6B8] shadow-[0_8px_30px_rgba(245,230,184,0.5)] bg-[#F5E6B8]/10'
-                                : 'border-white/20 shadow-[0_4px_15px_rgba(255,255,255,0.1)]'
+                                : 'border-[#87CEEB]/40 hover:border-[#87CEEB] hover:shadow-[0_8px_30px_rgba(135,206,235,0.3)]'
                                 }`}
                         >
                             <CardContent className="p-6">
                                 {/* Variation Header */}
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
+                                        <Music className="w-5 h-5 text-[#87CEEB]" />
                                         <h3 className={`text-lg font-medium ${isCurrentSelected(variation.id) ? 'text-[#F5E6B8]' : 'text-white'}`}>
-                                            Song {variation.id}
+                                            Option {variation.id} - {recipientName}
                                         </h3>
                                     </div>
                                     {isCurrentSelected(variation.id) && (
@@ -1145,7 +1160,16 @@ function VariationsContent() {
 
                                 {/* Status Indicator */}
                                 <div className="mb-3">
-                                    {!lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
+                                    {/* Failed State */}
+                                    {taskIds[activeTab] && !taskIds[activeTab][variation.id - 1] && (
+                                        <div className="flex items-center gap-2 text-sm text-red-400">
+                                            <span>❌</span>
+                                            <span>Generation Failed</span>
+                                        </div>
+                                    )}
+
+                                    {/* Generating State (only if task ID exists or not loaded yet) */}
+                                    {!lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (!taskIds[activeTab] || taskIds[activeTab][variation.id - 1]) && (
                                         <div className="flex items-center gap-2 text-sm text-white/60">
                                             <LoadingSpinner size="xs" variant="dots" color="primary" />
                                             <span>Generating your song...</span>
@@ -1196,13 +1220,13 @@ function VariationsContent() {
                                             </>
                                         ) : playingId === variation.id ? (
                                             <>
-                                                <PauseIcon className="w-5 h-5" />
+                                                <Pause className="w-5 h-5" />
                                                 <span className="font-medium">Pause</span>
                                             </>
                                         ) : (
                                             <>
-                                                <PlayIcon className="w-5 h-5" />
-                                                <span className="font-medium">Play Preview</span>
+                                                <Play className="w-5 h-5" />
+                                                <span className="font-medium">Play</span>
                                             </>
                                         )}
                                     </Button>
@@ -1239,7 +1263,11 @@ function VariationsContent() {
                                 ) : (
                                     <button
                                         onClick={() => handleSelectVariation(variation.id)}
-                                        className="w-full py-3 rounded-xl font-medium transition-all duration-200 bg-white/10 hover:bg-white/20 border border-white/30 text-white"
+                                        disabled={!audioUrls[activeTab]?.[variation.id]}
+                                        className={`w-full py-3 rounded-xl font-medium transition-all duration-200 border-2 ${!audioUrls[activeTab]?.[variation.id]
+                                            ? 'bg-white/5 text-white/40 border-white/10 cursor-not-allowed'
+                                            : 'bg-white/10 text-[#87CEEB] border-[#87CEEB]/40 hover:border-[#87CEEB] hover:bg-white/20'
+                                            }`}
                                     >
                                         Select This Version
                                     </button>
@@ -1284,10 +1312,10 @@ function VariationsContent() {
                         </PremiumButton>
                     ) : (
                         // Logged in - Show Proceed to Payment button
-                        <PremiumButton
+                        <button
                             onClick={handleContinue}
                             disabled={loading || (isBundle && completedCount < totalSongs)}
-                            className={isBundle && completedCount < totalSongs ? "opacity-70" : ""}
+                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
                         >
                             {loading ? (
                                 <>
@@ -1297,7 +1325,7 @@ function VariationsContent() {
                             ) : (
                                 isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
                             )}
-                        </PremiumButton>
+                        </button>
                     )}
                 </div>
             </div>
