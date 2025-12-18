@@ -89,13 +89,25 @@ function VariationsContent() {
         }
     }, [session?.user?.id, formIdParam]);
 
+    // Clear loading state when session is ready (safety mechanism)
+    useEffect(() => {
+        if (session !== undefined) {
+            // Session has loaded (either with user or without)
+            const timer = setTimeout(() => {
+                setIsLoadingSession(false);
+                console.log('[VARIATIONS] Loading state cleared by session ready check');
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [session]);
+
     // Load Data
     useEffect(() => {
         const loadData = async () => {
-            // Set loading state when formId changes
+            console.log('[VARIATIONS] Loading data for formId:', formIdParam);
             setIsLoadingSession(true);
 
-            // Clear old data first to prevent showing stale content
+            // Clear old data first
             setSongs([]);
             setTaskIds({});
             setAudioUrls({});
@@ -103,38 +115,71 @@ function VariationsContent() {
             setSelections({});
             setActiveTab(0);
 
-            let dataToParse = sessionStorage.getItem('songFormData');
+            let formData = null;
+            let dbTaskIds = null;
+            let dbAudioUrls = null;
+            let dbLyrics = null;
 
-            // Fallback to localStorage if needed
-            if (!dataToParse && formIdParam) {
-                const savedData = localStorage.getItem(`songForm_${formIdParam}`);
-                if (savedData) {
-                    try {
-                        const parsed = JSON.parse(savedData);
-                        dataToParse = JSON.stringify(parsed.formData);
-                    } catch (e) {
-                        console.error("Error parsing localStorage", e);
-                    }
-                }
-            }
-
-            if (dataToParse) {
+            // If formId is present, fetch from database (for history/purchases)
+            if (formIdParam) {
+                console.log('[VARIATIONS] Fetching from database...');
                 try {
-                    const parsed = JSON.parse(dataToParse);
-                    if (parsed.songs && Array.isArray(parsed.songs)) {
-                        setSongs(parsed.songs);
-                    } else {
-                        // Handle legacy single song format
-                        setSongs([parsed]);
+                    const response = await fetch(`/api/compose/forms/${formIdParam}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.form) {
+                            formData = data.form.formData;
+                            dbTaskIds = data.form.variationTaskIds || {};
+                            dbAudioUrls = data.form.variationAudioUrls || {};
+                            dbLyrics = data.form.variationLyrics || {};
+                            console.log('[VARIATIONS] ✅ Loaded from database');
+                            console.log('[VARIATIONS] Existing taskIds:', dbTaskIds);
+                            console.log('[VARIATIONS] Existing audioUrls:', dbAudioUrls);
+                        }
                     }
-                } catch (e) {
-                    console.error("Error parsing form data", e);
+                } catch (error) {
+                    console.error('[VARIATIONS] Database fetch error:', error);
                 }
             }
 
-            // Small delay to ensure state updates, then hide loading
+            // Fallback to sessionStorage (for new creations)
+            if (!formData) {
+                const sessionData = sessionStorage.getItem('songFormData');
+                if (sessionData) {
+                    try {
+                        formData = JSON.parse(sessionData);
+                        console.log('[VARIATIONS] Loaded from sessionStorage');
+                    } catch (e) {
+                        console.error('[VARIATIONS] Error parsing sessionStorage:', e);
+                    }
+                }
+            }
+
+            // Set songs data
+            if (formData) {
+                if (formData.songs && Array.isArray(formData.songs)) {
+                    setSongs(formData.songs);
+                } else {
+                    // Handle legacy single song format
+                    setSongs([formData]);
+                }
+            } else {
+                console.warn('[VARIATIONS] No form data found');
+            }
+
+            // Restore existing variation data from database
+            if (dbTaskIds && Object.keys(dbTaskIds).length > 0) {
+                console.log('[VARIATIONS] Restoring existing variations from database');
+                setTaskIds(dbTaskIds);
+                setAudioUrls(dbAudioUrls || {});
+                setLyrics(dbLyrics || {});
+                setGenerationStatus('ready'); // Mark as ready since we have existing data
+            }
+
+            // Clear loading state
             setTimeout(() => {
                 setIsLoadingSession(false);
+                console.log('[VARIATIONS] Loading complete');
             }, 300);
         };
 

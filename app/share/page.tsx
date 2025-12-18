@@ -28,7 +28,15 @@ function ShareContent() {
             try {
                 // Fetch compose form by session ID
                 console.log('[SHARE] Fetching form for session ID:', sessionId);
-                const response = await fetch(`/api/compose/forms?stripeSessionId=${sessionId}`);
+
+                // Try fetching by formId first (for direct links from purchases)
+                let response = await fetch(`/api/compose/forms?formId=${sessionId}`);
+
+                // If not found, try stripeSessionId (for actual Stripe session IDs)
+                if (!response.ok) {
+                    console.log('[SHARE] Not found by formId, trying stripeSessionId...');
+                    response = await fetch(`/api/compose/forms?stripeSessionId=${sessionId}`);
+                }
 
                 console.log('[SHARE] API response status:', response.status);
 

@@ -5,17 +5,15 @@ import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft01Icon } from 'hugeicons-react';
 import { HistoryMenu } from '@/components/compose/history-menu';
-import { LoginDialogProvider } from '@/contexts/login-dialog-context';
+import { LoginDialogProvider, useLoginDialog } from '@/contexts/login-dialog-context';
+import { LoginDialog } from '@/components/auth/login-dialog';
 
 const lora = Lora({ subsets: ['latin'] });
 
-export default function ComposeLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+function LayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { isOpen: showLoginDialog, openDialog, closeDialog } = useLoginDialog();
 
     // Smart back navigation based on current page
     const handleBack = () => {
@@ -34,7 +32,7 @@ export default function ComposeLayout({
     const showBackButton = !pathname.includes('/compose/success');
 
     return (
-        <LoginDialogProvider>
+        <>
             <div className="relative min-h-screen w-full flex flex-col font-sans" style={{ backgroundColor: '#1a3d5f' }}>
                 {/* Background Image Layer - Fixed */}
                 <Image
@@ -90,6 +88,29 @@ export default function ComposeLayout({
                     </div>
                 </div>
             </div>
+
+            {/* Global Login Dialog */}
+            <LoginDialog
+                open={showLoginDialog}
+                onOpenChange={(open) => open ? openDialog() : closeDialog()}
+                onSuccess={() => {
+                    console.log('[LAYOUT] User logged in successfully');
+                }}
+                title="Sign In"
+                description="Sign in to save your songs and access them anytime from your dashboard."
+            />
+        </>
+    );
+}
+
+export default function ComposeLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    return (
+        <LoginDialogProvider>
+            <LayoutContent>{children}</LayoutContent>
         </LoginDialogProvider>
     );
 }
