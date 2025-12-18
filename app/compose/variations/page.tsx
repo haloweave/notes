@@ -8,6 +8,9 @@ import { PremiumButton } from '@/components/ui/premium-button';
 import { Lora } from 'next/font/google';
 import { PlayIcon, CheckmarkCircle01Icon, PauseIcon } from 'hugeicons-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoginDialog } from '@/components/auth/login-dialog';
+import { useSession } from '@/lib/auth-client';
+import { useLoginDialog } from '@/contexts/login-dialog-context';
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -31,6 +34,8 @@ interface SongData {
 function VariationsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { data: session } = useSession();
+    const { isOpen: showLoginDialog, openDialog, closeDialog } = useLoginDialog();
 
     // State
     const [songs, setSongs] = useState<SongData[]>([]);
@@ -39,6 +44,7 @@ function VariationsContent() {
     const [loading, setLoading] = useState(false);
     const [playingId, setPlayingId] = useState<number | null>(null);
     const [isBundle, setIsBundle] = useState(false);
+    const [isLoadingSession, setIsLoadingSession] = useState(false);
 
     // Music Generation State
     const [taskIds, setTaskIds] = useState<Record<number, string[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
@@ -51,9 +57,52 @@ function VariationsContent() {
 
     const formIdParam = searchParams.get('formId');
 
+    // Associate form with logged-in user
+    const associateFormWithUser = async () => {
+        if (!session?.user?.id || !formIdParam) return;
+
+        try {
+            console.log('[VARIATIONS] Associating form with user:', session.user.id);
+            const response = await fetch('/api/compose/forms', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    formId: formIdParam,
+                    userId: session.user.id,
+                })
+            });
+
+            if (response.ok) {
+                console.log('[VARIATIONS] ✅ Form associated with user');
+            } else {
+                console.error('[VARIATIONS] Failed to associate form with user');
+            }
+        } catch (error) {
+            console.error('[VARIATIONS] Error associating form:', error);
+        }
+    };
+
+    // Auto-associate form when user logs in
+    useEffect(() => {
+        if (session?.user?.id && formIdParam) {
+            associateFormWithUser();
+        }
+    }, [session?.user?.id, formIdParam]);
+
     // Load Data
     useEffect(() => {
-        const loadData = () => {
+        const loadData = async () => {
+            // Set loading state when formId changes
+            setIsLoadingSession(true);
+
+            // Clear old data first to prevent showing stale content
+            setSongs([]);
+            setTaskIds({});
+            setAudioUrls({});
+            setLyrics({});
+            setSelections({});
+            setActiveTab(0);
+
             let dataToParse = sessionStorage.getItem('songFormData');
 
             // Fallback to localStorage if needed
@@ -82,6 +131,11 @@ function VariationsContent() {
                     console.error("Error parsing form data", e);
                 }
             }
+
+            // Small delay to ensure state updates, then hide loading
+            setTimeout(() => {
+                setIsLoadingSession(false);
+            }, 300);
         };
 
         loadData();
@@ -884,7 +938,34 @@ function VariationsContent() {
     }
 
     return (
-        <div className="w-full">
+        <div className="w-full relative">
+            {/* Session Loading Overlay - Shows when switching between sessions */}
+            {isLoadingSession && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#0a1628]/95 border-2 border-[#87CEEB]/40 rounded-2xl p-8 flex flex-col items-center gap-4">
+                        <LoadingSpinner size="lg" variant="dots" customColor="#87CEEB" />
+                        <p className="text-white text-lg font-medium">Loading session...</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Persistent Login Button (Top Right) - Always visible when not logged in */}
+            {!session?.user && (
+                <div className="max-w-6xl mx-auto px-4 mb-4">
+                    <div className="flex justify-end">
+                        <Button
+                            onClick={openDialog}
+                            className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Sign In to Save
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {/* Generation Progress Banner */}
             {
                 generationStatus !== 'idle' && generationStatus !== 'ready' && (
@@ -897,6 +978,20 @@ function VariationsContent() {
                             <p className="text-white/60 text-sm mt-2">
                                 This may take 2-3 minutes. You can listen to songs as they become ready.
                             </p>
+                            {!session?.user && (
+                                <div className="mt-4 pt-4 border-t border-[#87CEEB]/20">
+                                    <p className="text-white/80 text-sm mb-3">
+                                        💡 Sign in now to save your song to your dashboard!
+                                    </p>
+                                    <Button
+                                        onClick={openDialog}
+                                        variant="outline"
+                                        className="bg-white/10 hover:bg-white/20 border-[#87CEEB]/40 text-white"
+                                    >
+                                        Sign In to Save
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )
@@ -1109,6 +1204,27 @@ function VariationsContent() {
                     ))}
                 </div>
 
+                {/* Login Prompt (if not logged in and songs are ready) */}
+                {!session?.user && generationStatus === 'ready' && (
+                    <div className="mt-6 mb-4 max-w-2xl mx-auto">
+                        <div className="bg-gradient-to-br from-[#87CEEB]/20 to-[#5BA5D0]/20 border-2 border-[#87CEEB]/40 rounded-xl p-6 text-center backdrop-blur-sm">
+                            <h3 className="text-xl font-semibold text-white mb-2">🎵 Love your song?</h3>
+                            <p className="text-white/80 mb-4">
+                                Sign in to save it to your dashboard and access it anytime!
+                            </p>
+                            <Button
+                                onClick={openDialog}
+                                className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg"
+                            >
+                                Sign In to Save
+                            </Button>
+                            <p className="text-white/60 text-sm mt-3">
+                                Or continue as guest (you'll still get your song!)
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Continue Button */}
                 <div className="mt-6 flex justify-center">
                     <PremiumButton
@@ -1127,6 +1243,18 @@ function VariationsContent() {
                     </PremiumButton>
                 </div>
             </div>
+
+            {/* Login Dialog */}
+            <LoginDialog
+                open={showLoginDialog}
+                onOpenChange={(open) => open ? openDialog() : closeDialog()}
+                onSuccess={() => {
+                    console.log('[VARIATIONS] User logged in successfully');
+                    // Form will be auto-associated via useEffect
+                }}
+                title="Save Your Song"
+                description="Sign in to save your generated song and access it anytime from your dashboard."
+            />
 
             {/* Custom Scrollbar CSS */}
             <style jsx>{`
