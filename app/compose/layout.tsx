@@ -3,7 +3,7 @@
 import { Lora } from 'next/font/google';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { ArrowLeft01Icon } from 'hugeicons-react';
+import { ArrowLeft, Menu } from 'lucide-react';
 import { HistoryMenu } from '@/components/compose/history-menu';
 import { LoginDialogProvider, useLoginDialog } from '@/contexts/login-dialog-context';
 import { LoginDialog } from '@/components/auth/login-dialog';
@@ -28,64 +28,105 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         }
     };
 
+    // Determine back button label
+    const backLabel = pathname.includes('/compose/select-package') ? 'Back to Home' : 'Back';
+
     // Hide back button on Success page
     const showBackButton = !pathname.includes('/compose/success');
 
     return (
         <>
-            <div className="relative min-h-screen w-full flex flex-col font-sans" style={{ backgroundColor: '#1a3d5f' }}>
-                {/* Background Image Layer - Fixed */}
-                <Image
-                    src="/web background image.png"
-                    alt="Background"
-                    fill
-                    className="object-cover opacity-40 z-0"
-                    priority
-                    quality={100}
-                />
+            <div className="min-h-screen relative font-sans" style={{
+                backgroundImage: 'url("/web background image.png")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+                backgroundAttachment: 'fixed'
+            }}>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/45 via-[#0f1e30]/40 to-[#1a2a3f]/45"></div>
 
-                {/* Dark Overlay */}
-                <div className="fixed inset-0 z-[1] bg-black/30 pointer-events-none" />
+                {/* Snowfall Effect */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {[...Array(30)].map((_, i) => (
+                        <div
+                            key={i}
+                            className="absolute animate-fall"
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: '-10px',
+                                animationDuration: `${8 + Math.random() * 7}s`,
+                                animationDelay: `${Math.random() * 5}s`,
+                                opacity: Math.random() * 0.5 + 0.2,
+                                width: `${2 + Math.random() * 4}px`,
+                                height: `${2 + Math.random() * 4}px`,
+                                backgroundColor: 'white',
+                                borderRadius: '50%',
+                                boxShadow: '0 0 3px rgba(255, 255, 255, 0.8)'
+                            }}
+                        />
+                    ))}
+                </div>
 
-                <div className="relative z-10 w-full flex-grow flex flex-col">
-                    {/* Global Header */}
-                    <div className="container mx-auto max-w-7xl p-4 md:p-8 flex flex-col items-center">
+                <style jsx global>{`
+                    @keyframes fall {
+                        0% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+                        100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; }
+                    }
+                    .animate-fall { animation: fall linear infinite; }
+                `}</style>
 
-                        {/* Header Controls */}
-                        <div className="w-full flex justify-between items-start relative mb-4 md:mb-8">
-                            {showBackButton && (
-                                <button
-                                    onClick={handleBack}
-                                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:bg-white/20 h-9 px-4 py-2 text-white z-20"
-                                >
-                                    <ArrowLeft01Icon className="w-4 h-4 mr-2" />
-                                    Back
-                                </button>
-                            )}
+                <div className="relative z-10 container mx-auto max-w-7xl px-4 py-4 md:py-6">
+                    {/* Header Section */}
+                    {/* Mobile Header: Back (Left) & Menu (Right) */}
+                    <div className="flex md:hidden justify-between items-start mb-8">
+                        {showBackButton ? (
+                            <button
+                                onClick={handleBack}
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:bg-white/20 h-9 px-4 py-2 text-white"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                {backLabel}
+                            </button>
+                        ) : <div />}
 
-                            {/* Centered Logo */}
-                            <div className="absolute left-1/2 top-0 transform -translate-x-1/2 w-full flex justify-center">
-                                <Image
-                                    src="/huggnote bespoke logo.png"
-                                    alt="Huggnote Bespoke Songs"
-                                    width={200}
-                                    height={80}
-                                    className="h-16 md:h-24 w-auto drop-shadow-lg"
-                                    priority
-                                />
-                            </div>
-
-                            {/* History Menu - Top Right */}
-                            <div className="z-20">
-                                <HistoryMenu />
-                            </div>
-                        </div>
-
-                        {/* Page Content */}
-                        <div className="w-full">
-                            {children}
+                        <div className="text-white">
+                            <HistoryMenu />
                         </div>
                     </div>
+
+                    {/* Desktop Header: Back (Absolute Left), Logo (Center), Menu (Absolute Right) */}
+                    <div className="hidden md:flex justify-center items-start mb-1 relative">
+                        {showBackButton && (
+                            <button
+                                onClick={handleBack}
+                                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all hover:bg-white/20 h-9 px-4 py-2 absolute left-0 text-white"
+                            >
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                {backLabel}
+                            </button>
+                        )}
+
+                        <img
+                            src="/huggnote bespoke logo.png"
+                            alt="Huggnote Bespoke Songs"
+                            className="md:h-16 lg:h-20 w-auto"
+                        />
+
+                        <div className="absolute right-0 text-white">
+                            <HistoryMenu />
+                        </div>
+                    </div>
+
+                    {/* Mobile Logo (Below Header) */}
+                    <div className="flex md:hidden justify-center mb-3">
+                        <img
+                            src="/huggnote bespoke logo.png"
+                            alt="Huggnote Bespoke Songs"
+                            className="h-20 w-auto"
+                        />
+                    </div>
+
+                    {/* Page Content */}
+                    {children}
                 </div>
             </div>
 

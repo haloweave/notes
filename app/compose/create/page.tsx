@@ -20,38 +20,106 @@ import Image from 'next/image';
 import { SongForm } from '@/components/create/song-form';
 
 const songSchema = z.object({
-    recipientName: z.string().min(1, "Please enter the recipient's name"),
-    recipientNickname: z.string().optional(),
-    relationship: z.string().min(1, "Please specify the relationship"),
-    pronunciation: z.string().optional(),
+    // Recipient Information
+    recipientName: z.string()
+        .trim()
+        .min(1, "Please enter the recipient's name")
+        .max(100, "Recipient's name is too long"),
+    recipientNickname: z.string()
+        .trim()
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+    relationship: z.string()
+        .trim()
+        .min(1, "Please specify the relationship")
+        .max(50, "Relationship is too long"),
+    pronunciation: z.string()
+        .trim()
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
 
-    theme: z.string().min(1, "Please select a theme"),
+    // Theme selection
+    theme: z.string()
+        .min(1, "Please select a theme"),
 
     // About Them - Detailed fields
-    overallMessage: z.string().min(1, "Please tell us what you're trying to say"),
-    storySummary: z.string().min(1, "Please provide a short summary of your story"),
-    favoriteMemory: z.string().min(1, "Please share a favorite memory"),
-    qualities: z.string().min(1, "Please list some qualities you admire"),
-    activitiesTogether: z.string().optional(),
-    characteristics: z.string().optional(),
-    locationDetails: z.string().optional(),
+    overallMessage: z.string()
+        .trim()
+        .min(1, "Please tell us what you're trying to say")
+        .max(300, "Overall message must be less than 300 characters"),
+    storySummary: z.string()
+        .trim()
+        .min(1, "Please provide a short summary of your story")
+        .max(500, "Story summary must be less than 500 characters"),
+    favoriteMemory: z.string()
+        .trim()
+        .min(1, "Please share a favorite memory")
+        .max(300, "Favorite memory must be less than 300 characters"),
+    qualities: z.string()
+        .trim()
+        .min(1, "Please list some qualities you admire")
+        .max(300, "Qualities must be less than 300 characters"),
+    activitiesTogether: z.string()
+        .trim()
+        .max(300, "Activities must be less than 300 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+    characteristics: z.string()
+        .trim()
+        .max(300, "Characteristics must be less than 300 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+    locationDetails: z.string()
+        .trim()
+        .max(300, "Location details must be less than 300 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
 
     // Musical Preferences
-    voiceType: z.string().optional(),
-    genreStyle: z.string().optional(),
-    style: z.string().optional(),
+    voiceType: z.string()
+        .trim()
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+    genreStyle: z.string()
+        .trim()
+        .max(100, "Genre must be less than 100 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+    style: z.string()
+        .trim()
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
 
-    vibe: z.string().min(1, "Please select an overall vibe"),
-    deliverySpeed: z.string().min(1, "Please select a delivery speed"),
+    // Vibe and delivery
+    vibe: z.string()
+        .min(1, "Please select an overall vibe"),
+    deliverySpeed: z.string()
+        .min(1, "Please select a delivery speed"),
 
-    senderMessage: z.string().min(1, "Please add a short message"),
+    // Personal message
+    senderMessage: z.string()
+        .trim()
+        .min(1, "Please add a short message")
+        .max(200, "Personal note must be less than 200 characters"),
 });
 
 const formSchema = z.object({
     // Sender Info (Global)
-    senderName: z.string().min(1, "Please enter your name"),
-    senderEmail: z.string().email("Please enter a valid email"),
-    senderPhone: z.string().min(1, "Please enter your phone number"),
+    senderName: z.string()
+        .trim()
+        .min(1, "Please enter your name")
+        .max(100, "Name is too long"),
+    senderEmail: z.string()
+        .trim()
+        .toLowerCase()
+        .email("Please enter a valid email")
+        .min(5, "Email is too short")
+        .max(100, "Email is too long"),
+    senderPhone: z.string()
+        .trim()
+        .min(1, "Please enter your phone number")
+        .regex(/^[\d\s\+\-\(\)]+$/, "Please enter a valid phone number")
+        .min(10, "Phone number must be at least 10 characters"),
 
     // Songs
     songs: z.array(songSchema).min(1),
@@ -73,8 +141,8 @@ const defaultSongValues = {
     voiceType: "",
     genreStyle: "",
     style: "",
-    vibe: "loving", // Default to loving vibe
-    deliverySpeed: "express", // Default to express (gifted option)
+    vibe: "loving",
+    deliverySpeed: "express",
     senderMessage: "",
 };
 

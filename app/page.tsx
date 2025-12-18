@@ -86,117 +86,64 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen relative flex flex-col" style={{
-      backgroundImage: 'url("/web background image.png")',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center center',
-      backgroundAttachment: 'fixed'
-    }}>
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/50 via-[#0f1e30]/45 to-[#1a2a3f]/50"></div>
+    <div className="min-h-screen">
+      <div className="min-h-screen relative flex flex-col" style={{
+        backgroundImage: 'url("/web background image.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
+        backgroundAttachment: 'fixed'
+      }}>
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a2a3f]/50 via-[#0f1e30]/45 to-[#1a2a3f]/50"></div>
 
-      {/* Snowfall Effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(30)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute animate-fall"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: '-10px',
-              animationDuration: `${8 + Math.random() * 7}s`,
-              animationDelay: `${Math.random() * 5}s`,
-              opacity: Math.random() * 0.5 + 0.2,
-              width: `${2 + Math.random() * 4}px`,
-              height: `${2 + Math.random() * 4}px`,
-              backgroundColor: 'white',
-              borderRadius: '50%',
-              boxShadow: '0 0 3px rgba(255, 255, 255, 0.8)'
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Mobile Menu Button */}
-      <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
-          aria-label="Menu"
-        >
-          <Menu className="w-7 h-7 md:w-9 md:h-9 text-[#E0F4FF]" />
-        </button>
-      </div>
-
-      {/* Mobile Menu Sidebar */}
-      <div
-        className={`fixed top-0 right-0 h-full w-64 md:w-80 bg-gradient-to-br from-[#1a3d5f] to-[#0f2438] shadow-2xl z-40 border-l border-[#E0F4FF]/20 transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-      >
-        <div className="flex flex-col h-full pt-20 px-6">
-          <nav className="flex flex-col gap-4">
-            <a href="#home" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
-              Home
-            </a>
-            <a href="#samples" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
-              Sample Songs
-            </a>
-            <a href="#testimonials" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
-              Testimonials
-            </a>
-            <a href="#faq" className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200">
-              FAQ
-            </a>
-          </nav>
+        {/* Snowfall Effect */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute animate-fall"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: '-10px',
+                animationDuration: `${8 + Math.random() * 7}s`,
+                animationDelay: `${Math.random() * 5}s`,
+                opacity: Math.random() * 0.5 + 0.2,
+                width: `${2 + Math.random() * 4}px`,
+                height: `${2 + Math.random() * 4}px`,
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                boxShadow: '0 0 3px rgba(255, 255, 255, 0.8)'
+              }}
+            />
+          ))}
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Hero Section */}
-        <div className="flex-1 flex items-center justify-center px-6 md:p-8" id="home">
-          <div className="text-center max-w-4xl mx-auto mt-8 md:mt-0">
-            {/* Hero Logo - Original Sizing */}
-            <div className="mb-4 md:mb-6 animate-in fade-in zoom-in duration-1000">
-              <Image
-                src="/huggnote bespoke logo.png"
-                alt="Huggnote"
-                width={600}
-                height={200}
-                className="w-[250px] md:w-[400px] lg:w-[500px] h-auto drop-shadow-md mx-auto"
-                priority
-              />
+
+
+        {/* Main Content */}
+        <div className="relative z-10 flex flex-col min-h-screen">
+          {/* Hero Section */}
+          <div className="flex-1 flex items-center justify-center px-4" id="home">
+            <div className="text-center max-w-3xl -mt-20 md:-mt-8" style={{ opacity: 1, transform: 'none' }}>
+              <img src="/huggnote bespoke logo.png" alt="Huggnote" className="h-40 md:h-48 lg:h-56 w-auto mx-auto mb-8 md:mb-10" />
+
+              <h1 className="text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl text-center mb-12 md:mb-14 lg:mb-16" style={{ fontFamily: 'Lora, serif' }}>
+                The Gift They'll<br className="md:hidden" /> Never Forget
+              </h1>
+
+              <div className="mt-0" style={{ opacity: 1, transform: 'none' }}>
+                <button onClick={() => router.push('/compose/select-package')} data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(135,206,235,0.5),0_0_40px_rgba(135,206,235,0.3)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.7),0_0_60px_rgba(135,206,235,0.5)] active:shadow-[0_12px_40px_rgba(26,61,95,0.8),0_0_60px_rgba(26,61,95,0.6)] px-8 md:px-12 py-4 md:py-6 text-lg md:text-2xl rounded-xl transform hover:scale-105 transition-all duration-200" style={{ fontFamily: 'Lora, serif' }}>Create Your Bespoke Song</button>
+
+                <p className="text-[#87CEEB] text-base md:text-lg lg:text-xl mt-6 italic" style={{ fontFamily: 'Lora, serif' }}>
+                  Bespoke Songs, Giftwrapped in Emotion
+                </p>
+              </div>
             </div>
-
-            <h1 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl text-center mb-12 md:mb-14 lg:mb-16 ${lora.className}`}>
-              The Gift They'll<br className="md:hidden" /> Never Forget
-            </h1>
-
-            {/* Action Buttons - Original Sizing */}
-            <div className="flex flex-col md:flex-row gap-4 md:gap-5 animate-in slide-in-from-bottom-5 duration-1000 delay-300 fill-mode-backwards items-center justify-center pb-4 md:pb-0">
-              <button
-                onClick={() => router.push('/compose/select-package')}
-                className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-8 py-4 text-lg rounded-xl bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(135,206,235,0.5),0_0_40px_rgba(135,206,235,0.3)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.7),0_0_60px_rgba(135,206,235,0.5)] hover:-translate-y-0.5 transition-all duration-200 ${lora.className}`}
-              >
-                Create Bespoke Song
-              </button>
-
-              <button
-                onClick={() => setIsAuthOpen(true)}
-                className="px-8 py-4 rounded-full bg-black/20 backdrop-blur-md border border-white/30 text-white font-medium text-lg hover:bg-black/40 hover:-translate-y-0.5 transition-all"
-              >
-                Login
-              </button>
-            </div>
-
-            <p className={`text-[#87CEEB] text-base md:text-lg lg:text-xl mt-6 italic ${lora.className}`}>
-              Bespoke Songs, Giftwrapped in Emotion
-            </p>
           </div>
         </div>
 
         {/* Features Section */}
-        <div className="relative z-10 -mt-48 md:mt-0 pt-16 pb-16 md:py-20">
+        <div className="relative z-10 bg-gradient-to-b from-[#0f1e30]/30 to-[#1a2a3f]/40 -mt-48 md:mt-0 pt-16 pb-16 md:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-4xl mx-auto">
               <p className="text-slate-100 leading-relaxed text-center mb-8 md:mb-20 lg:mb-24">
@@ -254,7 +201,7 @@ export default function LandingPage() {
         </div>
 
         {/* Sample Songs Section */}
-        <div className="relative z-10 py-16 md:py-24" id="samples">
+        <div className="relative z-10 bg-gradient-to-b from-[#0f1e30]/30 to-[#1a2a3f]/40 py-16 md:py-24" id="samples">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-6xl mx-auto">
               <h2 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl mb-6 md:mb-8 ${lora.className}`}>
@@ -325,7 +272,7 @@ export default function LandingPage() {
         </div>
 
         {/* FAQ Section */}
-        <div className="relative z-10 py-16 md:py-24" id="faq">
+        <div className="relative z-10 bg-gradient-to-b from-[#0f1e30]/30 to-[#1a2a3f]/40 py-16 md:py-24" id="faq">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-4xl mx-auto">
               <h2 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl mb-6 md:mb-8 ${lora.className}`}>
@@ -437,12 +384,12 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
-      {/* Snowfall Animation CSS */}
-      <style jsx>{`
+        <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
+        {/* Snowfall Animation CSS */}
+        <style jsx>{`
         @keyframes fall {
           0% {
             transform: translateY(0) rotate(0deg);
@@ -458,6 +405,7 @@ export default function LandingPage() {
           animation: fall linear infinite;
         }
       `}</style>
+      </div>
     </div>
   );
 }
