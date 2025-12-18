@@ -25,18 +25,26 @@ const songSchema = z.object({
     relationship: z.string().min(1, "Please specify the relationship"),
     pronunciation: z.string().optional(),
 
-    senderMessage: z.string().min(1, "Please add a short message"),
-
     theme: z.string().min(1, "Please select a theme"),
-    aboutThem: z.string().min(10, "Please tell us more about them (at least 10 characters)"),
-    moreInfo: z.string().optional(),
 
+    // About Them - Detailed fields
+    overallMessage: z.string().min(1, "Please tell us what you're trying to say"),
+    storySummary: z.string().min(1, "Please provide a short summary of your story"),
+    favoriteMemory: z.string().min(1, "Please share a favorite memory"),
+    qualities: z.string().min(1, "Please list some qualities you admire"),
+    activitiesTogether: z.string().optional(),
+    characteristics: z.string().optional(),
+    locationDetails: z.string().optional(),
+
+    // Musical Preferences
     voiceType: z.string().optional(),
     genreStyle: z.string().optional(),
-    instrumentPreferences: z.string().optional(),
+    style: z.string().optional(),
 
     vibe: z.string().min(1, "Please select an overall vibe"),
-    deliverySpeed: z.string().optional(),
+    deliverySpeed: z.string().min(1, "Please select a delivery speed"),
+
+    senderMessage: z.string().min(1, "Please add a short message"),
 });
 
 const formSchema = z.object({
@@ -54,15 +62,20 @@ const defaultSongValues = {
     recipientNickname: "",
     relationship: "",
     pronunciation: "",
-    senderMessage: "",
     theme: "",
-    aboutThem: "",
-    moreInfo: "",
+    overallMessage: "",
+    storySummary: "",
+    favoriteMemory: "",
+    qualities: "",
+    activitiesTogether: "",
+    characteristics: "",
+    locationDetails: "",
     voiceType: "",
     genreStyle: "",
-    instrumentPreferences: "",
+    style: "",
     vibe: "",
-    deliverySpeed: "standard",
+    deliverySpeed: "express", // Default to express (gifted option)
+    senderMessage: "",
 };
 
 export default function CreatePage() {
@@ -81,6 +94,8 @@ export default function CreatePage() {
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
+        mode: 'onBlur', // Validate when user leaves a field
+        reValidateMode: 'onChange', // Re-validate on every change after first validation
         shouldUnregister: false, // Keep values when switching tabs
         defaultValues: {
             senderName: "",

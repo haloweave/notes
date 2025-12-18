@@ -23,13 +23,18 @@ IMPORTANT: Include these specific details in the prompt:
 - Recipient's name: "${formData.recipientName}"${formData.recipientNickname ? ` (nickname: "${formData.recipientNickname}")` : ''}
 - Relationship: ${formData.relationship}
 - Theme: ${formData.theme}
-- What makes them special: ${formData.aboutThem}
-${formData.moreInfo ? `- Additional details: ${formData.moreInfo}` : ''}
+- Overall message: ${formData.overallMessage}
+- Story: ${formData.storySummary}
+- Favorite memory: ${formData.favoriteMemory}
+- Qualities: ${formData.qualities}
+${formData.activitiesTogether ? `- Activities together: ${formData.activitiesTogether}` : ''}
+${formData.characteristics ? `- Characteristics: ${formData.characteristics}` : ''}
+${formData.locationDetails ? `- Location details: ${formData.locationDetails}` : ''}
 - Sender's message: "${formData.senderMessage}"
-- Musical style: ${formData.genreStyle || 'versatile'}${formData.voiceType ? `, ${formData.voiceType} voice` : ''}${formData.instrumentPreferences ? `, featuring ${formData.instrumentPreferences}` : ''}
+- Musical style: ${formData.genreStyle || 'versatile'}${formData.voiceType ? `, ${formData.voiceType} voice` : ''}${formData.style ? `, ${formData.style} style` : ''}
 - Overall vibe: ${formData.vibe}
 
-Create a prompt that captures the personal connection, mentions the recipient by name, references their qualities (${formData.aboutThem}), and reflects the ${formData.theme} theme with a ${formData.vibe} tone.
+Create a prompt that captures the personal connection, mentions the recipient by name, references their qualities (${formData.qualities}), incorporates the favorite memory (${formData.favoriteMemory}), and reflects the ${formData.theme} theme with a ${formData.vibe} tone.
 
 Output only the prompt string (max 250 chars). Make it personal and specific to this relationship. Be concise.`;
 

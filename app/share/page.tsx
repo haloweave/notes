@@ -14,6 +14,7 @@ function ShareContent() {
     const sessionId = searchParams.get('session_id');
     const [recipientName, setRecipientName] = useState('Someone Special');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
     // Initial Load & Data Processing
@@ -26,17 +27,27 @@ function ShareContent() {
 
             try {
                 // Fetch compose form by session ID
+                console.log('[SHARE] Fetching form for session ID:', sessionId);
                 const response = await fetch(`/api/compose/forms?stripeSessionId=${sessionId}`);
+
+                console.log('[SHARE] API response status:', response.status);
+
                 if (!response.ok) {
+                    const errorText = await response.text();
                     console.error('[SHARE] Failed to fetch form data');
+                    console.error('[SHARE] Status:', response.status);
+                    console.error('[SHARE] Error:', errorText);
                     setLoading(false);
                     return;
                 }
 
                 const data = await response.json();
+                console.log('[SHARE] API response data:', data);
 
                 if (!data.success || !data.form) {
                     console.error('[SHARE] No form found for session:', sessionId);
+                    console.error('[SHARE] Response:', data);
+                    setError('We couldn\'t find your order. The payment may not have completed, or the link may be invalid. Please check your email for the correct link or contact support.');
                     setLoading(false);
                     return;
                 }
@@ -79,6 +90,10 @@ function ShareContent() {
                     console.warn('[SHARE]   - No variation was selected yet');
                     console.warn('[SHARE]   - Variations are still generating');
                     console.warn('[SHARE]   - Data structure mismatch');
+                    console.warn('[SHARE]   - Payment webhook hasn\'t been processed yet');
+
+                    // Set error state instead of showing the gift UI
+                    setError('Your song is still being prepared. This usually means the payment is being processed or the songs are still generating. Please check your email in a few minutes for the link, or contact support if this persists.');
                 }
 
             } catch (error) {
@@ -97,7 +112,8 @@ function ShareContent() {
             router.push(`/play/${selectedTaskId}`);
         } else {
             console.error('[SHARE] No task ID available');
-            alert('🎵 Your song is still being prepared! Please check back in a few minutes. We\'ll send you an email when it\'s ready.');
+            // This should rarely happen now since we set error state earlier
+            alert('⚠️ Unable to open your song. The link may be invalid or the payment may not have completed. Please check your email for the correct link or contact support.');
         }
     };
 
@@ -105,6 +121,28 @@ function ShareContent() {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
                 <LoadingSpinner size="lg" variant="dots" color="primary" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="max-w-2xl w-full relative z-10 animate-in fade-in zoom-in duration-700">
+                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden p-8 text-center">
+                    <div className="text-6xl mb-4">❌</div>
+                    <h1 className={`text-2xl md:text-3xl font-bold text-red-600 mb-4 ${lora.className}`}>
+                        Oops! Something Went Wrong
+                    </h1>
+                    <p className="text-gray-700 mb-6 leading-relaxed">
+                        {error}
+                    </p>
+                    <button
+                        onClick={() => router.push('/')}
+                        className="px-6 py-3 bg-gradient-to-r from-red-600 to-green-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    >
+                        Return Home
+                    </button>
+                </div>
             </div>
         );
     }

@@ -82,16 +82,20 @@ export async function GET(request: NextRequest) {
 
         if (stripeSessionId) {
             // Query by Stripe session ID
+            console.log('[COMPOSE_FORMS_API] Querying by stripeSessionId:', stripeSessionId);
             const forms = await db.select()
                 .from(composeForms)
                 .where(eq(composeForms.stripeSessionId, stripeSessionId))
                 .limit(1);
             form = forms[0];
+            console.log('[COMPOSE_FORMS_API] Found form:', form ? `ID: ${form.id}` : 'null');
         } else {
             // Query by form ID
+            console.log('[COMPOSE_FORMS_API] Querying by formId:', formId);
             form = await db.query.composeForms.findFirst({
                 where: eq(composeForms.id, formId!),
             });
+            console.log('[COMPOSE_FORMS_API] Found form:', form ? `ID: ${form.id}` : 'null');
         }
 
         if (!form) {
