@@ -3,29 +3,60 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Lora } from 'next/font/google';
-import { Button } from '@/components/ui/button';
-import { MusicNote01Icon } from 'hugeicons-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { PremiumButton } from '@/components/ui/premium-button';
+import { CircleCheckBig, Sparkles, Mail, Music, Gift } from 'lucide-react';
 
 const lora = Lora({ subsets: ['latin'] });
+
+// Generate random confetti pieces
+function generateConfetti() {
+    const confetti = [];
+    for (let i = 0; i < 15; i++) {
+        confetti.push({
+            left: Math.random() * 100,
+            top: -(Math.random() * 20),
+            delay: Math.random() * 5,
+            duration: 3 + Math.random() * 3.5,
+            opacity: 0.65 + Math.random() * 0.25,
+            rotation: Math.random() * 360,
+            type: Math.random() > 0.5 ? 'square' : 'rect',
+            width: Math.random() > 0.7 ? 8 : Math.random() > 0.5 ? 5 : 4,
+            height: Math.random() > 0.7 ? 4 : Math.random() > 0.5 ? 12 : 4,
+        });
+    }
+    return confetti;
+}
 
 function SuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const sessionId = searchParams.get('session_id');
-    const [loading, setLoading] = useState(true);
-    const [resending, setResending] = useState(false);
-    const [resendStatus, setResendStatus] = useState<'idle' | 'success' | 'error'>('idle');
-    const [resendMessage, setResendMessage] = useState('');
+    const [confetti] = useState(generateConfetti);
+    const [currentStep, setCurrentStep] = useState(1);
+    const [recipientName, setRecipientName] = useState('');
+    const [orderNumber, setOrderNumber] = useState('');
 
     useEffect(() => {
         if (sessionId) {
-            // Update localStorage with success status
+            // Generate order number
+            setOrderNumber(`HUG-${Math.floor(10000000 + Math.random() * 90000000)}`);
+
+            // Get recipient name from form data
             const formId = sessionStorage.getItem('currentFormId');
             if (formId) {
                 const savedData = localStorage.getItem(`songForm_${formId}`);
                 if (savedData) {
+                    try {
+                        const parsedData = JSON.parse(savedData);
+                        const formData = parsedData.formData;
+                        if (formData?.songs?.[0]?.recipientName) {
+                            setRecipientName(formData.songs[0].recipientName);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing form data:', e);
+                    }
+
+                    // Update localStorage with success status
                     const parsedData = JSON.parse(savedData);
                     const updatedData = {
                         ...parsedData,
@@ -43,137 +74,271 @@ function SuccessContent() {
             sessionStorage.removeItem('songFormData');
             sessionStorage.removeItem('generatedPrompt');
             sessionStorage.removeItem('currentFormId');
-
-            // Show loading for effect
-            const timer = setTimeout(() => {
-                setLoading(false);
-            }, 2000);
-            return () => clearTimeout(timer);
         }
+
+        // Animate steps
+        const timer1 = setTimeout(() => setCurrentStep(2), 1000);
+        const timer2 = setTimeout(() => setCurrentStep(3), 2000);
+        const timer3 = setTimeout(() => setCurrentStep(4), 3000);
+
+        return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            clearTimeout(timer3);
+        };
     }, [sessionId]);
 
-    const handleResendEmail = async () => {
-        if (!sessionId) return;
-
-        setResending(true);
-        setResendStatus('idle');
-        setResendMessage('');
-
-        try {
-            const response = await fetch('/api/resend-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                setResendStatus('success');
-                setResendMessage('Email sent successfully! Check your inbox.');
-            } else {
-                setResendStatus('error');
-                setResendMessage(data.message || 'Failed to send email. Please try again.');
-            }
-        } catch (error) {
-            setResendStatus('error');
-            setResendMessage('Failed to send email. Please try again.');
-        } finally {
-            setResending(false);
-        }
-    };
+    const steps = [
+        {
+            id: 1,
+            title: 'Order Confirmed',
+            description: 'Your payment was successful',
+            icon: CircleCheckBig,
+            color: '#87CEEB',
+            completed: currentStep >= 1,
+        },
+        {
+            id: 2,
+            title: 'Crafting Your Song',
+            description: 'Our elves are composing magic',
+            icon: Music,
+            color: '#F5E6B8',
+            completed: currentStep >= 2,
+        },
+        {
+            id: 3,
+            title: 'Gift Wrapping',
+            description: 'Adding the final touches',
+            icon: Gift,
+            color: '#87CEEB',
+            completed: currentStep >= 3,
+        },
+        {
+            id: 4,
+            title: 'Express Festive Offer',
+            description: 'Sent via Santa\'s sleigh 🎅',
+            icon: Mail,
+            color: '#F5E6B8',
+            completed: currentStep >= 4,
+        },
+    ];
 
     return (
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#F5E6B8] p-8 md:p-12 shadow-[0_8px_30px_rgba(245,230,184,0.2)]">
-                {loading ? (
-                    <div className="space-y-6">
-                        <div className="w-20 h-20 mx-auto">
-                            <LoadingSpinner size="lg" variant="dots" color="primary" className="w-full h-full" />
+        <div className="w-full relative">
+            {/* Animated Confetti - Positioned relative to layout */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none z-[5]">
+                {confetti.map((piece, index) => (
+                    <div
+                        key={index}
+                        className="absolute animate-fall"
+                        style={{
+                            left: `${piece.left}%`,
+                            top: `${piece.top}%`,
+                            animationDelay: `${piece.delay}s`,
+                            animationDuration: `${piece.duration}s`,
+                            opacity: piece.opacity,
+                        }}
+                    >
+                        <div
+                            style={{
+                                backgroundColor: '#F5E6B8',
+                                width: `${piece.width}px`,
+                                height: `${piece.height}px`,
+                                transform: `rotate(${piece.rotation}deg)`,
+                            }}
+                        />
+                    </div>
+                ))}
+            </div>
+
+            {/* Content */}
+            <div className="max-w-3xl mx-auto px-4 py-4 md:py-8">
+                {/* Header */}
+                <div className="text-center mb-8 md:mb-12">
+                    <div className="flex items-center justify-center gap-3 md:gap-4 mb-4">
+                        <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] rounded-full animate-scale-in shadow-[0_0_40px_rgba(135,206,235,0.4)]">
+                            <CircleCheckBig className="w-6 h-6 md:w-7 md:h-7 text-white" />
                         </div>
-                        <h1 className={`text-2xl md:text-3xl font-medium text-[#E8DCC0] ${lora.className}`}>
-                            Confirming your order...
+                        <h1 className={`text-2xl md:text-4xl text-[#F5E6B8] animate-fade-in ${lora.className}`}>
+                            Order Confirmed
                         </h1>
                     </div>
-                ) : (
-                    <div className="space-y-8 animate-in fade-in zoom-in duration-500">
-                        <div className="w-24 h-24 mx-auto bg-[#F5E6B8]/20 rounded-full flex items-center justify-center border-2 border-[#F5E6B8]">
-                            <MusicNote01Icon className="w-12 h-12 text-[#F5E6B8]" />
-                        </div>
+                    <p className="text-base md:text-lg text-white/80 mb-2">
+                        Order #{orderNumber}
+                    </p>
+                </div>
 
-                        <div className="space-y-4">
-                            <h1 className={`text-3xl md:text-4xl font-normal text-[#F5E6B8] ${lora.className}`}>
-                                Payment Successful!
-                            </h1>
-                            <p className="text-lg text-white/80 leading-relaxed">
-                                Thank you for your order. We are now composing your bespoke song!
+                {/* Main Card */}
+                <div className="bg-white/10 backdrop-blur-md border-2 border-[#87CEEB]/30 rounded-2xl p-6 md:p-10 shadow-[0_8px_32px_rgba(135,206,235,0.2)]">
+                    {/* Message */}
+                    <div className="flex items-start gap-3 md:gap-4 mb-8 pb-8 border-b border-white/10">
+                        <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-[#F5E6B8] flex-shrink-0 mt-1 animate-pulse" />
+                        <div className="flex-1">
+                            <p className="text-white/90 text-base md:text-lg leading-relaxed">
+                                The Huggnote elves are putting the final touches on your special song
+                                {recipientName && (
+                                    <span className="text-[#F5E6B8]"> for {recipientName}</span>
+                                )}
+                                . Every note, every word will be uniquely yours.
                             </p>
-                            <div className="bg-[#1a3d5f]/50 rounded-lg p-6 border border-white/10">
-                                <p className="text-white/90">
-                                    You will receive an email shortly with the link to your song once it's ready.
-                                </p>
-
-                                {/* Resend Email Status */}
-                                {/* COMMENTED OUT FOR PRODUCTION
-                                {resendStatus === 'success' && (
-                                    <p className="mt-3 text-green-400 text-sm">
-                                        ✅ {resendMessage}
-                                    </p>
-                                )}
-                                {resendStatus === 'error' && (
-                                    <p className="mt-3 text-red-400 text-sm">
-                                        ❌ {resendMessage}
-                                    </p>
-                                )}
-                                */}
-                            </div>
-                        </div>
-
-                        <div className="pt-4 space-y-3">
-                            <PremiumButton onClick={() => router.push(`/share?session_id=${sessionId}`)} className="w-full">
-                                View & Share Your Song
-                            </PremiumButton>
-
-                            {/* Resend Email Button - COMMENTED OUT FOR PRODUCTION
-                            <Button
-                                variant="outline"
-                                className="w-full border-[#F5E6B8]/30 text-[#F5E6B8] hover:bg-[#F5E6B8]/10 hover:border-[#F5E6B8]"
-                                onClick={handleResendEmail}
-                                disabled={resending}
-                            >
-                                {resending ? (
-                                    <>
-                                        <LoadingSpinner size="sm" className="mr-2" />
-                                        Sending...
-                                    </>
-                                ) : (
-                                    '📧 Resend Email'
-                                )}
-                            </Button>
-                            */}
-
-                            <Button
-                                variant="ghost"
-                                className="w-full text-[#F5E6B8] hover:text-[#F5E6B8]/80 hover:bg-[#F5E6B8]/10"
-                                onClick={() => router.push('/')}
-                            >
-                                Return Home
-                            </Button>
                         </div>
                     </div>
-                )}
+
+                    {/* Email Notice */}
+                    <div className="flex items-start gap-4 mb-8 pb-8 border-b border-white/10">
+                        <div className="hidden md:flex w-14 h-14 bg-[#87CEEB] rounded-full items-center justify-center flex-shrink-0">
+                            <Mail className="w-7 h-7 text-white" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className={`text-base md:text-lg text-[#F5E6B8] mb-2 ${lora.className}`}>
+                                Incoming - Keep an Eye on Your Inbox
+                            </h3>
+                            <p className="text-white/80 text-sm md:text-base leading-relaxed">
+                                Your finished song will arrive at your email faster than Santa's sleigh!
+                            </p>
+                            <p className="text-white/80 text-sm md:text-base leading-relaxed mt-2">
+                                Thanks to our Express Festive Offer, your musical gift is already being crafted with extra holiday magic.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Progress Steps */}
+                    <div>
+                        <h2 className={`text-xl md:text-2xl text-[#F5E6B8] mb-6 text-center ${lora.className}`}>
+                            What Happens Next
+                        </h2>
+                        <div className="space-y-6">
+                            {steps.map((step, index) => {
+                                const Icon = step.icon;
+                                const isLast = index === steps.length - 1;
+                                const isActive = step.completed;
+
+                                return (
+                                    <div key={step.id} className="relative">
+                                        {/* Connector Line */}
+                                        {!isLast && (
+                                            <div
+                                                className="absolute left-5 md:left-7 top-10 md:top-14 w-0.5 h-10 md:h-12 transition-all duration-1000"
+                                                style={{
+                                                    background: isActive
+                                                        ? 'linear-gradient(rgba(135, 206, 235, 0.6), rgba(135, 206, 235, 0.2))'
+                                                        : 'rgba(255, 255, 255, 0.1)',
+                                                }}
+                                            />
+                                        )}
+
+                                        {/* Step Content */}
+                                        <div
+                                            className="flex items-start gap-4 md:gap-6 transition-all duration-500"
+                                            style={{ opacity: isActive ? 1 : 0.5 }}
+                                        >
+                                            {/* Icon Circle */}
+                                            <div
+                                                className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isActive
+                                                        ? 'bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] shadow-[0_0_30px_rgba(135,206,235,0.4)]'
+                                                        : 'bg-gradient-to-br from-[#87CEEB]/60 to-[#4A90E2]/60 shadow-[0_0_20px_rgba(135,206,235,0.3)]'
+                                                    } ${!isActive && step.id === 4 ? 'animate-pulse' : ''}`}
+                                                style={{
+                                                    borderColor: step.color,
+                                                    borderWidth: '2px',
+                                                    borderStyle: 'solid',
+                                                }}
+                                            >
+                                                <Icon className="w-5 h-5 md:w-7 md:h-7 text-white" />
+                                            </div>
+
+                                            {/* Text */}
+                                            <div className="flex-1 pt-1 md:pt-2">
+                                                <h3
+                                                    className={`text-base md:text-lg mb-1 ${lora.className}`}
+                                                    style={{ color: step.color }}
+                                                >
+                                                    {step.title}
+                                                </h3>
+                                                <p className="text-sm md:text-base text-white/80">
+                                                    {step.description}
+                                                </p>
+                                            </div>
+
+                                            {/* Checkmark */}
+                                            {isActive && step.id !== 4 && (
+                                                <CircleCheckBig className="w-5 h-5 md:w-6 md:h-6 text-[#87CEEB] flex-shrink-0 animate-scale-in" />
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-8 space-y-3">
+                    <button
+                        onClick={() => router.push(`/share?session_id=${sessionId}`)}
+                        className="w-full py-4 px-6 bg-gradient-to-br from-[#F5E6B8] to-[#D4C89A] text-[#1a3d5f] rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(245,230,184,0.3)] hover:shadow-[0_6px_25px_rgba(245,230,184,0.4)] transition-all duration-200"
+                    >
+                        View & Share Your Song
+                    </button>
+                    <button
+                        onClick={() => router.push('/')}
+                        className="w-full py-3 px-6 bg-white/10 hover:bg-white/20 text-[#E0F4FF] rounded-xl font-medium border border-white/20 transition-all duration-200"
+                    >
+                        Return Home
+                    </button>
+                </div>
             </div>
+
+            {/* Animations */}
+            <style jsx>{`
+                @keyframes fall {
+                    to {
+                        transform: translateY(100vh) rotate(360deg);
+                    }
+                }
+                @keyframes scale-in {
+                    from {
+                        transform: scale(0);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: scale(1);
+                        opacity: 1;
+                    }
+                }
+                @keyframes fade-in {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fall {
+                    animation: fall linear infinite;
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.5s ease-out;
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.8s ease-out;
+                }
+            `}</style>
         </div>
     );
 }
 
 export default function SuccessPage() {
     return (
-        <Suspense fallback={
-            <div className="flex min-h-screen items-center justify-center text-white">
-                <LoadingSpinner size="lg" variant="dots" color="primary" />
-            </div>
-        }>
+        <Suspense
+            fallback={
+                <div className="flex items-center justify-center min-h-[50vh]">
+                    <LoadingSpinner size="lg" variant="dots" color="primary" />
+                </div>
+            }
+        >
             <SuccessContent />
         </Suspense>
     );

@@ -66,7 +66,7 @@ export default function ComposeLayout({
                             )}
 
                             {/* Centered Logo */}
-                            <div className="absolute left-1/2 top-0 transform -translate-x-1/2 w-full flex justify-center pointer-events-none">
+                            <div className="absolute left-1/2 top-0 transform -translate-x-1/2 w-full flex justify-center">
                                 <Image
                                     src="/huggnote bespoke logo.png"
                                     alt="Huggnote Bespoke Songs"

@@ -395,10 +395,11 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                         <FormItem>
                             <FormLabel className={`block text-[#F5E6B8] mb-6 text-xl md:text-2xl ${lora.className}`}>One last thing...select overall vibe? <span className="text-[#F5E6B8]">*</span></FormLabel>
                             <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     {vibes.map((vibe) => (
-                                        <div
+                                        <button
                                             key={vibe.value}
+                                            type="button"
                                             onClick={() => field.onChange(vibe.value)}
                                             className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all duration-200 transform cursor-pointer ${field.value === vibe.value
                                                 ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105'
@@ -413,19 +414,17 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                             )}
                                             {vibe.value === 'formal' && (
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 mb-3 text-[#87CEEB]/70">
-                                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                                    <path d="M19 21 v-2 a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
                                                     <circle cx="12" cy="7" r="4"></circle>
                                                 </svg>
                                             )}
                                             <div className="text-center mb-2 text-[#F5E6B8] font-medium">{vibe.label}</div>
                                             <div className="text-xs text-[#87CEEB]/70">{vibe.description}</div>
-                                        </div>
+                                        </button>
                                     ))}
-                                </RadioGroup>
+                                </div>
                             </FormControl>
-                            <div className="mt-4">
-                                <FormMessage className="text-red-400 text-sm font-medium" />
-                            </div>
+                            <FormMessage className="text-red-400 text-sm font-medium mt-4" />
                         </FormItem>
                     )}
                 />

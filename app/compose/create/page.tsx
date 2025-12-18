@@ -73,7 +73,7 @@ const defaultSongValues = {
     voiceType: "",
     genreStyle: "",
     style: "",
-    vibe: "",
+    vibe: "loving", // Default to loving vibe
     deliverySpeed: "express", // Default to express (gifted option)
     senderMessage: "",
 };
@@ -94,7 +94,7 @@ export default function CreatePage() {
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        mode: 'onBlur', // Validate when user leaves a field
+        mode: 'onSubmit', // Show errors when submit is clicked
         reValidateMode: 'onChange', // Re-validate on every change after first validation
         shouldUnregister: false, // Keep values when switching tabs
         defaultValues: {
@@ -211,6 +211,16 @@ export default function CreatePage() {
     }, []);
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
+        // Log form submission
+        console.log('=== FORM SUBMITTED ===');
+        console.log('Form Values:', JSON.stringify(values, null, 2));
+        console.log('Songs:', values.songs.map((s, i) => ({
+            song: i + 1,
+            vibe: s.vibe,
+            theme: s.theme,
+            deliverySpeed: s.deliverySpeed
+        })));
+
         if (credits !== null && credits < 1) {
             setShowCreditsDialog(true);
             return;

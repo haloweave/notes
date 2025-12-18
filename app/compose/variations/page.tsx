@@ -1001,7 +1001,7 @@ function VariationsContent() {
                 generationStatus === 'ready' && (
                     <div className="max-w-6xl mx-auto px-4 mb-6">
                         <div className="bg-[#1e293b]/80 border-2 border-[#F5E6B8]/60 rounded-xl p-4 text-center backdrop-blur-sm">
-                            <p className="text-[#F5E6B8] font-medium">✨ {generationProgress}</p>
+                            <p className="text-[#F5E6B8] font-medium">{generationProgress}</p>
                         </div>
                     </div>
                 )
@@ -1204,43 +1204,56 @@ function VariationsContent() {
                     ))}
                 </div>
 
-                {/* Login Prompt (if not logged in and songs are ready) */}
+                {/* Login Required Prompt (if not logged in and songs are ready) */}
                 {!session?.user && generationStatus === 'ready' && (
                     <div className="mt-6 mb-4 max-w-2xl mx-auto">
                         <div className="bg-gradient-to-br from-[#87CEEB]/20 to-[#5BA5D0]/20 border-2 border-[#87CEEB]/40 rounded-xl p-6 text-center backdrop-blur-sm">
                             <h3 className="text-xl font-semibold text-white mb-2">🎵 Love your song?</h3>
                             <p className="text-white/80 mb-4">
-                                Sign in to save it to your dashboard and access it anytime!
+                                Sign in to save it to your dashboard and proceed to payment!
                             </p>
-                            <Button
-                                onClick={openDialog}
-                                className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg"
-                            >
-                                Sign In to Save
-                            </Button>
-                            <p className="text-white/60 text-sm mt-3">
-                                Or continue as guest (you'll still get your song!)
+                            <p className="text-white/60 text-sm mb-4">
+                                Login is required to complete your purchase and access your songs.
                             </p>
                         </div>
                     </div>
                 )}
 
-                {/* Continue Button */}
+                {/* Payment Button - Only show if logged in OR show Login button */}
                 <div className="mt-6 flex justify-center">
-                    <PremiumButton
-                        onClick={handleContinue}
-                        disabled={loading}
-                        className={isBundle && completedCount < totalSongs ? "opacity-70" : ""}
-                    >
-                        {loading ? (
-                            <>
-                                <LoadingSpinner size="md" variant="dots" color="primary" />
-                                Generating Your Song...
-                            </>
-                        ) : (
-                            isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
-                        )}
-                    </PremiumButton>
+                    {!session?.user ? (
+                        // Not logged in - Show Login button
+                        <PremiumButton
+                            onClick={openDialog}
+                            disabled={generationStatus !== 'ready'}
+                            className={generationStatus !== 'ready' ? "opacity-50 cursor-not-allowed" : ""}
+                        >
+                            {generationStatus !== 'ready' ? (
+                                <>
+                                    <LoadingSpinner size="md" variant="dots" color="primary" />
+                                    Generating Songs...
+                                </>
+                            ) : (
+                                "Login to Continue"
+                            )}
+                        </PremiumButton>
+                    ) : (
+                        // Logged in - Show Proceed to Payment button
+                        <PremiumButton
+                            onClick={handleContinue}
+                            disabled={loading || (isBundle && completedCount < totalSongs)}
+                            className={isBundle && completedCount < totalSongs ? "opacity-70" : ""}
+                        >
+                            {loading ? (
+                                <>
+                                    <LoadingSpinner size="md" variant="dots" color="primary" />
+                                    Processing...
+                                </>
+                            ) : (
+                                isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
+                            )}
+                        </PremiumButton>
+                    )}
                 </div>
             </div>
 

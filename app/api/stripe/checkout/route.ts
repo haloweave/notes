@@ -19,17 +19,15 @@ export async function POST(req: NextRequest) {
             headers: await headers()
         });
 
-        // Determine user identity: Session user OR Guest email
-        let customerEmail = session?.user?.email;
-        let userId = session?.user?.id;
-
-        if (!customerEmail && formData?.senderEmail) {
-            customerEmail = formData.senderEmail;
+        // Require login - no guest checkout
+        if (!session?.user?.id || !session?.user?.email) {
+            return NextResponse.json({
+                error: "Authentication required. Please log in to complete your purchase."
+            }, { status: 401 });
         }
 
-        if (!customerEmail) {
-            return NextResponse.json({ error: "Unauthorized: Please login or provide an email in the form." }, { status: 401 });
-        }
+        const customerEmail = session.user.email;
+        const userId = session.user.id;
 
         let priceData;
         let credits = 0;
@@ -65,12 +63,8 @@ export async function POST(req: NextRequest) {
         const metadata: any = {
             credits: credits.toString(),
             packageId: packageId,
-            isGuest: (!userId).toString()
+            userId: userId
         };
-
-        if (userId) {
-            metadata.userId = userId;
-        }
 
         // Add variation data if provided
         if (selections) {
@@ -102,11 +96,6 @@ export async function POST(req: NextRequest) {
                 metadata.theme = formData.theme || '';
             }
             metadata.senderName = formData.senderName || '';
-
-            // Store sender email in metadata as well for guest checkout reference
-            if (!userId) {
-                metadata.guestEmail = formData.senderEmail;
-            }
         }
 
         const checkoutSession = await stripe.checkout.sessions.create({
