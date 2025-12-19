@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,11 @@ interface SongData {
     aboutThem: string;
     moreInfo?: string;
     senderMessage?: string;
+    // Musical preferences
+    voiceType?: string;
+    genreStyle?: string;
+    style?: string;
+    vibe?: string;
 }
 
 function VariationsContent() {
@@ -55,6 +60,9 @@ function VariationsContent() {
     const [generationProgress, setGenerationProgress] = useState<string>('');
     const [audioRefs, setAudioRefs] = useState<Record<number, HTMLAudioElement | null>>({});
     const [audioProgress, setAudioProgress] = useState<Record<number, { currentTime: number; duration: number }>>({});
+
+    // 🔥 CRITICAL: Prevent duplicate generation (React Strict Mode + effect re-runs)
+    const generationStartedRef = useRef<boolean>(false);
 
     const formIdParam = searchParams.get('formId');
 
@@ -248,6 +256,12 @@ function VariationsContent() {
 
             if (songs.length === 0 || generationStatus !== 'idle') return;
 
+            // 🔥 CRITICAL: Prevent duplicate generation (React Strict Mode)
+            if (generationStartedRef.current) {
+                console.log('[VARIATIONS] Generation already started, skipping duplicate request');
+                return;
+            }
+
             // Check if we already have task IDs for the current active tab (from localStorage or state)
             if (taskIds[activeTab] && taskIds[activeTab].length > 0) {
                 console.log('[VARIATIONS] Task IDs already exist in state for song', activeTab, '- skipping generation');
@@ -325,57 +339,58 @@ function VariationsContent() {
             }
 
             console.log('[VARIATIONS] Starting music generation for song', activeTab);
+
+            // 🔥 Mark generation as started to prevent duplicates
+            generationStartedRef.current = true;
+
             setGenerationStatus('generating');
             setGenerationProgress('Generating your song...');
 
             try {
                 // Generate 3 DIFFERENT variations with unique styles
+                // NEW APPROACH: Use music_style parameter instead of prompt modifiers
                 const songVariations = [
                     {
                         id: 1,
                         name: 'Poetic & Romantic',
-                        modifier: 'with poetic romantic style, soft ballad'
+                        musicStyle: 'Romantic Ballad, Soft, Poetic'
                     },
                     {
                         id: 2,
                         name: 'Upbeat & Playful',
-                        modifier: 'with upbeat playful style, catchy pop'
+                        musicStyle: 'Pop, Upbeat, Playful, Catchy'
                     },
                     {
                         id: 3,
                         name: 'Heartfelt & Emotional',
-                        modifier: 'with heartfelt emotional style, acoustic'
+                        musicStyle: 'Acoustic, Heartfelt, Emotional'
                     }
                 ];
 
                 const newTaskIds: (string | null)[] = [];
 
-                // Generate 3 different songs with unique prompts
+                // Generate 3 different songs with unique prompts and styles
                 for (let i = 0; i < songVariations.length; i++) {
                     setGenerationProgress(`Creating variation ${i + 1} of 3...`);
 
-                    // Create a unique prompt for each song variation
-                    // IMPORTANT: MusicGPT has a 300-character limit!
-                    const modifier = songVariations[i].modifier;
-                    let basePrompt = currentPrompt;
+                    // Use the base prompt without style modifiers
+                    // MusicGPT recommends <280 characters for optimal results
+                    let finalPrompt = currentPrompt;
 
-                    // Calculate combined length and truncate base if needed
-                    const maxBaseLength = 300 - modifier.length - 1; // -1 for the space
-                    if (basePrompt.length > maxBaseLength) {
-                        basePrompt = basePrompt.substring(0, maxBaseLength - 3) + '...';
-                        console.log(`[VARIATIONS] Truncated base prompt to ${basePrompt.length} chars to fit modifier`);
+                    // Ensure prompt is within 280 character limit
+                    if (finalPrompt.length > 280) {
+                        finalPrompt = finalPrompt.substring(0, 277) + '...';
+                        console.log(`[VARIATIONS] Truncated prompt to ${finalPrompt.length} chars`);
                     }
 
-                    const uniquePrompt = `${basePrompt} ${modifier}`;
-
-                    // Final safety check
-                    const finalPrompt = uniquePrompt.length > 300
-                        ? uniquePrompt.substring(0, 297) + '...'
-                        : uniquePrompt;
+                    // Get music style from form data or use variation default
+                    const currentSong = songs[activeTab];
+                    const musicStyle = currentSong?.genreStyle || currentSong?.style || songVariations[i].musicStyle;
 
                     console.log(`[VARIATIONS] Generating variation ${i + 1} (${songVariations[i].name})`);
-                    console.log(`[VARIATIONS] Prompt length: ${finalPrompt.length}/300 chars`);
+                    console.log(`[VARIATIONS] Prompt length: ${finalPrompt.length}/280 chars`);
                     console.log(`[VARIATIONS] Prompt: ${finalPrompt}`);
+                    console.log(`[VARIATIONS] Music Style: ${musicStyle}`);
 
                     let retries = 0;
                     let success = false;
@@ -388,10 +403,11 @@ function VariationsContent() {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     prompt: finalPrompt,
+                                    music_style: musicStyle,  // Pass style separately
                                     make_instrumental: false,
                                     wait_audio: false,
                                     preview_mode: true,  // Bypass credit check for preview
-                                    custom_message: songs[activeTab]?.senderMessage || null  // Add sender message
+                                    custom_message: songs[activeTab]?.senderMessage || null
                                 })
                             });
 

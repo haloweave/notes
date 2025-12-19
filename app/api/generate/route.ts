@@ -77,7 +77,10 @@ export async function POST(request: NextRequest) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                ...body,
+                prompt: body.prompt,
+                music_style: body.music_style || undefined,
+                make_instrumental: body.make_instrumental || false,
+                wait_audio: body.wait_audio || false,
                 webhook_url: webhookUrl,
                 num_outputs: 1
             }),

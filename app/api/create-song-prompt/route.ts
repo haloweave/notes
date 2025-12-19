@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         }
 
         const systemPrompt = `You are an expert song prompt engineer for AI music generation.
-Create a concise, personalized prompt (max 250 characters) for an AI music generator that will create a heartfelt, customized song.
+Create a concise, personalized prompt (max 280 characters) for an AI music generator that will create a heartfelt, customized song.
 
 IMPORTANT: Include these specific details in the prompt:
 - Recipient's name: "${formData.recipientName}"${formData.recipientNickname ? ` (nickname: "${formData.recipientNickname}")` : ''}
@@ -31,12 +31,13 @@ ${formData.activitiesTogether ? `- Activities together: ${formData.activitiesTog
 ${formData.characteristics ? `- Characteristics: ${formData.characteristics}` : ''}
 ${formData.locationDetails ? `- Location details: ${formData.locationDetails}` : ''}
 - Sender's message: "${formData.senderMessage}"
-- Musical style: ${formData.genreStyle || 'versatile'}${formData.voiceType ? `, ${formData.voiceType} voice` : ''}${formData.style ? `, ${formData.style} style` : ''}
 - Overall vibe: ${formData.vibe}
+
+NOTE: Do NOT include musical style or genre in the prompt - that will be handled separately.
 
 Create a prompt that captures the personal connection, mentions the recipient by name, references their qualities (${formData.qualities}), incorporates the favorite memory (${formData.favoriteMemory}), and reflects the ${formData.theme} theme with a ${formData.vibe} tone.
 
-Output only the prompt string (max 250 chars). Make it personal and specific to this relationship. Be concise.`;
+Output only the prompt string (max 280 chars). Make it personal and specific to this relationship. Be concise.`;
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -74,18 +75,18 @@ Output only the prompt string (max 250 chars). Make it personal and specific to 
         let regenerationAttempts = 0;
         const maxRegenerationAttempts = 2;
 
-        while (generatedPrompt.length > 250 && regenerationAttempts < maxRegenerationAttempts) {
+        while (generatedPrompt.length > 280 && regenerationAttempts < maxRegenerationAttempts) {
             regenerationAttempts++;
             console.log(`[CREATE-SONG-PROMPT] ⚠️ Prompt too long (${generatedPrompt.length} chars). Regenerating attempt ${regenerationAttempts}/${maxRegenerationAttempts}...`);
 
-            const shortenPrompt = `The following song prompt is ${generatedPrompt.length} characters, but it must be MAXIMUM 250 characters.
+            const shortenPrompt = `The following song prompt is ${generatedPrompt.length} characters, but it must be MAXIMUM 280 characters.
 
 Original prompt:
 "${generatedPrompt}"
 
-Rewrite this prompt to be EXACTLY the same meaning but MUCH shorter (max 250 characters). Keep the recipient's name, relationship, theme, and key details. Remove unnecessary words. Be extremely concise.
+Rewrite this prompt to be EXACTLY the same meaning but MUCH shorter (max 280 characters). Keep the recipient's name, relationship, theme, and key details. Remove unnecessary words. Be extremely concise.
 
-Output ONLY the shortened prompt (max 250 chars):`;
+Output ONLY the shortened prompt (max 280 chars):`;
 
             const regenerateResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
@@ -118,9 +119,9 @@ Output ONLY the shortened prompt (max 250 chars):`;
 
         // Final fallback: Truncate if still too long after regeneration attempts
         let finalPrompt = generatedPrompt;
-        if (generatedPrompt.length > 250) {
+        if (generatedPrompt.length > 280) {
             console.log(`[CREATE-SONG-PROMPT] ⚠️ Still too long after ${regenerationAttempts} regeneration attempts. Truncating...`);
-            finalPrompt = generatedPrompt.substring(0, 247) + '...';
+            finalPrompt = generatedPrompt.substring(0, 277) + '...';
         }
 
         console.log('[CREATE-SONG-PROMPT] ✅ Final prompt:', finalPrompt);
