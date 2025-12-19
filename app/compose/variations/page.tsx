@@ -240,6 +240,12 @@ function VariationsContent() {
     // Generate music variations when songs are loaded
     useEffect(() => {
         const generateVariations = async () => {
+            // 🔥 CRITICAL FIX: Prevent race condition during page load
+            if (isLoadingSession) {
+                console.log('[VARIATIONS] Still loading session data, skipping generation check');
+                return;
+            }
+
             if (songs.length === 0 || generationStatus !== 'idle') return;
 
             // Check if we already have task IDs for the current active tab (from localStorage or state)
@@ -420,6 +426,51 @@ function VariationsContent() {
 
                     if (taskId) {
                         newTaskIds.push(taskId);
+
+                        // 🔥 CRITICAL FIX: Save immediately to prevent data loss if user closes tab
+                        // Update state immediately
+                        setTaskIds(prev => ({
+                            ...prev,
+                            [activeTab]: [...newTaskIds]
+                        }));
+
+                        // Save to localStorage immediately
+                        if (formIdParam) {
+                            const savedData = localStorage.getItem(`songForm_${formIdParam}`);
+                            if (savedData) {
+                                const parsed = JSON.parse(savedData);
+                                const updatedTaskIds = {
+                                    ...parsed.variationTaskIds,
+                                    [activeTab]: [...newTaskIds]
+                                };
+                                parsed.variationTaskIds = updatedTaskIds;
+                                localStorage.setItem(`songForm_${formIdParam}`, JSON.stringify(parsed));
+                                console.log(`[VARIATIONS] ✅ Saved task ID ${i + 1} to localStorage immediately`);
+
+                                // 🔥 Save to database IMMEDIATELY (don't wait for all 3)
+                                try {
+                                    const response = await fetch('/api/compose/forms', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            formId: formIdParam,
+                                            variationTaskIds: updatedTaskIds,
+                                            status: i === 0 ? 'variations_generating' : undefined // Only update status on first save
+                                        })
+                                    });
+
+                                    if (!response.ok && response.status !== 404) {
+                                        console.error(`[VARIATIONS] ⚠️ Failed to save task ID ${i + 1} to database (non-critical)`);
+                                        // Don't throw - continue generation even if DB save fails
+                                    } else if (response.ok) {
+                                        console.log(`[VARIATIONS] ✅ Saved task ID ${i + 1} to database immediately`);
+                                    }
+                                } catch (dbError) {
+                                    console.error(`[VARIATIONS] ⚠️ Database save error for task ID ${i + 1}:`, dbError);
+                                    // Don't throw - continue generation
+                                }
+                            }
+                        }
                     } else {
                         console.warn(`[VARIATIONS] Pushing null for variation ${i + 1} due to failure`);
                         newTaskIds.push(null);
@@ -431,56 +482,11 @@ function VariationsContent() {
                     }
                 }
 
-                // Store task IDs for this song
+                // Final state update (redundant but ensures consistency)
                 setTaskIds(prev => ({
                     ...prev,
                     [activeTab]: newTaskIds
                 }));
-
-                // Save to localStorage
-                if (formIdParam) {
-                    const savedData = localStorage.getItem(`songForm_${formIdParam}`);
-                    if (savedData) {
-                        const parsed = JSON.parse(savedData);
-                        const updatedTaskIds = {
-                            ...parsed.variationTaskIds,
-                            [activeTab]: newTaskIds
-                        };
-                        parsed.variationTaskIds = updatedTaskIds;
-                        localStorage.setItem(`songForm_${formIdParam}`, JSON.stringify(parsed));
-                        console.log('[VARIATIONS] Saved task IDs to localStorage');
-
-                        // Save to database (BLOCKING - must succeed before starting polling)
-                        try {
-                            const response = await fetch('/api/compose/forms', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    formId: formIdParam,
-                                    variationTaskIds: updatedTaskIds,
-                                    status: 'variations_generating'
-                                })
-                            });
-
-                            if (!response.ok) {
-                                if (response.status === 404) {
-                                    console.warn('[VARIATIONS] Form not found in database (old session)');
-                                    // For old sessions, we can continue with localStorage only
-                                } else {
-                                    const errorData = await response.json();
-                                    throw new Error(errorData.message || `Database save failed: ${response.status}`);
-                                }
-                            } else {
-                                console.log('[VARIATIONS] ✅ Saved task IDs to database');
-                            }
-                        } catch (dbError: any) {
-                            console.error('[VARIATIONS] ❌ Database save failed:', dbError);
-                            setGenerationStatus('error');
-                            setGenerationProgress(`Database error: ${dbError.message}. Please refresh and try again.`);
-                            return; // STOP - don't start polling
-                        }
-                    }
-                }
 
                 console.log('[VARIATIONS] All variations submitted. Task IDs:', newTaskIds);
                 setGenerationStatus('waiting');
@@ -498,10 +504,10 @@ function VariationsContent() {
             }
         };
 
-        if (songs.length > 0 && generationStatus === 'idle') {
+        if (songs.length > 0 && generationStatus === 'idle' && !isLoadingSession) {
             generateVariations();
         }
-    }, [songs, activeTab, generationStatus, taskIds]);
+    }, [songs, activeTab, generationStatus, taskIds, isLoadingSession]);
 
     // Dynamic Variations based on current song
     const currentSong = songs[activeTab] || {};
@@ -534,8 +540,21 @@ function VariationsContent() {
     const checkDatabaseForUpdates = async (songIndex: number) => {
         console.log('[VARIATIONS] Starting database check for song', songIndex);
 
+        // 🔥 CRITICAL FIX: Add timeout to prevent infinite polling
+        const startTime = Date.now();
+        const MAX_WAIT_TIME = 5 * 60 * 1000; // 5 minutes
+
         const checkDatabase = async () => {
             if (!formIdParam) return;
+
+            // Check if we've exceeded timeout
+            const elapsed = Date.now() - startTime;
+            if (elapsed > MAX_WAIT_TIME) {
+                console.error('[VARIATIONS] ⏱️ Generation timeout after 5 minutes');
+                setGenerationStatus('error');
+                setGenerationProgress('Generation is taking longer than expected. Please refresh the page or contact support if the issue persists.');
+                return; // Stop polling
+            }
 
             try {
                 const response = await fetch(`/api/compose/forms?formId=${formIdParam}`);
@@ -603,11 +622,14 @@ function VariationsContent() {
                         setGenerationProgress('All variations ready! Click play to listen.');
                         return; // Stop checking
                     } else {
-                        // Show detailed progress
+                        // Show detailed progress with time remaining
+                        const minutesElapsed = Math.floor(elapsed / 60000);
+                        const timeRemaining = Math.max(0, 5 - minutesElapsed);
+
                         if (lyricsCount > audioCount) {
-                            setGenerationProgress(`${lyricsCount} lyrics ready • ${audioCount} of ${expectedCount} audio ready...`);
+                            setGenerationProgress(`${lyricsCount} lyrics ready • ${audioCount} of ${expectedCount} audio ready... (~${timeRemaining} min remaining)`);
                         } else {
-                            setGenerationProgress(`${completedCount} of ${expectedCount} variations ready...`);
+                            setGenerationProgress(`${completedCount} of ${expectedCount} variations ready... (~${timeRemaining} min remaining)`);
                         }
                     }
                 }
@@ -617,6 +639,15 @@ function VariationsContent() {
 
             } catch (error) {
                 console.error('[VARIATIONS] Error checking database:', error);
+
+                // Check timeout even on error
+                const elapsed = Date.now() - startTime;
+                if (elapsed > MAX_WAIT_TIME) {
+                    setGenerationStatus('error');
+                    setGenerationProgress('Unable to check generation status. Please refresh the page.');
+                    return;
+                }
+
                 setTimeout(checkDatabase, 15000); // Retry on error
             }
         };
@@ -1069,8 +1100,21 @@ function VariationsContent() {
             {
                 generationStatus === 'error' && (
                     <div className="max-w-6xl mx-auto px-4 mb-6">
-                        <div className="bg-red-900/20 border-2 border-red-500/40 rounded-xl p-4 text-center backdrop-blur-sm">
-                            <p className="text-red-300 font-medium">❌ {generationProgress}</p>
+                        <div className="bg-red-900/20 border-2 border-red-500/40 rounded-xl p-6 text-center backdrop-blur-sm">
+                            <p className="text-red-300 font-medium mb-4">❌ {generationProgress}</p>
+                            <button
+                                onClick={() => {
+                                    console.log('[VARIATIONS] User clicked retry - resetting generation state');
+                                    setGenerationStatus('idle');
+                                    setTaskIds({});
+                                    setAudioUrls({});
+                                    setLyrics({});
+                                    // Will trigger regeneration via useEffect
+                                }}
+                                className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all duration-200 font-medium"
+                            >
+                                🔄 Retry Generation
+                            </button>
                         </div>
                     </div>
                 )
