@@ -263,7 +263,9 @@ function VariationsContent() {
             }
 
             // Check if we already have task IDs for the current active tab (from localStorage or state)
-            if (taskIds[activeTab] && taskIds[activeTab].length > 0) {
+            // Use the current value from state, not from dependencies
+            const currentTaskIds = taskIds[activeTab];
+            if (currentTaskIds && currentTaskIds.length > 0) {
                 console.log('[VARIATIONS] Task IDs already exist in state for song', activeTab, '- skipping generation');
                 return;
             }
@@ -517,13 +519,15 @@ function VariationsContent() {
                 console.error('[VARIATIONS] Error generating variations:', error);
                 setGenerationStatus('error');
                 setGenerationProgress('Failed to generate variations. Please try again.');
+                // Reset the ref on error so user can retry
+                generationStartedRef.current = false;
             }
         };
 
         if (songs.length > 0 && generationStatus === 'idle' && !isLoadingSession) {
             generateVariations();
         }
-    }, [songs, activeTab, generationStatus, taskIds, isLoadingSession]);
+    }, [songs, activeTab, generationStatus, isLoadingSession]); // Removed taskIds from dependencies!
 
     // Dynamic Variations based on current song
     const currentSong = songs[activeTab] || {};
@@ -1220,8 +1224,8 @@ function VariationsContent() {
 
                                 {/* Status Indicator */}
                                 <div className="mb-3">
-                                    {/* Failed State */}
-                                    {taskIds[activeTab] && !taskIds[activeTab][variation.id - 1] && (
+                                    {/* Failed State - Only show if generation is complete and task ID is null */}
+                                    {(generationStatus === 'ready' || generationStatus === 'error') && taskIds[activeTab] && taskIds[activeTab][variation.id - 1] === null && (
                                         <div className="flex items-center gap-2 text-sm text-red-400">
                                             <span>❌</span>
                                             <span>Generation Failed</span>

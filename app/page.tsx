@@ -203,7 +203,7 @@ export default function LandingPage() {
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    router.push('/privacy');
+                    setIsPrivacyModalOpen(true);
                   }}
                   className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200 text-left"
                 >

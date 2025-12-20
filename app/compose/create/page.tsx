@@ -26,48 +26,61 @@ const songSchema = z.object({
         .trim()
         .min(1, "Please enter the recipient's name")
         .max(100, "Recipient's name is too long"),
+    pronunciation: z.string()
+        .trim()
+        .min(1, "Please provide pronunciation")
+        .max(100, "Pronunciation is too long"),
     recipientNickname: z.string()
         .trim()
-        .transform(val => val === "" ? undefined : val)
-        .optional(),
+        .min(1, "Please tell us what you'll call them")
+        .max(50, "Nickname is too long"),
     relationship: z.string()
         .trim()
         .min(1, "Please specify the relationship")
         .max(50, "Relationship is too long"),
-    pronunciation: z.string()
-        .trim()
-        .transform(val => val === "" ? undefined : val)
-        .optional(),
 
-    // Theme selection
+    // Theme selection (NEW - Required)
     theme: z.string()
         .min(1, "Please select a theme"),
+
+    // Emotions to Convey (NEW - Required)
+    emotions: z.string()
+        .min(1, "Please select the emotions you want to convey"),
 
     // About Them - Detailed fields
     overallMessage: z.string()
         .trim()
-        .min(1, "Please tell us what you're trying to say")
-        .max(300, "Overall message must be less than 300 characters"),
+        .min(1, "Please tell us who they are to you")
+        .max(300, "Message must be less than 300 characters"),
     storySummary: z.string()
         .trim()
         .min(1, "Please provide a short summary of your story")
         .max(500, "Story summary must be less than 500 characters"),
-    favoriteMemory: z.string()
-        .trim()
-        .min(1, "Please share a favorite memory")
-        .max(300, "Favorite memory must be less than 300 characters"),
     qualities: z.string()
         .trim()
         .min(1, "Please list some qualities you admire")
         .max(300, "Qualities must be less than 300 characters"),
+    characteristics: z.string()
+        .trim()
+        .max(300, "Characteristics must be less than 300 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+
+    // Grateful For (NEW - Optional)
+    gratefulFor: z.string()
+        .trim()
+        .max(300, "Grateful for must be less than 300 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
+
     activitiesTogether: z.string()
         .trim()
         .max(300, "Activities must be less than 300 characters")
         .transform(val => val === "" ? undefined : val)
         .optional(),
-    characteristics: z.string()
+    favoriteMemory: z.string()
         .trim()
-        .max(300, "Characteristics must be less than 300 characters")
+        .max(300, "Favorite memory must be less than 300 characters")
         .transform(val => val === "" ? undefined : val)
         .optional(),
     locationDetails: z.string()
@@ -76,14 +89,13 @@ const songSchema = z.object({
         .transform(val => val === "" ? undefined : val)
         .optional(),
 
+    // Festive Lyrics Level (NEW - Required)
+    festiveLyricsLevel: z.string()
+        .min(1, "Please select how festive you want the lyrics to be"),
+
     // Musical Preferences
     voiceType: z.string()
         .trim()
-        .transform(val => val === "" ? undefined : val)
-        .optional(),
-    genreStyle: z.string()
-        .trim()
-        .max(100, "Genre must be less than 100 characters")
         .transform(val => val === "" ? undefined : val)
         .optional(),
     style: z.string()
@@ -91,7 +103,11 @@ const songSchema = z.object({
         .transform(val => val === "" ? undefined : val)
         .optional(),
 
-    // Vibe
+    // Festive Sound Level (NEW - Required)
+    festiveSoundLevel: z.string()
+        .min(1, "Please select how festive you want the song to sound"),
+
+    // Vibe (Required)
     vibe: z.string()
         .min(1, "Please select an overall vibe"),
 });
@@ -128,20 +144,23 @@ const formSchema = z.object({
 
 const defaultSongValues = {
     recipientName: "",
+    pronunciation: "",
     recipientNickname: "",
     relationship: "",
-    pronunciation: "",
     theme: "",
+    emotions: "love", // Preselect "Love" as default
     overallMessage: "",
     storySummary: "",
-    favoriteMemory: "",
     qualities: "",
-    activitiesTogether: "",
     characteristics: "",
+    gratefulFor: "",
+    activitiesTogether: "",
+    favoriteMemory: "",
     locationDetails: "",
+    festiveLyricsLevel: "lightly-festive", // Preselect "Lightly Festive" as default
     voiceType: "",
-    genreStyle: "",
     style: "",
+    festiveSoundLevel: "lightly-festive", // Preselect "Lightly Festive" as default
     vibe: "loving",
 };
 

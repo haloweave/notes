@@ -15,12 +15,16 @@ import {
     PartyPopper,
     Sparkles,
     Trash2,
-    Disc,
     Zap,
     Coffee,
-    MicVocal,
     Music,
-    User
+    User,
+    HeartHandshake,
+    Laugh,
+    Sunrise,
+    Clock,
+    Shield,
+    Award
 } from "lucide-react";
 
 const lora = Lora({ subsets: ["latin"] });
@@ -30,17 +34,40 @@ const themes = [
     { value: "happy-holidays", label: "Happy Holidays", description: "Fun, Happy, Playful", icon: Snowflake },
     { value: "mistletoe-kisses", label: "Mistletoe Kisses", description: "Romantic or Flirty", icon: Heart },
     { value: "christmas-wish", label: "A Christmas Wish", description: "Loving, Emotional, but Hopeful", icon: Star },
-    { value: "happy-new-year", label: "Happy New Year", description: "Celebratory, Hopeful, Fun", icon: PartyPopper },
+    { value: "happy-new-year", label: "Happy New Year", description: "Celebratory, Uplifting, Fun", icon: PartyPopper },
     { value: "new-years-wish", label: "New Year's Wish", description: "Emotional, Sentimental, Heartfelt", icon: Sparkles },
 ];
 
+const emotions = [
+    { value: "love", label: "Love", description: "Platonic, Familial", icon: HeartHandshake },
+    { value: "romantic-love", label: "Romantic Love", description: "Partner, Soulmate", icon: Heart },
+    { value: "gratitude", label: "Gratitude", description: "Appreciation, Thankfulness", icon: Sparkles },
+    { value: "joy", label: "Joy", description: "Celebration, Happiness", icon: Laugh },
+    { value: "hope", label: "Hope", description: "Optimism, Future looking", icon: Sunrise },
+    { value: "nostalgia", label: "Nostalgia", description: "Warm, Sentimental", icon: Clock },
+    { value: "comfort", label: "Comfort", description: "Support, Warmth during tough times", icon: Shield },
+    { value: "pride", label: "Pride", description: "Admiration, Respect", icon: Award },
+];
+
+const festiveLyricsLevels = [
+    { value: "christmas-magic", label: "Christmas Magic", description: "Santa, Reindeer, Christmas Trees", icon: TreePine },
+    { value: "lightly-festive", label: "Lightly Festive", description: "Snow, Sleighrides, Twinkling Lights", icon: Snowflake },
+    { value: "winter-wonderland", label: "Winter Wonderland", description: "Winter, Snowfall, Cosy Fires", icon: Sparkles },
+];
+
+const festiveSoundLevels = [
+    { value: "festive", label: "Festive", description: "Sleighbells, choir, orchestra", icon: TreePine },
+    { value: "lightly-festive", label: "Lightly Festive", description: "Light bells, strings, acoustic piano", icon: Snowflake },
+    { value: "non-festive", label: "Non Festive", description: "No Sleighbells, No Choir, No Orchestra", icon: Music },
+];
+
 const styles = [
-    { value: "vintage-ballad", label: "Vintage / Smooth Ballad", description: "Cozy, warm, nostalgic", icon: Disc },
-    { value: "gentle-ballad", label: "Gentle / Emotional Ballad", description: "Soft, heartfelt, reflective", icon: Heart },
-    { value: "uptempo-retro", label: "Up-Tempo Retro", description: "Fun, lively, upbeat", icon: Zap },
-    { value: "warm-jazz", label: "Warm / Intimate Jazz", description: "Smooth, cozy, intimate", icon: Coffee },
-    { value: "contemporary-pop", label: "Contemporary Pop", description: "Modern, catchy, polished", icon: MicVocal },
-    { value: "swing-influenced", label: "Swing-Influenced", description: "Playful, festive, swinging", icon: Music },
+    { value: "classic-timeless", label: "Classic & Timeless", description: "Traditional, rich, classic", icon: Music },
+    { value: "soft-heartfelt", label: "Soft & Heartfelt", description: "Slow, intimate, gentle", icon: Heart },
+    { value: "bright-uplifting", label: "Bright & Uplifting", description: "Fun, energetic, celebratory", icon: Zap },
+    { value: "romantic-heartfelt", label: "Romantic & Heartfelt", description: "Deeply emotional, romantic, tender", icon: Heart },
+    { value: "warm-cosy", label: "Warm & Cosy", description: "Comforting, homely, gentle", icon: Coffee },
+    { value: "orchestral-festive", label: "Orchestral & Festive", description: "Majestic, elegant, celebratory", icon: Sparkles },
 ];
 
 const vibes = [
@@ -54,13 +81,12 @@ interface SongFormProps {
     title: string;
     onRemove?: () => void;
     canRemove?: boolean;
-    namePrefix?: string; // e.g. "songs.0" for nested forms
+    namePrefix?: string;
 }
 
 export function SongForm({ index, title, onRemove, canRemove = false, namePrefix = "" }: SongFormProps) {
     const { control } = useFormContext();
 
-    // Helper to get field name: if namePrefix is provided, use it (e.g., songs.0.recipientName), otherwise use flat name
     const getFieldName = (name: string) => namePrefix ? `${namePrefix}.${name}` : name;
 
     return (
@@ -68,13 +94,7 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
             {/* Recipient Information Card */}
             <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)]">
                 <div className="flex items-center justify-between mb-6">
-                    <div>
-                        {/* Optional Subtitle for Bundle Mode */}
-                        {namePrefix && (
-                            <span className="block text-[#87CEEB] text-lg mb-2">Song {index + 1}</span>
-                        )}
-                        <h2 className={`text-xl md:text-2xl text-[#E8DCC0] ${lora.className}`}>{title || "Who is this song for?"}</h2>
-                    </div>
+                    <FormLabel className={`block text-[#E8DCC0] text-xl md:text-2xl ${lora.className}`}>Who is Your Song For?</FormLabel>
                     {canRemove && onRemove && (
                         <Button
                             type="button"
@@ -93,7 +113,7 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                         name={getFieldName("recipientName")}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">Recipient's Name <span className="text-[#87CEEB]/60 text-sm">(first name will suffice)</span> <span className="text-[#87CEEB]">*</span></FormLabel>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Recipient's Name <span className="text-[#87CEEB]/60 text-sm">(First name will suffice)</span> <span className="text-[#87CEEB]">*</span></FormLabel>
                                 <FormControl>
                                     <Input placeholder="Recipient's name" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
                                 </FormControl>
@@ -107,10 +127,11 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                         name={getFieldName("pronunciation")}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">Pronunciation</FormLabel>
+                                <FormLabel className="block text-[#87CEEB] mb-2">Pronunciation <span className="text-[#87CEEB]/60 text-sm">(How is their name pronounced?)</span> <span className="text-[#87CEEB]">*</span></FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Write phonetically if complicated spelling" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                    <Input placeholder="e.g., Peeter for Peter" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
                                 </FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -122,10 +143,11 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                         name={getFieldName("recipientNickname")}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">What do you call them?</FormLabel>
+                                <FormLabel className="block text-[#87CEEB] mb-2">What will you call them in your song? <span className="text-[#87CEEB]">*</span></FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Petnames / nicknames etc." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                    <Input placeholder="e.g. Petname, Dad, Grandma etc." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
                                 </FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -184,23 +206,84 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                 />
             </div>
 
-            {/* About Them Card */}
+            {/* About Them Card with Emotions */}
             <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)] space-y-6">
                 <div>
                     <h2 className={`block text-[#F5E6B8] mb-2 text-lg md:text-2xl ${lora.className}`}>About Them</h2>
                     <p className="text-[#87CEEB]/80 text-sm mb-6">Fill in any fields below you feel will make this song more meaningful?</p>
                 </div>
 
+                {/* Emotions Selector */}
+                <FormField
+                    control={control}
+                    name={getFieldName("emotions")}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="block text-[#87CEEB] mb-4">What overall emotions do you want the lyrics to convey? <span className="text-[#87CEEB]">*</span></FormLabel>
+                            <FormControl>
+                                <div className="space-y-3">
+                                    {/* First row: Love and Romantic Love (larger buttons) */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {emotions.slice(0, 2).map((emotion) => {
+                                            const IconComponent = emotion.icon;
+                                            return (
+                                                <div
+                                                    key={emotion.value}
+                                                    onClick={() => field.onChange(emotion.value)}
+                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === emotion.value
+                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                            : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <IconComponent className="w-5 h-5 text-[#F5E6B8]" />
+                                                        <div className="text-[#F5E6B8]">{emotion.label}</div>
+                                                    </div>
+                                                    <div className="text-xs text-[#87CEEB]/70">{emotion.description}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Second section: Other emotions (smaller grid) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {emotions.slice(2).map((emotion) => {
+                                            const IconComponent = emotion.icon;
+                                            return (
+                                                <div
+                                                    key={emotion.value}
+                                                    onClick={() => field.onChange(emotion.value)}
+                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === emotion.value
+                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                            : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <IconComponent className="w-5 h-5 text-[#F5E6B8]" />
+                                                        <div className="text-[#F5E6B8]">{emotion.label}</div>
+                                                    </div>
+                                                    <div className="text-xs text-[#87CEEB]/70">{emotion.description}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
                 <FormField
                     control={control}
                     name={getFieldName("overallMessage")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">Overall Message - What are you trying to say with this song? <span className="text-[#87CEEB]">*</span></FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">Who are they to you? <span className="text-[#87CEEB]">*</span></FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. Let her know she's loved, celebrate our friendship"
+                                    placeholder="e.g. My BFF, Love of my life, Favourite sister"
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
@@ -214,30 +297,11 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                     name={getFieldName("storySummary")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">Your Story - Short Summary: <span className="text-[#87CEEB]">*</span></FormLabel>
-                            <FormControl>
-                                <Textarea
-                                    {...field}
-                                    placeholder="e.g. met in pre-school and best friends since"
-                                    rows={3}
-                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm resize-none"
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={control}
-                    name={getFieldName("favoriteMemory")}
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">Favourite memory: <span className="text-[#87CEEB]">*</span></FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">Your Story - briefly summarise: <span className="text-[#87CEEB]">*</span></FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. our skiing trip to Aspen"
+                                    placeholder="e.g. Besties since pre-school, Husband of 9 years"
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
@@ -251,11 +315,11 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                     name={getFieldName("qualities")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">List some qualities you admire about them? <span className="text-[#87CEEB]">*</span></FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">List 1-3 qualities you admire in them? <span className="text-[#87CEEB]">*</span></FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. patience, loyal friend, the best Auntie"
+                                    placeholder="e.g. Gorgeous, Loyal, Funny"
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
@@ -266,14 +330,14 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
 
                 <FormField
                     control={control}
-                    name={getFieldName("activitiesTogether")}
+                    name={getFieldName("characteristics")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">List some things you like to do together:</FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">List some defining yet loveable characteristics:</FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. movie nights, dance class"
+                                    placeholder="e.g. Always late, Loves singing, Crazy curly hair"
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
@@ -283,14 +347,48 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
 
                 <FormField
                     control={control}
-                    name={getFieldName("characteristics")}
+                    name={getFieldName("gratefulFor")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">Any defining but loveable characteristics you'd like to include:</FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">What are 1-2 things you're grateful to them for?</FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. always late, loves wine"
+                                    placeholder="e.g. Driving me everywhere, Always calling to check I got home"
+                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={control}
+                    name={getFieldName("activitiesTogether")}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="block text-[#87CEEB] mb-2">What are moments you share regularly?</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    placeholder="e.g. Movie nights by the fire, Coffee chats on Saturdays"
+                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={control}
+                    name={getFieldName("favoriteMemory")}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="block text-[#87CEEB] mb-2">What is one shared memory that makes you smile?</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    placeholder="e.g. The time we got lost in Paris, When you lost your shoe at Coldplay"
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
@@ -303,14 +401,51 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                     name={getFieldName("locationDetails")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="block text-[#87CEEB] mb-2">Details - Location names or other specifics/keywords you'd like mentioned:</FormLabel>
+                            <FormLabel className="block text-[#87CEEB] mb-2">Details - location names or other keywords you'd like mentioned:</FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
-                                    placeholder="e.g. Paris, our favourite coffee shop"
+                                    placeholder="e.g. Paris, Fav coffee shop etc."
                                     className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
                                 />
                             </FormControl>
+                        </FormItem>
+                    )}
+                />
+            </div>
+
+            {/* Festive Lyrics Level Card */}
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)] space-y-6">
+                <FormField
+                    control={control}
+                    name={getFieldName("festiveLyricsLevel")}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="block text-[#87CEEB] mb-2">How Festive do You Want the <span className="italic">Lyrics</span> to be? <span className="text-[#87CEEB]">*</span></FormLabel>
+                            <FormControl>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {festiveLyricsLevels.map((level) => {
+                                        const IconComponent = level.icon;
+                                        return (
+                                            <div
+                                                key={level.value}
+                                                onClick={() => field.onChange(level.value)}
+                                                className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === level.value
+                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                        : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <IconComponent className="w-5 h-5 text-[#F5E6B8]" />
+                                                    <div className="text-[#F5E6B8]">{level.label}</div>
+                                                </div>
+                                                <div className="text-xs text-[#87CEEB]/70 ml-7">{level.description}</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
@@ -351,21 +486,6 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                 <div className="mb-6">
                     <FormField
                         control={control}
-                        name={getFieldName("genreStyle")}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">Genre</FormLabel>
-                                <FormControl>
-                                    <Input {...field} placeholder="e.g., Pop, Country, R&B, Acoustic, Jazz, Rock..." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 rounded-lg focus:outline-none focus:border-[#87CEEB] transition-all duration-200 backdrop-blur-sm" />
-                                </FormControl>
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                <div>
-                    <FormField
-                        control={control}
                         name={getFieldName("style")}
                         render={({ field }) => (
                             <FormItem>
@@ -394,6 +514,42 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                         })}
                                     </div>
                                 </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <div>
+                    <FormField
+                        control={control}
+                        name={getFieldName("festiveSoundLevel")}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="block text-[#87CEEB] mb-2">How festive do you want this song to <em>sound</em>? <span className="text-[#87CEEB]">*</span></FormLabel>
+                                <FormControl>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        {festiveSoundLevels.map((level) => {
+                                            const IconComponent = level.icon;
+                                            return (
+                                                <div
+                                                    key={level.value}
+                                                    onClick={() => field.onChange(level.value)}
+                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === level.value
+                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                            : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <IconComponent className="w-5 h-5 text-[#F5E6B8]" />
+                                                        <div className="text-[#F5E6B8]">{level.label}</div>
+                                                    </div>
+                                                    <div className="text-xs text-[#87CEEB]/70 ml-7">{level.description}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />

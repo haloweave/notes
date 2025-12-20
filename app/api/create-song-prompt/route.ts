@@ -20,24 +20,38 @@ export async function POST(request: NextRequest) {
 Create a concise, personalized prompt (max 280 characters) for an AI music generator that will create a heartfelt, customized song.
 
 IMPORTANT: Include these specific details in the prompt:
-- Recipient's name: "${formData.recipientName}"${formData.recipientNickname ? ` (nickname: "${formData.recipientNickname}")` : ''}
+- Recipient's name: "${formData.recipientName}"${formData.recipientNickname ? ` (call them: "${formData.recipientNickname}")` : ''}
+- Pronunciation: ${formData.pronunciation || formData.recipientName}
 - Relationship: ${formData.relationship}
 - Theme: ${formData.theme}
-- Overall message: ${formData.overallMessage}
-- Story: ${formData.storySummary}
-- Favorite memory: ${formData.favoriteMemory}
-- Qualities: ${formData.qualities}
-${formData.activitiesTogether ? `- Activities together: ${formData.activitiesTogether}` : ''}
-${formData.characteristics ? `- Characteristics: ${formData.characteristics}` : ''}
-${formData.locationDetails ? `- Location details: ${formData.locationDetails}` : ''}
+- Emotional tone: ${formData.emotions || 'loving'}
+- Who they are: ${formData.overallMessage}
+- Your story: ${formData.storySummary}
+- Qualities you admire: ${formData.qualities}
+${formData.characteristics ? `- Loveable characteristics: ${formData.characteristics}` : ''}
+${formData.gratefulFor ? `- Grateful for: ${formData.gratefulFor}` : ''}
+${formData.activitiesTogether ? `- Moments shared: ${formData.activitiesTogether}` : ''}
+${formData.favoriteMemory ? `- Shared memory: ${formData.favoriteMemory}` : ''}
+${formData.locationDetails ? `- Special places: ${formData.locationDetails}` : ''}
+- Festive lyrics level: ${formData.festiveLyricsLevel || 'lightly-festive'}
+- Festive sound: ${formData.festiveSoundLevel || 'lightly-festive'}
 - Sender's message: "${formData.senderMessage}"
 - Overall vibe: ${formData.vibe}
+${formData.voiceType ? `- Voice preference: ${formData.voiceType}` : ''}
+${formData.style ? `- Musical style: ${formData.style}` : ''}
 
 NOTE: Do NOT include musical style or genre in the prompt - that will be handled separately.
 
-Create a prompt that captures the personal connection, mentions the recipient by name, references their qualities (${formData.qualities}), incorporates the favorite memory (${formData.favoriteMemory}), and reflects the ${formData.theme} theme with a ${formData.vibe} tone.
+Create a prompt that:
+1. Mentions the recipient by name (${formData.recipientName})
+2. Captures the ${formData.emotions || 'loving'} emotional tone
+3. References their qualities (${formData.qualities})
+4. Reflects the ${formData.theme} theme
+5. Matches the ${formData.festiveLyricsLevel || 'lightly-festive'} festive level
+6. Has a ${formData.vibe} overall vibe
+${formData.favoriteMemory ? `7. Incorporates the memory: ${formData.favoriteMemory}` : ''}
 
-Output only the prompt string (max 280 chars). Make it personal and specific to this relationship. Be concise.`;
+Output only the prompt string (max 280 chars). Make it personal, specific, and emotionally resonant. Be concise.`;
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
