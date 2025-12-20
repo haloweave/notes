@@ -359,16 +359,16 @@ export default function PlayPage() {
                             <button
                                 onClick={togglePlay}
                                 className={cn(
-                                    "w-20 h-20 md:w-40 md:h-40 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl backdrop-blur-md border-4",
+                                    "w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl backdrop-blur-md border-2",
                                     isPlaying
                                         ? "bg-white/20 border-white/40 scale-95"
                                         : "bg-white/30 border-white/60 hover:scale-110 hover:bg-white/40"
                                 )}
                             >
                                 {isPlaying ? (
-                                    <Pause className="w-10 h-10 md:w-20 md:h-20 text-white fill-current" />
+                                    <Pause className="w-7 h-7 md:w-9 md:h-9 text-white fill-current" />
                                 ) : (
-                                    <Play className="w-10 h-10 md:w-20 md:h-20 text-white fill-current ml-2" />
+                                    <Play className="w-7 h-7 md:w-9 md:h-9 text-white fill-current ml-1" />
                                 )}
                             </button>
                         </div>
