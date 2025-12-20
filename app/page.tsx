@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { PremiumButton } from '@/components/ui/premium-button';
-import { Heart, Gift, Sparkles, Play, Menu, ChevronDown } from 'lucide-react';
+import { Heart, Gift, Sparkles, Play, Menu, ChevronDown, Music, X } from 'lucide-react';
 import { useState } from 'react';
 import { Lora } from 'next/font/google';
 
@@ -15,6 +15,7 @@ export default function LandingPage() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
   const testimonials = [
     {
@@ -128,6 +129,90 @@ export default function LandingPage() {
 
         {/* Main Content */}
         <div className="relative z-10 flex flex-col min-h-screen">
+          {/* Menu Button - Top Right */}
+          <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
+              aria-label="Menu"
+            >
+              <Menu className="w-7 h-7 md:w-9 md:h-9 text-[#E0F4FF]" />
+            </button>
+          </div>
+
+          {/* Backdrop Overlay */}
+          {isMobileMenuOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 transition-opacity duration-300"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
+
+          {/* Slide-out Navigation Menu */}
+          <div
+            className={`fixed top-0 right-0 h-full w-64 md:w-80 bg-gradient-to-br from-[#1a3d5f] to-[#0f2438] shadow-2xl z-40 border-l border-[#E0F4FF]/20 transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
+          >
+            <div className="flex flex-col h-full pt-20 px-6">
+              {/* Close button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="absolute top-6 right-6 p-2 rounded-lg hover:bg-white/10 transition-all duration-200"
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6 text-[#E0F4FF]" />
+              </button>
+
+              <nav className="flex flex-col gap-4">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="text-[#F5E6B8] text-lg py-3 px-4 rounded-lg bg-[#E0F4FF]/10"
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    router.push('/pricing');
+                  }}
+                  className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200 text-left"
+                >
+                  Pricing
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    router.push('/how-it-works');
+                  }}
+                  className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200 text-left"
+                >
+                  How It Works
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    document.getElementById('testimonials')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200 text-left"
+                >
+                  About
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    router.push('/privacy');
+                  }}
+                  className="text-[#E0F4FF] hover:text-[#F5E6B8] text-lg py-3 px-4 rounded-lg hover:bg-[#E0F4FF]/10 transition-all duration-200 text-left"
+                >
+                  Privacy & GDPR
+                </button>
+              </nav>
+            </div>
+          </div>
+
           {/* Hero Section */}
           <div className="flex-1 flex items-center justify-center px-4" id="home">
             <div className="text-center max-w-3xl -mt-20 md:-mt-8" style={{ opacity: 1, transform: 'none' }}>
@@ -201,6 +286,79 @@ export default function LandingPage() {
                 >
                   Create Your Bespoke Song
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* How It Works Section */}
+        <div className="relative z-10 bg-gradient-to-b from-[#0f1e30]/30 to-[#1a2a3f]/40 py-16 md:py-24" id="how-it-works">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-5xl mx-auto mb-20 md:mb-32">
+              <div className="flex items-center justify-center gap-3 mb-6 md:mb-8">
+                <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-[#F5E6B8]" />
+                <h2 className={`text-[#E8DCC0] text-3xl md:text-4xl lg:text-5xl ${lora.className}`}>
+                  How It Works
+                </h2>
+                <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-[#F5E6B8]" />
+              </div>
+
+              <p className="text-white/80 text-base md:text-lg mb-12 md:mb-16 max-w-2xl mx-auto">
+                Your heartfelt story becomes a bespoke musical masterpiece in four simple steps
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
+                {/* Step 1 */}
+                <div className="bg-white/10 backdrop-blur-md border-2 border-[#87CEEB]/30 rounded-2xl p-6 hover:border-[#F5E6B8]/40 transition-all duration-300">
+                  <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] flex items-center justify-center shadow-[0_0_30px_rgba(135,206,235,0.4)]">
+                    <Heart className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  </div>
+                  <h3 className={`text-[#F5E6B8] text-xl md:text-2xl mb-3 ${lora.className}`}>
+                    Share Your Story
+                  </h3>
+                  <p className="text-white/70 text-sm md:text-base">
+                    Tell us about your loved one and the moments that make them special
+                  </p>
+                </div>
+
+                {/* Step 2 */}
+                <div className="bg-white/10 backdrop-blur-md border-2 border-[#87CEEB]/30 rounded-2xl p-6 hover:border-[#F5E6B8]/40 transition-all duration-300">
+                  <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] flex items-center justify-center shadow-[0_0_30px_rgba(135,206,235,0.4)]">
+                    <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  </div>
+                  <h3 className={`text-[#F5E6B8] text-xl md:text-2xl mb-3 ${lora.className}`}>
+                    We Craft Magic
+                  </h3>
+                  <p className="text-white/70 text-sm md:text-base">
+                    Our composers transform your story into a bespoke musical masterpiece
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div className="bg-white/10 backdrop-blur-md border-2 border-[#87CEEB]/30 rounded-2xl p-6 hover:border-[#F5E6B8]/40 transition-all duration-300">
+                  <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] flex items-center justify-center shadow-[0_0_30px_rgba(135,206,235,0.4)]">
+                    <Play className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  </div>
+                  <h3 className={`text-[#F5E6B8] text-xl md:text-2xl mb-3 ${lora.className}`}>
+                    Preview & Perfect
+                  </h3>
+                  <p className="text-white/70 text-sm md:text-base">
+                    Listen to variations and choose your favourite before we deliver
+                  </p>
+                </div>
+
+                {/* Step 4 */}
+                <div className="bg-white/10 backdrop-blur-md border-2 border-[#87CEEB]/30 rounded-2xl p-6 hover:border-[#F5E6B8]/40 transition-all duration-300">
+                  <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] flex items-center justify-center shadow-[0_0_30px_rgba(135,206,235,0.4)]">
+                    <Gift className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  </div>
+                  <h3 className={`text-[#F5E6B8] text-xl md:text-2xl mb-3 ${lora.className}`}>
+                    Deliver Joy
+                  </h3>
+                  <p className="text-white/70 text-sm md:text-base">
+                    Share a stunning gift box reveal with their personalised song
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -318,65 +476,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Privacy Section */}
-        <div className="relative z-10 py-16 md:py-24">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 md:p-12 border border-white/20">
-                <h2 className={`text-[#E8DCC0] text-2xl md:text-3xl mb-6 font-semibold ${lora.className}`}>
-                  Privacy & GDPR Compliance
-                </h2>
-
-                <div className="space-y-6 text-white/80 leading-relaxed">
-                  <p>
-                    At Huggnote, we take your privacy seriously. We are fully compliant with the General Data Protection Regulation (GDPR) and are committed to protecting your personal information.
-                  </p>
-
-                  <div>
-                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">What Data We Collect</h3>
-                    <p>
-                      We collect only the information necessary to create your bespoke song and deliver it to you. This includes your name, email address, payment information, and the details you provide about the song recipient.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">How We Use Your Data</h3>
-                    <p>
-                      Your personal information is used solely to create and deliver your personalised song. We never sell, rent, or share your data with third parties for marketing purposes. All data is encrypted and stored securely on EU-based servers.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">Your Rights</h3>
-                    <p>
-                      Under GDPR, you have the right to access, correct, or delete your personal data at any time. You can also request a copy of all data we hold about you. To exercise these rights, please contact us at{' '}
-                      <a href="mailto:privacy@huggnote.com" className="text-[#87CEEB] hover:text-[#F5E6B8] underline">
-                        privacy@huggnote.com
-                      </a>
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-[#E8DCC0] text-lg mb-3 font-semibold">Data Retention</h3>
-                    <p>
-                      We retain your personal information only for as long as necessary to provide our services and comply with legal obligations. You can request deletion of your data at any time.
-                    </p>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/20">
-                    <p className="text-sm text-white/60">
-                      Last updated: December 2024 | For our full privacy policy, please contact{' '}
-                      <a href="mailto:privacy@huggnote.com" className="text-[#87CEEB] hover:text-[#F5E6B8] underline">
-                        privacy@huggnote.com
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Final CTA */}
         <div className="relative z-10 pb-24">
           <div className="container mx-auto px-4">
@@ -387,12 +486,107 @@ export default function LandingPage() {
               >
                 Create Your Bespoke Song
               </button>
+
+              {/* Footer */}
+              <div className="border-t border-white/10 mt-12 pt-6">
+                <button
+                  onClick={() => setIsPrivacyModalOpen(true)}
+                  className="text-[#87CEEB] hover:text-[#F5E6B8] text-sm underline transition-colors duration-200"
+                >
+                  Privacy & GDPR Compliance
+                </button>
+                <p className="text-white/40 text-xs mt-2">
+                  © 2025 Huggnote. All rights reserved.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
 
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
+        {/* Privacy Modal */}
+        {isPrivacyModalOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setIsPrivacyModalOpen(false)}
+            />
+
+            {/* Modal Content */}
+            <div className="relative bg-gradient-to-br from-[#1a3d5f] to-[#0f2438] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
+              <button
+                onClick={() => setIsPrivacyModalOpen(false)}
+                className="sticky top-4 float-right mr-4 mt-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-200 backdrop-blur-sm z-10"
+                aria-label="Close"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+
+              <div className="p-8 md:p-12 pt-16">
+                <h2 className={`text-[#E8DCC0] text-2xl md:text-3xl mb-6 ${lora.className}`} style={{ fontWeight: 600 }}>
+                  Privacy & GDPR Compliance
+                </h2>
+
+                <div className="space-y-6 text-white/80 leading-relaxed">
+                  <p>
+                    At Huggnote, we take your privacy seriously. We are fully compliant with the General Data Protection Regulation (GDPR) and are committed to protecting your personal information.
+                  </p>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3" style={{ fontWeight: 600 }}>
+                      What Data We Collect
+                    </h3>
+                    <p>
+                      We collect only the information necessary to create your bespoke song and deliver it to you. This includes your name, email address, payment information, and the details you provide about the song recipient.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3" style={{ fontWeight: 600 }}>
+                      How We Use Your Data
+                    </h3>
+                    <p>
+                      Your personal information is used solely to create and deliver your personalised song. We never sell, rent, or share your data with third parties for marketing purposes. All data is encrypted and stored securely on EU-based servers.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3" style={{ fontWeight: 600 }}>
+                      Your Rights
+                    </h3>
+                    <p>
+                      Under GDPR, you have the right to access, correct, or delete your personal data at any time. You can also request a copy of all data we hold about you. To exercise these rights, please contact us at{' '}
+                      <a href="mailto:privacy@huggnote.com" className="text-[#87CEEB] hover:text-[#F5E6B8] underline">
+                        privacy@huggnote.com
+                      </a>
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[#E8DCC0] text-lg mb-3" style={{ fontWeight: 600 }}>
+                      Data Retention
+                    </h3>
+                    <p>
+                      We retain your personal information only for as long as necessary to provide our services and comply with legal obligations. You can request deletion of your data at any time.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/20">
+                    <p className="text-sm text-white/60">
+                      Last updated: December 2025 | For our full privacy policy, please contact{' '}
+                      <a href="mailto:privacy@huggnote.com" className="text-[#87CEEB] hover:text-[#F5E6B8] underline">
+                        privacy@huggnote.com
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Snowfall Animation CSS */}
         <style jsx>{`
