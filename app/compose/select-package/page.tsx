@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Lora } from 'next/font/google';
 import { Star } from 'lucide-react';
 
@@ -39,7 +40,7 @@ export default function SelectPackagePage() {
                         onClick={() => handleSelect('solo-serenade')}
                         className="cursor-pointer transition-all duration-300 w-[85%] mx-auto border-2 rounded-2xl overflow-hidden transform relative border-[#87CEEB] hover:scale-105 hover:shadow-[0_8px_30px_rgba(135,206,235,0.4)]"
                     >
-                        <img src="/soloSerenade.png" alt="Solo Serenade - 1 Custom Personalised Song" className="w-full h-auto md:w-[80%] md:mx-auto lg:w-[80%] lg:mx-auto" />
+                        <Image src="/soloSerenade.png" alt="Solo Serenade - 1 Custom Personalised Song" width={800} height={1000} className="w-full h-auto md:w-[80%] md:mx-auto lg:w-[80%] lg:mx-auto" priority />
                     </div>
                     <div className="flex justify-center">
                         <button
@@ -66,7 +67,7 @@ export default function SelectPackagePage() {
                         onClick={() => handleSelect('holiday-hamper')}
                         className="cursor-pointer transition-all duration-300 w-[85%] mx-auto border-2 rounded-2xl overflow-hidden transform relative border-[#f5ecd4] hover:scale-105 hover:shadow-[0_8px_30px_rgba(245,236,212,0.3)]"
                     >
-                        <img src="/merryMedley.png" alt="Merry Medley - 5 Custom Personalised Songs" className="w-full h-auto md:w-[80%] md:mx-auto lg:w-[80%] lg:mx-auto" />
+                        <Image src="/merryMedley.png" alt="Merry Medley - 5 Custom Personalised Songs" width={800} height={1000} className="w-full h-auto md:w-[80%] md:mx-auto lg:w-[80%] lg:mx-auto" priority />
                     </div>
                     <div className="flex justify-center">
                         <button
@@ -88,7 +89,7 @@ export default function SelectPackagePage() {
                         onClick={() => handleSelect('solo-serenade')}
                         className="cursor-pointer transition-all duration-300 w-full mx-auto border-2 rounded-2xl overflow-hidden transform relative md:p-0 border-[#87CEEB] hover:scale-105 hover:shadow-[0_8px_30px_rgba(135,206,235,0.4)]"
                     >
-                        <img src="/soloSerenade.png" alt="Solo Serenade - 1 Custom Personalised Song" className="w-full h-auto md:w-[90%] md:mx-auto lg:w-[90%] lg:mx-auto" />
+                        <Image src="/soloSerenade.png" alt="Solo Serenade - 1 Custom Personalised Song" width={800} height={1000} className="w-full h-auto md:w-[90%] md:mx-auto lg:w-[90%] lg:mx-auto" priority />
                     </div>
 
                     {/* Merry Image + Badge */}
@@ -101,7 +102,7 @@ export default function SelectPackagePage() {
                             onClick={() => handleSelect('holiday-hamper')}
                             className="cursor-pointer transition-all duration-300 w-full mx-auto border-2 rounded-2xl overflow-hidden transform relative border-[#f5ecd4] hover:scale-105 hover:shadow-[0_8px_30px_rgba(245,236,212,0.3)]"
                         >
-                            <img src="/merryMedley.png" alt="Merry Medley - 5 Custom Personalised Songs" className="w-full h-auto md:w-[90%] md:mx-auto lg:w-[90%] lg:mx-auto" />
+                            <Image src="/merryMedley.png" alt="Merry Medley - 5 Custom Personalised Songs" width={800} height={1000} className="w-full h-auto md:w-[90%] md:mx-auto lg:w-[90%] lg:mx-auto" priority />
                         </div>
                     </div>
                 </div>
