@@ -333,7 +333,9 @@ function VariationsContent() {
             }
 
             const allPrompts = JSON.parse(sessionStorage.getItem('allPrompts') || '[]');
+            const allMusicStyles = JSON.parse(sessionStorage.getItem('allMusicStyles') || '[]'); // NEW: Get music styles
             const currentPrompt = allPrompts[activeTab];
+            const currentMusicStyle = allMusicStyles[activeTab]; // NEW: Get style for current song
 
             if (!currentPrompt) {
                 console.error('[VARIATIONS] No prompt found for song', activeTab);
@@ -341,6 +343,7 @@ function VariationsContent() {
             }
 
             console.log('[VARIATIONS] Starting music generation for song', activeTab);
+            console.log('[VARIATIONS] Base music style:', currentMusicStyle);
 
             // 🔥 Mark generation as started to prevent duplicates
             generationStartedRef.current = true;
@@ -350,12 +353,12 @@ function VariationsContent() {
 
             try {
                 // Generate 3 DIFFERENT variations with unique styles
-                // NEW APPROACH: Use music_style parameter instead of prompt modifiers
+                // NEW APPROACH: Use base music_style from form, then add variation modifiers
                 const songVariations = [
                     {
                         id: 1,
                         name: 'Poetic & Romantic',
-                        musicStyle: 'Romantic Ballad, Soft, Poetic'
+                        styleModifier: 'Romantic, Poetic'
                     },
                     {
                         id: 2,
@@ -365,7 +368,7 @@ function VariationsContent() {
                     {
                         id: 3,
                         name: 'Heartfelt & Emotional',
-                        musicStyle: 'Acoustic, Heartfelt, Emotional'
+                        styleModifier: 'Heartfelt, Emotional'
                     }
                 ];
 
@@ -385,9 +388,21 @@ function VariationsContent() {
                         console.log(`[VARIATIONS] Truncated prompt to ${finalPrompt.length} chars`);
                     }
 
-                    // Get music style from form data or use variation default
+                    // NEW: Use base music style from form + variation modifier
+                    // If we have a base style from the form, use it; otherwise fall back to variation default
+                    let musicStyle = currentMusicStyle || songVariations[i].musicStyle;
+
+                    // Add variation-specific modifier to the base style
+                    if (currentMusicStyle && songVariations[i].styleModifier) {
+                        musicStyle = `${currentMusicStyle}, ${songVariations[i].styleModifier}`;
+                    }
+
+                    // Add voice type if specified
                     const currentSong = songs[activeTab];
-                    const musicStyle = currentSong?.genreStyle || currentSong?.style || songVariations[i].musicStyle;
+                    if (currentSong?.voiceType) {
+                        musicStyle = `${musicStyle}, ${currentSong.voiceType} voice`;
+                        console.log(`[VARIATIONS] Added voice type: ${currentSong.voiceType}`);
+                    }
 
                     console.log(`[VARIATIONS] Generating variation ${i + 1} (${songVariations[i].name})`);
                     console.log(`[VARIATIONS] Prompt length: ${finalPrompt.length}/280 chars`);
@@ -405,7 +420,7 @@ function VariationsContent() {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                     prompt: finalPrompt,
-                                    music_style: musicStyle,  // Pass style separately
+                                    music_style: musicStyle,  // Pass style separately (now includes voice type)
                                     make_instrumental: false,
                                     wait_audio: false,
                                     preview_mode: true,  // Bypass credit check for preview
@@ -1224,8 +1239,8 @@ function VariationsContent() {
 
                                 {/* Status Indicator */}
                                 <div className="mb-3">
-                                    {/* Failed State - Only show if generation is complete and task ID is null */}
-                                    {(generationStatus === 'ready' || generationStatus === 'error') && taskIds[activeTab] && taskIds[activeTab][variation.id - 1] === null && (
+                                    {/* Failed State - Only show if generation is complete, no audio URL, and no lyrics */}
+                                    {(generationStatus === 'ready' || generationStatus === 'error') && !audioUrls[activeTab]?.[variation.id] && !lyrics[activeTab]?.[variation.id] && taskIds[activeTab] && taskIds[activeTab][variation.id - 1] === null && (
                                         <div className="flex items-center gap-2 text-sm text-red-400">
                                             <span>❌</span>
                                             <span>Generation Failed</span>
@@ -1241,15 +1256,15 @@ function VariationsContent() {
                                     )}
                                     {lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
                                         <div className="flex items-center gap-2 text-sm">
-                                            <span className="text-green-400">✓</span>
-                                            <span className="text-green-400">Lyrics ready</span>
+                                            <span className="text-[#F5E6B8]">✓</span>
+                                            <span className="text-[#F5E6B8]">Lyrics ready</span>
                                             <span className="text-white/40">•</span>
                                             <LoadingSpinner size="xs" variant="dots" color="primary" />
                                             <span className="text-white/60">Generating audio...</span>
                                         </div>
                                     )}
                                     {audioUrls[activeTab]?.[variation.id] && (
-                                        <div className="flex items-center gap-2 text-sm text-green-400">
+                                        <div className="flex items-center gap-2 text-sm text-[#87CEEB]">
                                             <span>✓</span>
                                             <span>Ready to play!</span>
                                         </div>
@@ -1328,7 +1343,7 @@ function VariationsContent() {
                                     <button
                                         onClick={() => handleSelectVariation(variation.id)}
                                         disabled={!audioUrls[activeTab]?.[variation.id]}
-                                        className={`w-full py-3 rounded-xl font-medium transition-all duration-200 border-2 ${!audioUrls[activeTab]?.[variation.id]
+                                        className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 border-2 min-w-[200px] ${!audioUrls[activeTab]?.[variation.id]
                                             ? 'bg-white/5 text-white/40 border-white/10 cursor-not-allowed'
                                             : 'bg-white/10 text-[#87CEEB] border-[#87CEEB]/40 hover:border-[#87CEEB] hover:bg-white/20'
                                             }`}

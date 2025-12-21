@@ -34,6 +34,11 @@ const songSchema = z.object({
         .trim()
         .min(1, "Please tell us what you'll call them")
         .max(50, "Nickname is too long"),
+    recipientNickname2: z.string()
+        .trim()
+        .max(50, "Nickname is too long")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
     relationship: z.string()
         .trim()
         .min(1, "Please specify the relationship")
@@ -42,6 +47,17 @@ const songSchema = z.object({
     // Theme selection (NEW - Required)
     theme: z.string()
         .min(1, "Please select a theme"),
+
+    // Style Modifiers (Optional)
+    childFriendly: z.boolean().optional(),
+    faithBased: z.boolean().optional(),
+
+    // Short Phrase (Optional)
+    shortPhrase: z.string()
+        .trim()
+        .max(200, "Short phrase must be less than 200 characters")
+        .transform(val => val === "" ? undefined : val)
+        .optional(),
 
     // Emotions to Convey (NEW - Required)
     emotions: z.string()
@@ -146,8 +162,12 @@ const defaultSongValues = {
     recipientName: "",
     pronunciation: "",
     recipientNickname: "",
+    recipientNickname2: "",
     relationship: "",
-    theme: "",
+    theme: "merry-christmas", // Preselect "Merry Christmas" as default
+    childFriendly: false,
+    faithBased: false,
+    shortPhrase: "",
     emotions: "love", // Preselect "Love" as default
     overallMessage: "",
     storySummary: "",
@@ -307,6 +327,7 @@ export default function CreatePage() {
             }
 
             const generatedPrompts = [];
+            const generatedMusicStyles = []; // NEW: Store music styles
 
             // Loop through songs and generate prompts
             for (let i = 0; i < values.songs.length; i++) {
@@ -343,6 +364,14 @@ export default function CreatePage() {
                     console.log(`[FRONTEND] Using cached prompt for song ${i + 1}`);
                     setStatus(`Using cached result for song ${i + 1}...`);
                     generatedPrompts.push(cachedPrompts.current[i]);
+                    // Also use cached music style if available
+                    const savedData = localStorage.getItem(`songForm_${formId}`);
+                    if (savedData) {
+                        const parsed = JSON.parse(savedData);
+                        if (parsed.allMusicStyles && parsed.allMusicStyles[i]) {
+                            generatedMusicStyles.push(parsed.allMusicStyles[i]);
+                        }
+                    }
                     await new Promise(r => setTimeout(r, 500));
                 } else {
                     setStatus(`Composing song ${i + 1} of ${values.songs.length}...`);
@@ -367,6 +396,11 @@ export default function CreatePage() {
                     const data = await response.json();
                     if (data.success && data.prompt) {
                         generatedPrompts.push(data.prompt);
+                        // NEW: Store music_style from response
+                        if (data.music_style) {
+                            generatedMusicStyles.push(data.music_style);
+                            console.log(`[FRONTEND] Music style for song ${i + 1}:`, data.music_style);
+                        }
                     } else {
                         throw new Error(data.message || `Failed to generate prompt for song ${i + 1}`);
                     }
@@ -375,12 +409,14 @@ export default function CreatePage() {
 
             if (generatedPrompts.length > 0) {
                 console.log('[FRONTEND] Generated/Cached prompts:', generatedPrompts);
+                console.log('[FRONTEND] Generated music styles:', generatedMusicStyles);
                 const formDataWithMetadata = {
                     formId,
                     timestamp: Date.now(),
                     formData: values, // Includes global fields
                     generatedPrompt: generatedPrompts[0],
                     allPrompts: generatedPrompts,
+                    allMusicStyles: generatedMusicStyles, // NEW: Store music styles
                     status: 'prompt_generated'
                 };
 
@@ -405,7 +441,8 @@ export default function CreatePage() {
                             packageType: isBundle ? 'holiday-hamper' : 'solo-serenade',
                             songCount: values.songs.length,
                             formData: values, // Full values including global
-                            generatedPrompts: generatedPrompts
+                            generatedPrompts: generatedPrompts,
+                            musicStyles: generatedMusicStyles // NEW: Save to database
                         })
                     });
 
@@ -425,6 +462,7 @@ export default function CreatePage() {
                 sessionStorage.setItem('songFormData', JSON.stringify(values));
                 sessionStorage.setItem('generatedPrompt', generatedPrompts[0]);
                 sessionStorage.setItem('allPrompts', JSON.stringify(generatedPrompts));
+                sessionStorage.setItem('allMusicStyles', JSON.stringify(generatedMusicStyles)); // NEW: Store in session
                 sessionStorage.setItem('currentFormId', formId);
 
                 setStatus('Preparing your variations...');
@@ -660,8 +698,25 @@ export default function CreatePage() {
 
                     {/* Status Messages */}
                     {status && (
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                            <p className="text-blue-800 text-sm font-medium">{status}</p>
+                        <div className="relative overflow-hidden bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 shadow-[0_8px_30px_rgba(135,206,235,0.3)] animate-pulse">
+                            {/* Animated gradient background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-[#87CEEB]/10 via-[#F5E6B8]/10 to-[#87CEEB]/10 animate-shimmer"></div>
+
+                            {/* Content */}
+                            <div className="relative z-10 flex items-center gap-4">
+                                {/* Loading spinner */}
+                                <div className="flex-shrink-0">
+                                    <svg className="animate-spin h-6 w-6 text-[#87CEEB]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+
+                                {/* Status text */}
+                                <p className={`text-[#F5E6B8] text-lg font-medium ${lora.className}`}>
+                                    {status}
+                                </p>
+                            </div>
                         </div>
                     )}
 

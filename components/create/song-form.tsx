@@ -24,7 +24,8 @@ import {
     Sunrise,
     Clock,
     Shield,
-    Award
+    Award,
+    Gift
 } from "lucide-react";
 
 const lora = Lora({ subsets: ["latin"] });
@@ -32,10 +33,13 @@ const lora = Lora({ subsets: ["latin"] });
 const themes = [
     { value: "merry-christmas", label: "Merry Christmas", description: "Traditional, Festive and Joyful", icon: TreePine },
     { value: "happy-holidays", label: "Happy Holidays", description: "Fun, Happy, Playful", icon: Snowflake },
-    { value: "mistletoe-kisses", label: "Mistletoe Kisses", description: "Romantic or Flirty", icon: Heart },
+    { value: "mistletoe-kisses", label: "Mistletoe Kisses", description: "Flirty, Fun, Playful", icon: Heart },
+    { value: "christmas-love", label: "Christmas Love", description: "Romantic, Devoted, Sincere", icon: Gift },
+    { value: "missing-you", label: "Missing You This Christmas", description: "Emotional, Heartfelt, Longing", icon: HeartHandshake },
     { value: "christmas-wish", label: "A Christmas Wish", description: "Loving, Emotional, but Hopeful", icon: Star },
     { value: "happy-new-year", label: "Happy New Year", description: "Celebratory, Uplifting, Fun", icon: PartyPopper },
     { value: "new-years-wish", label: "New Year's Wish", description: "Emotional, Sentimental, Heartfelt", icon: Sparkles },
+    { value: "thinking-of-you", label: "Thinking of You", description: "Versatile, Heartfelt, Year-round", icon: Sunrise },
 ];
 
 const emotions = [
@@ -137,21 +141,39 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                     />
                 </div>
 
-                <div className="mt-4 md:mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    <FormField
-                        control={control}
-                        name={getFieldName("recipientNickname")}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="block text-[#87CEEB] mb-2">What will you call them in your song? <span className="text-[#87CEEB]">*</span></FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g. Petname, Dad, Grandma etc." className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                <div className="mt-4 md:mt-6">
+                    <FormLabel className="block text-[#87CEEB] mb-2">What do you call them? Suggest a second option also where appropriate</FormLabel>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <FormField
+                            control={control}
+                            name={getFieldName("recipientNickname")}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="block text-[#87CEEB]/70 text-sm mb-2">Name 1 <span className="text-[#87CEEB]">*</span></FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Dad, Elizabeth, Pierre" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
+                        <FormField
+                            control={control}
+                            name={getFieldName("recipientNickname2")}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="block text-[#87CEEB]/70 text-sm mb-2">Name 2</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Liz, Pierre Bear :-)" className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm" {...field} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-4 md:mt-6">
                     <FormField
                         control={control}
                         name={getFieldName("relationship")}
@@ -175,7 +197,8 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                     name={getFieldName("theme")}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className={`text-xl md:text-2xl mb-6 block text-[#F5E6B8] ${lora.className}`}>Choose a theme <span className="text-[#F5E6B8]">*</span></FormLabel>
+                            <FormLabel className={`text-xl md:text-2xl mb-2 block text-[#F5E6B8] ${lora.className}`}>Choose an Overall Theme for your Song? <span className="text-[#F5E6B8]">*</span></FormLabel>
+                            <p className="text-[#87CEEB]/80 text-sm mb-4">If it was a Christmas card what would be written on the front?</p>
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {themes.map((theme) => {
@@ -206,6 +229,95 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                 />
             </div>
 
+            {/* Style Modifiers Card */}
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)]">
+                <FormLabel className={`block text-[#F5E6B8] mb-2 text-xl md:text-2xl ${lora.className}`}>Style Modifiers (Important but Optional)</FormLabel>
+                <p className="text-[#87CEEB]/80 text-sm mb-6">Customise your chosen theme above:</p>
+
+                <div className="space-y-4">
+                    <FormField
+                        control={control}
+                        name={getFieldName("childFriendly")}
+                        render={({ field }) => (
+                            <FormItem>
+                                <div
+                                    onClick={() => field.onChange(!field.value)}
+                                    className="p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer flex items-center justify-between border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB] hover:bg-white/10"
+                                >
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <span className="text-2xl w-7 h-7 flex items-center justify-center flex-shrink-0">☃️</span>
+                                        <span className="text-[#F5E6B8]">Child-Friendly:</span>
+                                        <span className="text-sm text-[#87CEEB]/80">Include playful, age-appropriate elements (Santa, magic, wonder)</span>
+                                    </div>
+                                    <FormControl>
+                                        <input
+                                            type="checkbox"
+                                            checked={field.value || false}
+                                            onChange={(e) => field.onChange(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded border-2 border-[#87CEEB] focus:ring-2 focus:ring-[#87CEEB]/50 cursor-pointer flex-shrink-0 ml-2 accent-[#87CEEB]"
+                                        />
+                                    </FormControl>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={control}
+                        name={getFieldName("faithBased")}
+                        render={({ field }) => (
+                            <FormItem>
+                                <div
+                                    onClick={() => field.onChange(!field.value)}
+                                    className="p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer flex items-center justify-between border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB] hover:bg-white/10"
+                                >
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#F5E6B8]">
+                                                <path d="M12 2l1 2 2 .3-1.5 1.5.3 2-1.8-1-1.8 1 .3-2L9 4.3l2-.3z" fill="currentColor"></path>
+                                                <rect x="6" y="15" width="12" height="7"></rect>
+                                                <path d="M5 15l7-4 7 4"></path>
+                                            </svg>
+                                        </div>
+                                        <span className="text-[#F5E6B8]">Faith-Based:</span>
+                                        <span className="text-sm text-[#87CEEB]/80">Centre the song around Christian faith and the sacred story of Christmas</span>
+                                    </div>
+                                    <FormControl>
+                                        <input
+                                            type="checkbox"
+                                            checked={field.value || false}
+                                            onChange={(e) => field.onChange(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded border-2 border-[#87CEEB] focus:ring-2 focus:ring-[#87CEEB]/50 cursor-pointer flex-shrink-0 ml-2 accent-[#87CEEB]"
+                                        />
+                                    </FormControl>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+            </div>
+
+            {/* Short Phrase Card */}
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)]
+                ">
+                <FormField
+                    control={control}
+                    name={getFieldName("shortPhrase")}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="block text-[#87CEEB] mb-2">Add a short phrase to convey your overall message?</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    placeholder="e.g. Missing you this Christmas, You're so special, Distance can't diminish our love"
+                                    className="w-full px-4 py-3 bg-[#0f1e30]/60 border-2 border-[#87CEEB]/40 text-white placeholder-white/50 italic rounded-lg focus:outline-none focus:border-[#F5E6B8] transition-all duration-200 backdrop-blur-sm"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+            </div>
+
             {/* About Them Card with Emotions */}
             <div className="bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#87CEEB]/40 p-6 md:p-8 shadow-[0_8px_30px_rgba(135,206,235,0.3)] space-y-6">
                 <div>
@@ -231,8 +343,8 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                                     key={emotion.value}
                                                     onClick={() => field.onChange(emotion.value)}
                                                     className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === emotion.value
-                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
-                                                            : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                        : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-2 mb-1">
@@ -254,8 +366,8 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                                     key={emotion.value}
                                                     onClick={() => field.onChange(emotion.value)}
                                                     className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === emotion.value
-                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
-                                                            : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                        : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-2 mb-1">
@@ -431,8 +543,8 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                                 key={level.value}
                                                 onClick={() => field.onChange(level.value)}
                                                 className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === level.value
-                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
-                                                        : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                    ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                    : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-2 mb-1">
@@ -535,8 +647,8 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                                     key={level.value}
                                                     onClick={() => field.onChange(level.value)}
                                                     className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === level.value
-                                                            ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
-                                                            : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
+                                                        ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
+                                                        : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-2 mb-1">

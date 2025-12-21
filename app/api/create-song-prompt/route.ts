@@ -51,7 +51,7 @@ Create a prompt that:
 6. Has a ${formData.vibe} overall vibe
 ${formData.favoriteMemory ? `7. Incorporates the memory: ${formData.favoriteMemory}` : ''}
 
-Output only the prompt string (max 280 chars). Make it personal, specific, and emotionally resonant. Be concise.`;
+Output only the prompt string (max 280 chars). Aim for 200-280 characters to maximize detail while staying within the limit. Make it personal, specific, and emotionally resonant.`;
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -62,8 +62,8 @@ Output only the prompt string (max 280 chars). Make it personal, specific, and e
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: [{ role: 'user', content: systemPrompt }],
-                temperature: 0.7,
-                max_tokens: 150,
+                temperature: 0.8,
+                max_tokens: 300,
             }),
         });
 
@@ -111,8 +111,8 @@ Output ONLY the shortened prompt (max 280 chars):`;
                 body: JSON.stringify({
                     model: 'llama-3.3-70b-versatile',
                     messages: [{ role: 'user', content: shortenPrompt }],
-                    temperature: 0.5, // Lower temperature for more focused output
-                    max_tokens: 120,
+                    temperature: 0.6,
+                    max_tokens: 200,
                 }),
             });
 
