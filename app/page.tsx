@@ -140,7 +140,7 @@ export default function ComingSoonPage() {
                     disabled={isLoading}
                     className={`px-6 md:px-8 py-3 md:py-4 rounded-lg bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] font-semibold shadow-[0_8px_30px_rgba(135,206,235,0.5)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.7)] transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${lora.className}`}
                   >
-                    {isLoading ? 'Submitting...' : 'Notify Me'}
+                    {isLoading ? 'Submitting...' : 'Let Me In'}
                   </button>
                 </form>
 
