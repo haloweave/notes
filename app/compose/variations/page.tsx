@@ -557,9 +557,12 @@ function VariationsContent() {
         'alternative interpretation'
     ];
 
-    // Capitalize first letter of each variation style for display
+    // Capitalize each word of variation style for display (Title Case)
     const formatVariationName = (style: string) => {
-        return style.charAt(0).toUpperCase() + style.slice(1);
+        return style
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
     };
 
     const variations: Variation[] = [
