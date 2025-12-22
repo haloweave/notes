@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
                         if (songLinks.length > 0) {
                             console.log('[EMAIL] 📨 Step 4: Preparing email...');
                             const emailData = {
-                                recipientEmail: 'haloweavedev@gmail.com', // Hardcoded for testing
+                                recipientEmail: formData.senderEmail || 'haloweavedev@gmail.com', // Use sender's email
                                 senderName: formData.senderName || 'Customer',
                                 recipientName: songs[0]?.recipientName || 'Recipient',
                                 songLinks: songLinks,
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
                             };
 
                             console.log('[EMAIL] Email data:');
-                            console.log('[EMAIL]   - To:', emailData.recipientEmail, '(HARDCODED FOR TESTING)');
+                            console.log('[EMAIL]   - To:', emailData.recipientEmail);
                             console.log('[EMAIL]   - Sender name:', emailData.senderName);
                             console.log('[EMAIL]   - Recipient name:', emailData.recipientName);
                             console.log('[EMAIL]   - Package type:', emailData.packageType);

@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
         // Send email
         const emailResult = await sendSongDeliveryEmail({
-            recipientEmail: 'haloweavedev@gmail.com', // Hardcoded for testing
+            recipientEmail: formData.senderEmail || 'haloweavedev@gmail.com', // Use sender's email
             senderName: formData.senderName || 'Customer',
             recipientName: songs[0]?.recipientName || 'Recipient',
             songLinks: songLinks,

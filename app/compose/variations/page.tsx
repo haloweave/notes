@@ -859,6 +859,12 @@ function VariationsContent() {
         } else {
             setPlayingId(id);
             const audio = new Audio(audioUrl);
+
+            // 🎵 PREVIEW MODE: Play 20 seconds from start initially
+            const INITIAL_PREVIEW_DURATION = 20; // 20 seconds for first play
+            let previewStartTime = 0;
+            let previewDuration = INITIAL_PREVIEW_DURATION;
+
             audio.play();
 
             // Store reference
@@ -869,6 +875,16 @@ function VariationsContent() {
 
             // Track progress for seek slider
             audio.ontimeupdate = () => {
+                // 🎵 Auto-stop after preview duration
+                if (audio.currentTime >= previewStartTime + previewDuration) {
+                    audio.pause();
+                    setPlayingId(null);
+                    setAudioRefs(prev => ({
+                        ...prev,
+                        [id]: null
+                    }));
+                }
+
                 setAudioProgress(prev => ({
                     ...prev,
                     [id]: {
@@ -901,6 +917,10 @@ function VariationsContent() {
                     [id]: { currentTime: 0, duration: prev[id]?.duration || 0 }
                 }));
             };
+
+            // 🎵 Store preview settings on audio element for handleSeek to access
+            (audio as any).previewStartTime = previewStartTime;
+            (audio as any).previewDuration = previewDuration;
         }
     };
 
@@ -914,7 +934,21 @@ function VariationsContent() {
     const handleSeek = (id: number, newTime: number) => {
         const audio = audioRefs[id];
         if (audio) {
+            // 🎵 PREVIEW MODE: When seeking, play only 5 seconds from new position
+            const SEEK_PREVIEW_DURATION = 5; // 5 seconds when seeking
+
             audio.currentTime = newTime;
+
+            // Update preview settings for this seek
+            (audio as any).previewStartTime = newTime;
+            (audio as any).previewDuration = SEEK_PREVIEW_DURATION;
+
+            // If audio was paused, start playing the 5-second snippet
+            if (audio.paused) {
+                audio.play();
+                setPlayingId(id);
+            }
+
             setAudioProgress(prev => ({
                 ...prev,
                 [id]: {
@@ -1253,9 +1287,14 @@ function VariationsContent() {
                                         </div>
                                     )}
                                     {audioUrls[activeTab]?.[variation.id] && (
-                                        <div className="flex items-center gap-2 text-sm text-[#87CEEB]">
-                                            <span>✓</span>
-                                            <span>Ready to play!</span>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 text-sm text-[#87CEEB]">
+                                                <span>✓</span>
+                                                <span>Ready to play!</span>
+                                            </div>
+                                            <div className="text-xs text-white/50">
+                                                🎵 Preview: 20s from start • 5s snippets when seeking
+                                            </div>
                                         </div>
                                     )}
                                 </div>

@@ -3,7 +3,6 @@
 import { Lora } from "next/font/google";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useFormContext } from "react-hook-form";
@@ -200,17 +199,16 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                             <FormLabel className={`text-xl md:text-2xl mb-2 block text-[#F5E6B8] ${lora.className}`}>Choose an Overall Theme for your Song? <span className="text-[#F5E6B8]">*</span></FormLabel>
                             <p className="text-[#87CEEB]/80 text-sm mb-4">If it was a Christmas card what would be written on the front?</p>
                             <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {themes.map((theme) => {
                                         const IconComponent = theme.icon;
                                         return (
                                             <div key={theme.value}
                                                 onClick={() => field.onChange(theme.value)}
-                                                className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all duration-200 text-center transform cursor-pointer will-change-transform ${field.value === theme.value
-                                                    ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105 z-0'
-                                                    : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/30 hover:border-[#87CEEB] hover:bg-white/10 hover:scale-[1.02] hover:shadow-lg'
+                                                className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all duration-200 text-center transform cursor-pointer ${field.value === theme.value
+                                                    ? 'border-[#87CEEB] bg-[#87CEEB]/20 shadow-[0_0_30px_rgba(135,206,235,0.8)] scale-105'
+                                                    : 'bg-white/5 backdrop-blur-md border-[#87CEEB]/30 hover:border-[#87CEEB] hover:bg-white/10 hover:scale-102 hover:shadow-lg'
                                                     }`}>
-                                                <RadioGroupItem value={theme.value} id={`${getFieldName("theme")}-${theme.value}`} className="sr-only" />
                                                 <IconComponent className="w-8 h-8 flex-shrink-0 text-[#87CEEB]" />
                                                 <div className="flex-1">
                                                     <div className="mb-1 text-[#F5E6B8] font-medium">{theme.label}</div>
@@ -219,7 +217,7 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                             </div>
                                         );
                                     })}
-                                </RadioGroup>
+                                </div>
                             </FormControl>
                             <div className="mt-4">
                                 <FormMessage className="text-red-400 text-sm font-medium" />

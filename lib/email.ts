@@ -325,7 +325,7 @@ The Huggnote Team
 
     try {
         console.log('[RESEND] 📧 Preparing to send email via Resend API...');
-        console.log('[RESEND] From: Resend Onboarding (for testing)');
+        console.log('[RESEND] From: Huggnote <noreply@huggnotebespoke.com>');
         console.log('[RESEND] To:', recipientEmail);
         console.log('[RESEND] Subject:', subject);
         console.log('[RESEND] Song links count:', songLinks.length);
@@ -333,9 +333,8 @@ The Huggnote Team
         console.log('[RESEND] Text content length:', textContent.length, 'characters');
 
         const response = await resend.emails.send({
-            // Use onboarding email for testing (no domain verification needed)
-            // Change to 'Huggnote <noreply@huggnote.com>' after domain verification
-            from: 'Resend Onboarding <onboarding@resend.dev>',
+            // Using verified domain huggnotebespoke.com
+            from: 'Huggnote <noreply@huggnotebespoke.com>',
             to: [recipientEmail],
             subject: subject,
             html: htmlContent,
