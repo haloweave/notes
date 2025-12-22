@@ -58,6 +58,7 @@ function VariationsContent() {
     const [taskIds, setTaskIds] = useState<Record<number, (string | null)[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
     const [audioUrls, setAudioUrls] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: audioUrl } }
     const [lyrics, setLyrics] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: lyrics } }
+    const [titles, setTitles] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: title } }
     const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'polling' | 'waiting' | 'ready' | 'error'>('idle');
     const [generationProgress, setGenerationProgress] = useState<string>('');
     const [audioRefs, setAudioRefs] = useState<Record<number, HTMLAudioElement | null>>({});
@@ -162,6 +163,7 @@ function VariationsContent() {
             setTaskIds({});
             setAudioUrls({});
             setLyrics({});
+            setTitles({});
             setSelections({});
             setActiveTab(0);
 
@@ -169,6 +171,7 @@ function VariationsContent() {
             let dbTaskIds = null;
             let dbAudioUrls = null;
             let dbLyrics = null;
+            let dbTitles = null;
 
             // If formId is present, fetch from database (for history/purchases)
             if (formIdParam) {
@@ -182,6 +185,7 @@ function VariationsContent() {
                             dbTaskIds = data.form.variationTaskIds || {};
                             dbAudioUrls = data.form.variationAudioUrls || {};
                             dbLyrics = data.form.variationLyrics || {};
+                            dbTitles = data.form.variationTitles || {};
                             console.log('[VARIATIONS] ✅ Loaded from database');
                             console.log('[VARIATIONS] Existing taskIds:', dbTaskIds);
                             console.log('[VARIATIONS] Existing audioUrls:', dbAudioUrls);
@@ -223,6 +227,7 @@ function VariationsContent() {
                 setTaskIds(dbTaskIds);
                 setAudioUrls(dbAudioUrls || {});
                 setLyrics(dbLyrics || {});
+                if (dbTitles) setTitles(dbTitles);
                 setGenerationStatus('ready'); // Mark as ready since we have existing data
             }
 
@@ -590,8 +595,10 @@ function VariationsContent() {
     const relationship = currentSong.relationship || 'Friend';
     const theme = currentSong.theme || 'Special Occasion';
 
-    // Get AI-generated variation styles from sessionStorage
-    const allVariationStyles = JSON.parse(sessionStorage.getItem('allVariationStyles') || '[]');
+    // Get AI-generated variation styles from sessionStorage (client-side only)
+    const allVariationStyles = typeof window !== 'undefined'
+        ? JSON.parse(sessionStorage.getItem('allVariationStyles') || '[]')
+        : [];
     const currentVariationStyles = allVariationStyles[activeTab] || [
         'standard tempo',
         'slightly varied',
@@ -663,6 +670,7 @@ function VariationsContent() {
                 const form = data.form;
                 const variationAudioUrls = form.variationAudioUrls || {};
                 const variationLyrics = form.variationLyrics || {};
+                const variationTitles = form.variationTitles || {};
 
                 // Check if we have audio URLs for this song
                 if (variationAudioUrls[songIndex]) {
@@ -690,6 +698,13 @@ function VariationsContent() {
                         setLyrics(prev => ({
                             ...prev,
                             [songIndex]: variationLyrics[songIndex]
+                        }));
+                    }
+
+                    if (variationTitles[songIndex]) {
+                        setTitles(prev => ({
+                            ...prev,
+                            [songIndex]: variationTitles[songIndex]
                         }));
                     }
 
@@ -1331,10 +1346,13 @@ function VariationsContent() {
                             <CardContent className="p-6">
                                 {/* Variation Header */}
                                 <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Music className="w-5 h-5 text-[#87CEEB]" />
-                                        <h3 className={`text-lg font-medium ${isCurrentSelected(variation.id) ? 'text-[#F5E6B8]' : 'text-white'}`}>
-                                            Option {variation.id} - {recipientName}
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <Music className="w-5 h-5 text-[#87CEEB] shrink-0" />
+                                        <h3
+                                            className={`text-lg font-medium truncate ${isCurrentSelected(variation.id) ? 'text-[#F5E6B8]' : 'text-white'}`}
+                                            title={titles[activeTab]?.[variation.id] || `Option ${variation.id} - ${recipientName}`}
+                                        >
+                                            {titles[activeTab]?.[variation.id] || `Option ${variation.id} - ${recipientName}`}
                                         </h3>
                                     </div>
                                     {isCurrentSelected(variation.id) && (
@@ -1357,15 +1375,15 @@ function VariationsContent() {
                                     {(generationStatus === 'ready' || generationStatus === 'error') && !audioUrls[activeTab]?.[variation.id] && !lyrics[activeTab]?.[variation.id] && taskIds[activeTab] && taskIds[activeTab][variation.id - 1] === null && (
                                         <div className="flex items-center gap-2 text-sm text-red-400">
                                             <span>❌</span>
-                                            <span>Generation Failed</span>
+                                            <span>Composition Failed</span>
                                         </div>
                                     )}
 
-                                    {/* Generating State (only if task ID exists or not loaded yet) */}
+                                    {/* Composing State (only if task ID exists or not loaded yet) */}
                                     {!lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (!taskIds[activeTab] || taskIds[activeTab][variation.id - 1]) && (
                                         <div className="flex items-center gap-2 text-sm text-white/60">
                                             <LoadingSpinner size="xs" variant="dots" color="primary" />
-                                            <span>Generating your song...</span>
+                                            <span>Composing your song...</span>
                                         </div>
                                     )}
                                     {lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
@@ -1374,7 +1392,7 @@ function VariationsContent() {
                                             <span className="text-[#F5E6B8]">Lyrics ready</span>
                                             <span className="text-white/40">•</span>
                                             <LoadingSpinner size="xs" variant="dots" color="primary" />
-                                            <span className="text-white/60">Generating audio...</span>
+                                            <span className="text-white/60">Composing audio...</span>
                                         </div>
                                     )}
                                     {audioUrls[activeTab]?.[variation.id] && (
@@ -1394,7 +1412,7 @@ function VariationsContent() {
                                 {lyrics[activeTab]?.[variation.id] && (
                                     <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
                                         <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Full Lyrics</h4>
-                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-[#87CEEB]/30 scrollbar-track-transparent hover:scrollbar-thumb-[#87CEEB]/50">
+                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto">
                                             {lyrics[activeTab][variation.id]}
                                         </div>
                                     </div>

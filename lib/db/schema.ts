@@ -104,6 +104,7 @@ export const composeForms = pgTable('compose_forms', {
     variationTaskIds: jsonb('variation_task_ids'), // { "0": ["task1", "task2", "task3"], ... }
     variationAudioUrls: jsonb('variation_audio_urls'), // { "0": { "1": "url", "2": "url", "3": "url" }, ... }
     variationLyrics: jsonb('variation_lyrics'), // { "0": { "1": "lyrics", "2": "lyrics", "3": "lyrics" }, ... }
+    variationTitles: jsonb('variation_titles'), // { "0": { "1": "title", "2": "title", "3": "title" }, ... }
     selectedVariations: jsonb('selected_variations'), // { "0": 2, "1": 1, "2": 3 }
 
     // Status tracking

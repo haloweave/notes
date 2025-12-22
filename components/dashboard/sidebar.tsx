@@ -48,6 +48,21 @@ export function Sidebar() {
             {/* Navigation */}
             <nav className="flex-1 p-3 md:p-4 space-y-2 overflow-y-auto">
                 <Button
+                    variant="default"
+                    className="w-full justify-start h-12 pl-6 md:pl-14 text-base rounded-xl bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg transition-all duration-200"
+                    asChild
+                >
+                    <Link href="/compose/select-package" onClick={closeMobileMenu}>
+                        <AddCircleIcon className="mr-2 md:mr-3 h-6 w-6 md:h-7 md:w-7 shrink-0 stroke-[2]" />
+                        Compose New Song
+                    </Link>
+                </Button>
+
+                <div className="pt-2 pb-2">
+                    <div className="h-px bg-gray-100 mx-2"></div>
+                </div>
+
+                <Button
                     variant="ghost"
                     className={getLinkClass('/dashboard/create')}
                     asChild

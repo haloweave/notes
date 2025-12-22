@@ -229,6 +229,7 @@ export async function POST(request: NextRequest) {
                         // Update the variationAudioUrls
                         const currentAudioUrls = form.variationAudioUrls as any || {};
                         const currentLyrics = form.variationLyrics as any || {};
+                        const currentTitles = form.variationTitles as any || {};
 
                         if (!currentAudioUrls[songIndex]) {
                             currentAudioUrls[songIndex] = {};
@@ -236,10 +237,14 @@ export async function POST(request: NextRequest) {
                         if (!currentLyrics[songIndex]) {
                             currentLyrics[songIndex] = {};
                         }
+                        if (!currentTitles[songIndex]) {
+                            currentTitles[songIndex] = {};
+                        }
 
                         // Use the audio URL from either conversion object or body
                         const audioUrl = conversion?.conversion_path_1 || body.conversion_path;
                         const lyrics = conversion?.lyrics_1 || body.lyrics;
+                        const title = conversion?.title_1 || body.title;
 
                         // IMPORTANT: Since we're using the same task ID for all 3 variations (single song mode),
                         // we need to apply this audio URL to ALL variations that have this task ID
@@ -251,6 +256,9 @@ export async function POST(request: NextRequest) {
                                     currentAudioUrls[songIndex][varId] = audioUrl;
                                     if (lyrics) {
                                         currentLyrics[songIndex][varId] = lyrics;
+                                    }
+                                    if (title) {
+                                        currentTitles[songIndex][varId] = title;
                                     }
                                     console.log(`[WEBHOOK] Applied audio URL to variation ${varId}`);
                                 }
@@ -271,6 +279,7 @@ export async function POST(request: NextRequest) {
                             .set({
                                 variationAudioUrls: currentAudioUrls,
                                 variationLyrics: currentLyrics,
+                                variationTitles: currentTitles,
                                 status: newStatus,
                                 updatedAt: new Date(),
                             })
