@@ -352,33 +352,23 @@ function VariationsContent() {
             setGenerationProgress('Generating your song...');
 
             try {
-                // Generate 3 DIFFERENT variations with unique styles
-                // NEW APPROACH: Use base music_style from form, then add variation modifiers
-                const songVariations = [
-                    {
-                        id: 1,
-                        name: 'Poetic & Romantic',
-                        styleModifier: 'Romantic, Poetic'
-                    },
-                    {
-                        id: 2,
-                        name: 'Upbeat & Playful',
-                        musicStyle: 'Pop, Upbeat, Playful, Catchy'
-                    },
-                    {
-                        id: 3,
-                        name: 'Heartfelt & Emotional',
-                        styleModifier: 'Heartfelt, Emotional'
-                    }
-                ];
-
+                // Generate 3 variations with the SAME style but SLIGHT pace/tempo variations
+                // This provides choice through different interpretations while respecting user's style
                 const newTaskIds: (string | null)[] = [];
 
-                // Generate 3 different songs with unique prompts and styles
-                for (let i = 0; i < songVariations.length; i++) {
+                // Define subtle variations in tempo/pace
+                // These are subtle enough to maintain the same message/tone but provide variety
+                const variationModifiers = [
+                    { id: 1, name: 'Standard Tempo', modifier: '' }, // No modifier - pure user style
+                    { id: 2, name: 'Slightly Upbeat', modifier: ', slightly upbeat tempo' },
+                    { id: 3, name: 'Gentle Pace', modifier: ', gentle, relaxed pace' }
+                ];
+
+                // Generate 3 variations with subtle tempo differences
+                for (let i = 0; i < 3; i++) {
                     setGenerationProgress(`Creating variation ${i + 1} of 3...`);
 
-                    // Use the base prompt without style modifiers
+                    // Use the base prompt from form
                     // MusicGPT recommends <280 characters for optimal results
                     let finalPrompt = currentPrompt;
 
@@ -388,13 +378,12 @@ function VariationsContent() {
                         console.log(`[VARIATIONS] Truncated prompt to ${finalPrompt.length} chars`);
                     }
 
-                    // NEW: Use base music style from form + variation modifier
-                    // If we have a base style from the form, use it; otherwise fall back to variation default
-                    let musicStyle = currentMusicStyle || songVariations[i].musicStyle;
+                    // Use the music style from the form
+                    let musicStyle = currentMusicStyle;
 
-                    // Add variation-specific modifier to the base style
-                    if (currentMusicStyle && songVariations[i].styleModifier) {
-                        musicStyle = `${currentMusicStyle}, ${songVariations[i].styleModifier}`;
+                    // Add subtle tempo variation (only for variations 2 and 3)
+                    if (variationModifiers[i].modifier) {
+                        musicStyle = `${musicStyle}${variationModifiers[i].modifier}`;
                     }
 
                     // Add voice type if specified
@@ -404,7 +393,7 @@ function VariationsContent() {
                         console.log(`[VARIATIONS] Added voice type: ${currentSong.voiceType}`);
                     }
 
-                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${songVariations[i].name})`);
+                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${variationModifiers[i].name})`);
                     console.log(`[VARIATIONS] Prompt length: ${finalPrompt.length}/280 chars`);
                     console.log(`[VARIATIONS] Prompt: ${finalPrompt}`);
                     console.log(`[VARIATIONS] Music Style: ${musicStyle}`);
@@ -510,7 +499,7 @@ function VariationsContent() {
                     }
 
                     // Delay between requests to avoid rate limiting (5 seconds between variations)
-                    if (i < songVariations.length - 1) {
+                    if (i < 2) { // 3 variations total (0, 1, 2), so delay after 0 and 1
                         await new Promise(resolve => setTimeout(resolve, 5000));
                     }
                 }
@@ -553,20 +542,20 @@ function VariationsContent() {
     const variations: Variation[] = [
         {
             id: 1,
-            style: 'Poetic & Romantic',
-            description: 'Elegant and heartfelt with poetic expressions',
+            style: 'Standard Tempo',
+            description: 'Your song with the exact style you chose',
             lyricsPreview: `Through the years we've shared so much, ${recipientName}\nFrom ${theme} moments, memories gold\nMy dear ${relationship}, your touch\nA story that deserves to be told`,
         },
         {
             id: 2,
-            style: 'Upbeat & Playful',
-            description: 'Fun and energetic with a cheerful vibe',
+            style: 'Slightly Upbeat',
+            description: 'A slightly more energetic version',
             lyricsPreview: `Hey ${recipientName}, remember all those days\nWhen we'd celebrate in simple ways\nMy ${relationship}, you're one of a kind\nThis ${theme} brings you to mind`,
         },
         {
             id: 3,
-            style: 'Heartfelt & Emotional',
-            description: 'Deep and sincere with emotional depth',
+            style: 'Gentle Pace',
+            description: 'A more relaxed, gentle interpretation',
             lyricsPreview: `${recipientName}, my ${relationship}, my guiding light\nThis ${theme} message feels so right\nEvery moment that we've shared\nShows how deeply I have cared`,
         },
     ];

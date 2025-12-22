@@ -141,9 +141,42 @@ Output ONLY the shortened prompt (max 280 chars):`;
         console.log('[CREATE-SONG-PROMPT] ✅ Final prompt:', finalPrompt);
         console.log('[CREATE-SONG-PROMPT] ✅ Final length:', finalPrompt.length);
 
+        // Generate music_style from user's form selections
+        // This captures the festive feeling, vibe, and style preferences
+        const musicStyleComponents = [];
+
+        // Add user's selected style (if provided)
+        if (formData.style) {
+            musicStyleComponents.push(formData.style);
+        }
+
+        // Add vibe (e.g., "loving", "joyful", "melancholic")
+        if (formData.vibe) {
+            musicStyleComponents.push(formData.vibe);
+        }
+
+        // Add festive sound level for Christmas/holiday themes
+        if (formData.festiveSoundLevel) {
+            const festiveMap: Record<string, string> = {
+                'lightly-festive': 'subtle festive elements',
+                'moderately-festive': 'festive, holiday spirit',
+                'very-festive': 'very festive, celebratory, holiday cheer'
+            };
+            const festiveStyle = festiveMap[formData.festiveSoundLevel];
+            if (festiveStyle) {
+                musicStyleComponents.push(festiveStyle);
+            }
+        }
+
+        // Construct final music_style string
+        const music_style = musicStyleComponents.join(', ') || 'heartfelt, personalized';
+
+        console.log('[CREATE-SONG-PROMPT] ✅ Generated music_style:', music_style);
+
         return NextResponse.json({
             success: true,
             prompt: finalPrompt,
+            music_style: music_style, // NEW: Return music style
             regenerated: regenerationAttempts > 0,
             regenerationAttempts
         });
