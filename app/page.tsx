@@ -97,12 +97,18 @@ export default function ComingSoonPage() {
         {/* Main Content */}
         <div className="relative z-10 flex flex-col min-h-screen">
           {/* Hero Section */}
-          <div className="flex-1 flex items-center justify-center px-4">
-            <div className="text-center w-full" style={{ opacity: 1, transform: 'none' }}>
+          <div className="flex-1 flex items-start justify-center px-4 pt-8 md:pt-16 pb-8 md:pb-12">
+            <div className="text-center w-full max-w-7xl mx-auto pb-8" style={{ opacity: 1, transform: 'none' }}>
               {/* Launch Date - Above Logo */}
-              <div className="mb-8 md:mb-10">
-                <h2 className={`text-[#B8E4F4] text-4xl md:text-6xl lg:text-8xl font-bold ${cinzel.className}`}>
-                  Launching 23<sup className="text-2xl md:text-4xl lg:text-5xl">rd</sup> December 2025
+              <div className="mb-8 md:mb-10 px-4">
+                <h2
+                  className={`text-[#B8E4F4] font-bold ${cinzel.className} whitespace-nowrap`}
+                  style={{
+                    fontSize: 'clamp(1.5rem, 5vw, 5rem)',
+                    lineHeight: '1.2'
+                  }}
+                >
+                  Launching 23<sup style={{ fontSize: '0.6em' }}>rd</sup> December 2025
                 </h2>
               </div>
 
@@ -114,7 +120,7 @@ export default function ComingSoonPage() {
               />
 
               {/* Main Tagline */}
-              <h1 className={`text-[#E8DCC0] text-2xl md:text-3xl lg:text-4xl text-center mb-10 md:mb-12 ${lora.className}`}>
+              <h1 className={`text-[#E8DCC0] text-3xl md:text-5xl lg:text-6xl italic text-center mb-10 md:mb-12 ${lora.className}`}>
                 The Gift They'll Never Forget
               </h1>
 

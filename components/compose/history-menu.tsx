@@ -227,51 +227,61 @@ export function HistoryMenu() {
     };
 
     return (
-        <div className="relative">
-            {/* Hamburger Button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg"
-                aria-label="Menu"
-            >
-                <Menu className="w-6 h-6 md:w-7 md:h-7 text-[#E0F4FF]" />
-            </button>
+        <div className="flex items-center gap-3">
+            {!session?.user && (
+                <Button
+                    onClick={openDialog}
+                    className="bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 text-[#E0F4FF] border-0 shadow-lg h-[48px] px-6 rounded-lg font-medium tracking-wide transition-all duration-200"
+                >
+                    Sign In
+                </Button>
+            )}
 
-            {/* Dropdown Menu */}
-            {isOpen && (
-                <>
-                    {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
-                        onClick={() => setIsOpen(false)}
-                    />
+            <div className="relative">
+                {/* Hamburger Button */}
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="p-3 rounded-lg bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 transition-all duration-200 shadow-lg block"
+                    aria-label="Menu"
+                >
+                    <Menu className="w-6 h-6 md:w-7 md:h-7 text-[#E0F4FF]" />
+                </button>
 
-                    {/* Menu Panel */}
-                    <div className="absolute top-14 right-0 w-96 max-h-[80vh] overflow-y-auto bg-[#0a1628]/95 backdrop-blur-xl border-2 border-white/20 rounded-2xl shadow-2xl z-40">
-                        {/* Header */}
-                        <div className="sticky top-0 bg-[#0a1628] border-b border-white/10 p-4 z-10">
-                            <div className="flex items-start justify-between gap-2 mb-3">
-                                <div className="flex-1">
-                                    <h3 className="text-white font-semibold text-lg">Song History</h3>
-                                    {session?.user && (
-                                        <p className="text-[#87CEEB] text-xs mt-0.5 truncate">
-                                            {session.user.email}
-                                        </p>
+                {/* Dropdown Menu */}
+                {isOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <div
+                            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+                            onClick={() => setIsOpen(false)}
+                        />
+
+                        {/* Menu Panel */}
+                        <div className="absolute top-14 right-0 w-96 max-h-[80vh] overflow-y-auto bg-[#0a1628]/95 backdrop-blur-xl border-2 border-white/20 rounded-2xl shadow-2xl z-40">
+                            {/* Header */}
+                            <div className="sticky top-0 bg-[#0a1628] border-b border-white/10 p-4 z-10">
+                                <div className="flex items-start justify-between gap-2 mb-3">
+                                    <div className="flex-1">
+                                        <h3 className="text-white font-semibold text-lg">Song History</h3>
+                                        {session?.user && (
+                                            <p className="text-[#87CEEB] text-xs mt-0.5 truncate">
+                                                {session.user.email}
+                                            </p>
+                                        )}
+                                    </div>
+                                    {!session?.user && (
+                                        <Button
+                                            onClick={() => {
+                                                setIsOpen(false);
+                                                openDialog();
+                                            }}
+                                            size="sm"
+                                            className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg text-xs px-3 py-1 h-auto"
+                                        >
+                                            Sign In
+                                        </Button>
                                     )}
                                 </div>
-                                {!session?.user && (
-                                    <Button
-                                        onClick={() => {
-                                            setIsOpen(false);
-                                            openDialog();
-                                        }}
-                                        size="sm"
-                                        className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg text-xs px-3 py-1 h-auto"
-                                    >
-                                        Sign In
-                                    </Button>
-                                )}
-                            </div>
 
                             {/* Tabs */}
                             <div className="flex gap-2 mb-2">
@@ -400,6 +410,7 @@ export function HistoryMenu() {
                     </div>
                 </>
             )}
+            </div>
         </div>
     );
 }
