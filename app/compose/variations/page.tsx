@@ -1394,7 +1394,7 @@ function VariationsContent() {
                                 {lyrics[activeTab]?.[variation.id] && (
                                     <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
                                         <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Full Lyrics</h4>
-                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-96 overflow-y-auto custom-scrollbar">
+                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-[#87CEEB]/30 scrollbar-track-transparent hover:scrollbar-thumb-[#87CEEB]/50">
                                             {lyrics[activeTab][variation.id]}
                                         </div>
                                     </div>
