@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PremiumButton } from '@/components/ui/premium-button';
@@ -51,6 +52,7 @@ function VariationsContent() {
     const [playingId, setPlayingId] = useState<number | null>(null);
     const [isBundle, setIsBundle] = useState(false);
     const [isLoadingSession, setIsLoadingSession] = useState(false);
+    const [showSnowGlobeLoading, setShowSnowGlobeLoading] = useState(true); // Show snow globe for 8 seconds
 
     // Music Generation State
     const [taskIds, setTaskIds] = useState<Record<number, (string | null)[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
@@ -109,6 +111,45 @@ function VariationsContent() {
             return () => clearTimeout(timer);
         }
     }, [session]);
+
+    // Hide snow globe loading screen after 8 seconds
+    // Only show on fresh submissions (when coming from the form)
+    useEffect(() => {
+        // Check if we're coming from a fresh form submission
+        // If there's existing data in the database, don't show the snow globe
+        const checkIfFreshSubmission = async () => {
+            if (formIdParam) {
+                try {
+                    const response = await fetch(`/api/compose/forms/${formIdParam}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.form) {
+                            const existingTaskIds = data.form.variationTaskIds || {};
+                            // If we have existing task IDs, this is not a fresh submission
+                            if (Object.keys(existingTaskIds).length > 0) {
+                                console.log('[VARIATIONS] Existing data found - skipping snow globe');
+                                setShowSnowGlobeLoading(false);
+                                return;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('[VARIATIONS] Error checking for existing data:', error);
+                }
+            }
+
+            // Fresh submission - show snow globe for 8 seconds
+            const timer = setTimeout(() => {
+                setShowSnowGlobeLoading(false);
+                console.log('[VARIATIONS] Snow globe loading screen hidden after 8 seconds');
+            }, 8000); // 8 seconds
+
+            return () => clearTimeout(timer);
+        };
+
+        checkIfFreshSubmission();
+    }, [formIdParam]); // Run when formId changes
+
 
     // Load Data
     useEffect(() => {
@@ -1113,6 +1154,30 @@ function VariationsContent() {
 
     return (
         <div className="w-full relative">
+            {/* Snow Globe Loading Screen - Shows for 8 seconds */}
+            {showSnowGlobeLoading && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a1628] animate-in fade-in duration-500">
+                    {/* Desktop Snow Globe */}
+                    <div className="hidden md:flex items-center justify-center w-full h-full p-8">
+                        <img
+                            src="/snowGlobeDesktop.gif"
+                            alt="Loading your magical song..."
+                            className="max-w-full max-h-full object-contain"
+                            style={{ imageRendering: 'auto' }}
+                        />
+                    </div>
+                    {/* Mobile Snow Globe */}
+                    <div className="flex md:hidden items-center justify-center w-full h-full p-4">
+                        <img
+                            src="/snowglobeMobile.gif"
+                            alt="Loading your magical song..."
+                            className="max-w-full max-h-full object-contain"
+                            style={{ imageRendering: 'auto' }}
+                        />
+                    </div>
+                </div>
+            )}
+
             {/* Session Loading Overlay - Shows when switching between sessions */}
             {isLoadingSession && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">

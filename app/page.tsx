@@ -160,14 +160,14 @@ export default function ComingSoonPage() {
               </div>
 
               {/* "Let Me In" Button */}
-              <div className="mt-8">
+              {/* <div className="mt-8">
                 <button
                   onClick={() => router.push('/compose/select-package')}
                   className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-8 md:px-10 py-3 md:py-4 text-base md:text-lg rounded-lg bg-white/10 backdrop-blur-sm border-2 border-[#87CEEB]/40 text-[#E0F4FF] hover:bg-white/20 hover:border-[#F5E6B8] shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ${lora.className}`}
                 >
                   Let Me In
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
