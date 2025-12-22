@@ -1393,10 +1393,9 @@ function VariationsContent() {
                                 {/* Lyrics Preview - Show even if audio isn't ready */}
                                 {lyrics[activeTab]?.[variation.id] && (
                                     <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
-                                        <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Lyrics Preview</h4>
-                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto custom-scrollbar">
-                                            {lyrics[activeTab][variation.id].split('\n').slice(0, 8).join('\n')}
-                                            {lyrics[activeTab][variation.id].split('\n').length > 8 && '\n...'}
+                                        <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Full Lyrics</h4>
+                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-96 overflow-y-auto custom-scrollbar">
+                                            {lyrics[activeTab][variation.id]}
                                         </div>
                                     </div>
                                 )}

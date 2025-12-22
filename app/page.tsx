@@ -3,9 +3,10 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Lora } from 'next/font/google';
+import { Lora, Cinzel } from 'next/font/google';
 
 const lora = Lora({ subsets: ['latin'] });
+const cinzel = Cinzel({ subsets: ['latin'], weight: ['400', '700'] });
 
 export default function ComingSoonPage() {
   const router = useRouter();
@@ -97,23 +98,20 @@ export default function ComingSoonPage() {
         <div className="relative z-10 flex flex-col min-h-screen">
           {/* Hero Section */}
           <div className="flex-1 flex items-center justify-center px-4">
-            <div className="text-center max-w-3xl" style={{ opacity: 1, transform: 'none' }}>
+            <div className="text-center w-full" style={{ opacity: 1, transform: 'none' }}>
+              {/* Launch Date - Above Logo */}
+              <div className="mb-8 md:mb-10">
+                <h2 className={`text-[#B8E4F4] text-4xl md:text-6xl lg:text-8xl font-bold ${cinzel.className}`}>
+                  Launching 23<sup className="text-2xl md:text-4xl lg:text-5xl">rd</sup> December 2025
+                </h2>
+              </div>
+
               {/* Huggnote Logo */}
               <img
                 src="/huggnote bespoke logo.png"
                 alt="Huggnote"
-                className="h-32 md:h-40 lg:h-48 w-auto mx-auto mb-8 md:mb-10"
+                className="h-40 md:h-52 lg:h-64 w-auto mx-auto mb-8 md:mb-10"
               />
-
-              {/* Launch Date */}
-              <div className="mb-8 md:mb-10">
-                <p className={`text-[#87CEEB] text-xl md:text-2xl lg:text-3xl mb-2 ${lora.className}`}>
-                  Launching
-                </p>
-                <h2 className={`text-[#F5E6B8] text-3xl md:text-5xl lg:text-6xl font-bold ${lora.className}`}>
-                  23rd December 2025
-                </h2>
-              </div>
 
               {/* Main Tagline */}
               <h1 className={`text-[#E8DCC0] text-2xl md:text-3xl lg:text-4xl text-center mb-10 md:mb-12 ${lora.className}`}>
@@ -121,12 +119,12 @@ export default function ComingSoonPage() {
               </h1>
 
               {/* Email Signup Form */}
-              <div className="max-w-md mx-auto mb-6">
-                <p className={`text-white/90 text-base md:text-lg mb-4 ${lora.className}`}>
+              <div className="w-full mb-6">
+                <p className={`text-[#E8DCC0] text-xl md:text-3xl lg:text-4xl mb-6 ${cinzel.className}`} style={{ fontWeight: 300 }}>
                   Enter email for VIP access and surprises
                 </p>
 
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
                   <input
                     type="email"
                     value={email}
