@@ -173,10 +173,73 @@ Output ONLY the shortened prompt (max 280 chars):`;
 
         console.log('[CREATE-SONG-PROMPT] ✅ Generated music_style:', music_style);
 
+        // NEW: Generate 3 contextually appropriate variation styles using AI
+        console.log('[CREATE-SONG-PROMPT] Generating variation styles...');
+
+        const variationPrompt = `Based on this song context:
+- Theme: ${formData.theme}
+- Emotions: ${formData.emotions}
+- Vibe: ${formData.vibe}
+- Style: ${formData.style || 'not specified'}
+- Festive Level: ${formData.festiveSoundLevel || 'not specified'}
+
+Generate 3 DIFFERENT but contextually appropriate musical variation descriptors that would work well for this song. These should be subtle variations that maintain the same emotional tone and message.
+
+For example:
+- If it's a happy, festive song: variations could be "energetic", "celebratory", "joyful tempo"
+- If it's a sad, missing-you song: variations could be "melancholic", "reflective", "gentle and somber"
+- If it's a romantic song: variations could be "intimate", "passionate", "tender"
+
+Output ONLY 3 short descriptors (2-4 words each), separated by " | ". No explanations, no numbering.
+Example output: "energetic and bright | warm and celebratory | uplifting tempo"`;
+
+        const variationResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: variationPrompt }],
+                temperature: 0.7,
+                max_tokens: 100,
+            }),
+        });
+
+        let variationStyles: string[] = [];
+
+        if (variationResponse.ok) {
+            const variationData = await variationResponse.json();
+            const variationText = variationData.choices?.[0]?.message?.content || '';
+            console.log('[CREATE-SONG-PROMPT] AI variation styles:', variationText);
+
+            // Parse the variations (split by |)
+            variationStyles = variationText.split('|').map((v: string) => v.trim()).filter((v: string) => v.length > 0);
+
+            // Ensure we have exactly 3 variations
+            if (variationStyles.length < 3) {
+                console.warn('[CREATE-SONG-PROMPT] Not enough variations generated, using fallbacks');
+                variationStyles = [
+                    variationStyles[0] || 'standard tempo',
+                    variationStyles[1] || 'slightly varied',
+                    variationStyles[2] || 'alternative interpretation'
+                ];
+            } else if (variationStyles.length > 3) {
+                variationStyles = variationStyles.slice(0, 3);
+            }
+        } else {
+            console.error('[CREATE-SONG-PROMPT] Failed to generate variation styles, using fallbacks');
+            variationStyles = ['standard tempo', 'slightly varied', 'alternative interpretation'];
+        }
+
+        console.log('[CREATE-SONG-PROMPT] ✅ Final variation styles:', variationStyles);
+
         return NextResponse.json({
             success: true,
             prompt: finalPrompt,
-            music_style: music_style, // NEW: Return music style
+            music_style: music_style,
+            variation_styles: variationStyles, // NEW: Return AI-generated variation styles
             regenerated: regenerationAttempts > 0,
             regenerationAttempts
         });

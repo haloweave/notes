@@ -327,7 +327,8 @@ export default function CreatePage() {
             }
 
             const generatedPrompts = [];
-            const generatedMusicStyles = []; // NEW: Store music styles
+            const generatedMusicStyles = []; // Store music styles
+            const generatedVariationStyles = []; // NEW: Store AI-generated variation styles
 
             // Loop through songs and generate prompts
             for (let i = 0; i < values.songs.length; i++) {
@@ -364,12 +365,16 @@ export default function CreatePage() {
                     console.log(`[FRONTEND] Using cached prompt for song ${i + 1}`);
                     setStatus(`Using cached result for song ${i + 1}...`);
                     generatedPrompts.push(cachedPrompts.current[i]);
-                    // Also use cached music style if available
+                    // Also use cached music style and variation styles if available
                     const savedData = localStorage.getItem(`songForm_${formId}`);
                     if (savedData) {
                         const parsed = JSON.parse(savedData);
                         if (parsed.allMusicStyles && parsed.allMusicStyles[i]) {
                             generatedMusicStyles.push(parsed.allMusicStyles[i]);
+                        }
+                        // NEW: Also load cached variation styles
+                        if (parsed.allVariationStyles && parsed.allVariationStyles[i]) {
+                            generatedVariationStyles.push(parsed.allVariationStyles[i]);
                         }
                     }
                     await new Promise(r => setTimeout(r, 500));
@@ -396,10 +401,15 @@ export default function CreatePage() {
                     const data = await response.json();
                     if (data.success && data.prompt) {
                         generatedPrompts.push(data.prompt);
-                        // NEW: Store music_style from response
+                        // Store music_style from response
                         if (data.music_style) {
                             generatedMusicStyles.push(data.music_style);
                             console.log(`[FRONTEND] Music style for song ${i + 1}:`, data.music_style);
+                        }
+                        // NEW: Store variation_styles from response
+                        if (data.variation_styles) {
+                            generatedVariationStyles.push(data.variation_styles);
+                            console.log(`[FRONTEND] Variation styles for song ${i + 1}:`, data.variation_styles);
                         }
                     } else {
                         throw new Error(data.message || `Failed to generate prompt for song ${i + 1}`);
@@ -410,13 +420,15 @@ export default function CreatePage() {
             if (generatedPrompts.length > 0) {
                 console.log('[FRONTEND] Generated/Cached prompts:', generatedPrompts);
                 console.log('[FRONTEND] Generated music styles:', generatedMusicStyles);
+                console.log('[FRONTEND] Generated variation styles:', generatedVariationStyles);
                 const formDataWithMetadata = {
                     formId,
                     timestamp: Date.now(),
                     formData: values, // Includes global fields
                     generatedPrompt: generatedPrompts[0],
                     allPrompts: generatedPrompts,
-                    allMusicStyles: generatedMusicStyles, // NEW: Store music styles
+                    allMusicStyles: generatedMusicStyles,
+                    allVariationStyles: generatedVariationStyles, // NEW: Store variation styles
                     status: 'prompt_generated'
                 };
 
@@ -442,7 +454,8 @@ export default function CreatePage() {
                             songCount: values.songs.length,
                             formData: values, // Full values including global
                             generatedPrompts: generatedPrompts,
-                            musicStyles: generatedMusicStyles // NEW: Save to database
+                            musicStyles: generatedMusicStyles, // NEW: Save to database
+                            variationStyles: generatedVariationStyles, // NEW: Save AI-generated variation styles
                         })
                     });
 
@@ -462,7 +475,8 @@ export default function CreatePage() {
                 sessionStorage.setItem('songFormData', JSON.stringify(values));
                 sessionStorage.setItem('generatedPrompt', generatedPrompts[0]);
                 sessionStorage.setItem('allPrompts', JSON.stringify(generatedPrompts));
-                sessionStorage.setItem('allMusicStyles', JSON.stringify(generatedMusicStyles)); // NEW: Store in session
+                sessionStorage.setItem('allMusicStyles', JSON.stringify(generatedMusicStyles));
+                sessionStorage.setItem('allVariationStyles', JSON.stringify(generatedVariationStyles)); // NEW: Store AI-generated variation styles
                 sessionStorage.setItem('currentFormId', formId);
 
                 setStatus('Preparing your variations...');

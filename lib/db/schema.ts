@@ -95,8 +95,10 @@ export const composeForms = pgTable('compose_forms', {
     // Complete form data (JSONB for flexibility)
     formData: jsonb('form_data').notNull(),
 
-    // Generated prompts
+    // Generated prompts and styles
     generatedPrompts: jsonb('generated_prompts').notNull(), // Array of prompts
+    musicStyles: jsonb('music_styles'), // NEW: Array of music styles for each song
+    variationStyles: jsonb('variation_styles'), // NEW: Array of arrays - 3 variation styles per song
 
     // Variation tracking
     variationTaskIds: jsonb('variation_task_ids'), // { "0": ["task1", "task2", "task3"], ... }

@@ -282,6 +282,13 @@ function VariationsContent() {
                             const existingTaskIds = data.form.variationTaskIds as any || {};
                             const existingAudioUrls = data.form.variationAudioUrls as any || {};
                             const existingLyrics = data.form.variationLyrics as any || {};
+                            const variationStyles = data.form.variationStyles as any || []; // NEW: Load variation styles from DB
+
+                            // Store variation styles in sessionStorage for UI access
+                            if (variationStyles && variationStyles.length > 0) {
+                                sessionStorage.setItem('allVariationStyles', JSON.stringify(variationStyles));
+                                console.log('[VARIATIONS] ✅ Loaded variation styles from database:', variationStyles);
+                            }
 
                             // Check if we have task IDs for this song in the database
                             if (existingTaskIds[activeTab] && existingTaskIds[activeTab].length > 0) {
@@ -352,19 +359,21 @@ function VariationsContent() {
             setGenerationProgress('Generating your song...');
 
             try {
-                // Generate 3 variations with the SAME style but SLIGHT pace/tempo variations
-                // This provides choice through different interpretations while respecting user's style
+                // Generate 3 variations with AI-generated contextual styles
+                // These styles are dynamically generated based on the song's theme, emotions, and vibe
                 const newTaskIds: (string | null)[] = [];
 
-                // Define subtle variations in tempo/pace
-                // These are subtle enough to maintain the same message/tone but provide variety
-                const variationModifiers = [
-                    { id: 1, name: 'Standard Tempo', modifier: '' }, // No modifier - pure user style
-                    { id: 2, name: 'Slightly Upbeat', modifier: ', slightly upbeat tempo' },
-                    { id: 3, name: 'Gentle Pace', modifier: ', gentle, relaxed pace' }
+                // Get AI-generated variation styles from sessionStorage (loaded from database)
+                const allVariationStyles = JSON.parse(sessionStorage.getItem('allVariationStyles') || '[]');
+                const currentVariationStyles = allVariationStyles[activeTab] || [
+                    'standard tempo',
+                    'slightly varied',
+                    'alternative interpretation'
                 ];
 
-                // Generate 3 variations with subtle tempo differences
+                console.log('[VARIATIONS] Using AI-generated variation styles:', currentVariationStyles);
+
+                // Generate 3 variations with AI-generated styles
                 for (let i = 0; i < 3; i++) {
                     setGenerationProgress(`Creating variation ${i + 1} of 3...`);
 
@@ -381,9 +390,10 @@ function VariationsContent() {
                     // Use the music style from the form
                     let musicStyle = currentMusicStyle;
 
-                    // Add subtle tempo variation (only for variations 2 and 3)
-                    if (variationModifiers[i].modifier) {
-                        musicStyle = `${musicStyle}${variationModifiers[i].modifier}`;
+                    // Add AI-generated variation style (contextually appropriate)
+                    if (currentVariationStyles[i]) {
+                        musicStyle = `${musicStyle}, ${currentVariationStyles[i]}`;
+                        console.log(`[VARIATIONS] Added AI variation style: ${currentVariationStyles[i]}`);
                     }
 
                     // Add voice type if specified
@@ -393,7 +403,7 @@ function VariationsContent() {
                         console.log(`[VARIATIONS] Added voice type: ${currentSong.voiceType}`);
                     }
 
-                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${variationModifiers[i].name})`);
+                    console.log(`[VARIATIONS] Generating variation ${i + 1} (${currentVariationStyles[i]})`);
                     console.log(`[VARIATIONS] Prompt length: ${finalPrompt.length}/280 chars`);
                     console.log(`[VARIATIONS] Prompt: ${finalPrompt}`);
                     console.log(`[VARIATIONS] Music Style: ${musicStyle}`);
@@ -539,23 +549,36 @@ function VariationsContent() {
     const relationship = currentSong.relationship || 'Friend';
     const theme = currentSong.theme || 'Special Occasion';
 
+    // Get AI-generated variation styles from sessionStorage
+    const allVariationStyles = JSON.parse(sessionStorage.getItem('allVariationStyles') || '[]');
+    const currentVariationStyles = allVariationStyles[activeTab] || [
+        'standard tempo',
+        'slightly varied',
+        'alternative interpretation'
+    ];
+
+    // Capitalize first letter of each variation style for display
+    const formatVariationName = (style: string) => {
+        return style.charAt(0).toUpperCase() + style.slice(1);
+    };
+
     const variations: Variation[] = [
         {
             id: 1,
-            style: 'Standard Tempo',
+            style: formatVariationName(currentVariationStyles[0]),
             description: 'Your song with the exact style you chose',
             lyricsPreview: `Through the years we've shared so much, ${recipientName}\nFrom ${theme} moments, memories gold\nMy dear ${relationship}, your touch\nA story that deserves to be told`,
         },
         {
             id: 2,
-            style: 'Slightly Upbeat',
-            description: 'A slightly more energetic version',
+            style: formatVariationName(currentVariationStyles[1]),
+            description: `A variation with ${currentVariationStyles[1]} feel`,
             lyricsPreview: `Hey ${recipientName}, remember all those days\nWhen we'd celebrate in simple ways\nMy ${relationship}, you're one of a kind\nThis ${theme} brings you to mind`,
         },
         {
             id: 3,
-            style: 'Gentle Pace',
-            description: 'A more relaxed, gentle interpretation',
+            style: formatVariationName(currentVariationStyles[2]),
+            description: `A variation with ${currentVariationStyles[2]} feel`,
             lyricsPreview: `${recipientName}, my ${relationship}, my guiding light\nThis ${theme} message feels so right\nEvery moment that we've shared\nShows how deeply I have cared`,
         },
     ];

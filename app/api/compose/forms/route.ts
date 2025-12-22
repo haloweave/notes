@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
             songCount,
             formData,
             generatedPrompts,
+            musicStyles, // NEW
+            variationStyles, // NEW
         } = body;
 
         // Validate required fields
@@ -34,22 +36,35 @@ export async function POST(request: NextRequest) {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
-        // Create form record
+        // Create or update form record (UPSERT)
         const newForm = await db.insert(composeForms).values({
             id: formId,
             packageType,
             songCount,
             formData,
             generatedPrompts,
+            musicStyles: musicStyles || null,
+            variationStyles: variationStyles || null,
             status: 'prompts_generated',
             userId: session?.user?.id || null,
             guestEmail: formData.senderEmail || null,
             expiresAt,
             createdAt: new Date(),
             updatedAt: new Date(),
-        }).returning();
+        })
+            .onConflictDoUpdate({
+                target: composeForms.id,
+                set: {
+                    formData,
+                    generatedPrompts,
+                    musicStyles: musicStyles || null,
+                    variationStyles: variationStyles || null,
+                    updatedAt: new Date(),
+                }
+            })
+            .returning();
 
-        console.log(`[COMPOSE_FORMS] Created form ${formId} for ${session?.user?.id || 'guest'}`);
+        console.log(`[COMPOSE_FORMS] Created/Updated form ${formId} for ${session?.user?.id || 'guest'}`);
 
         return NextResponse.json({
             success: true,
