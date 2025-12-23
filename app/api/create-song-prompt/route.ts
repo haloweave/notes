@@ -19,39 +19,41 @@ export async function POST(request: NextRequest) {
         const systemPrompt = `You are an expert song prompt engineer for AI music generation.
 Create a concise, personalized prompt (max 280 characters) for an AI music generator that will create a heartfelt, customized song.
 
-IMPORTANT: Include these specific details in the prompt:
-- Recipient's name: "${formData.recipientName}"${formData.recipientNickname ? ` (call them: "${formData.recipientNickname}")` : ''}
+IMPORTANT CONTEXT:
+- Recipient: "${formData.recipientName}"${formData.recipientNickname ? ` (call them: "${formData.recipientNickname}")` : ''}
 - Pronunciation: ${formData.pronunciation || formData.recipientName}
 - Relationship: ${formData.relationship}
 - Theme: ${formData.theme}
 - Emotional tone: ${formData.emotions || 'loving'}
-- Who they are: ${formData.overallMessage}
+- Overall vibe: ${formData.vibe}
+- Who they are to you: ${formData.overallMessage}
 - Your story: ${formData.storySummary}
-- Qualities you admire: ${formData.qualities}
-${formData.characteristics ? `- Loveable characteristics: ${formData.characteristics}` : ''}
+- Qualities: ${formData.qualities}
+${formData.characteristics ? `- Characteristics: ${formData.characteristics}` : ''}
 ${formData.gratefulFor ? `- Grateful for: ${formData.gratefulFor}` : ''}
 ${formData.activitiesTogether ? `- Moments shared: ${formData.activitiesTogether}` : ''}
-${formData.favoriteMemory ? `- Shared memory: ${formData.favoriteMemory}` : ''}
+${formData.favoriteMemory ? `- Favorite memory: ${formData.favoriteMemory}` : ''}
 ${formData.locationDetails ? `- Special places: ${formData.locationDetails}` : ''}
 - Festive lyrics level: ${formData.festiveLyricsLevel || 'lightly-festive'}
 - Festive sound: ${formData.festiveSoundLevel || 'lightly-festive'}
-- Sender's message: "${formData.senderMessage}"
-- Overall vibe: ${formData.vibe}
-${formData.voiceType ? `- Voice preference: ${formData.voiceType}` : ''}
-${formData.style ? `- Musical style: ${formData.style}` : ''}
+- Personal message: "${formData.senderMessage}"
 
-NOTE: Do NOT include musical style or genre in the prompt - that will be handled separately.
+CRITICAL INSTRUCTIONS:
+1. Do NOT include musical style, genre, or tempo descriptors (e.g., "upbeat", "slow", "pop", "rock") - these are handled separately
+2. DO include emotional tone (${formData.emotions || 'loving'}), vibe (${formData.vibe}), and festive elements
+3. Focus on the STORY, EMOTIONS, and PERSONAL DETAILS
 
 Create a prompt that:
-1. Mentions the recipient by name (${formData.recipientName})
-2. Captures the ${formData.emotions || 'loving'} emotional tone
-3. References their qualities (${formData.qualities})
-4. Reflects the ${formData.theme} theme
-5. Matches the ${formData.festiveLyricsLevel || 'lightly-festive'} festive level
-6. Has a ${formData.vibe} overall vibe
-${formData.favoriteMemory ? `7. Incorporates the memory: ${formData.favoriteMemory}` : ''}
+- Opens with the recipient's name and relationship
+- Conveys the ${formData.emotions || 'loving'} emotion and ${formData.vibe} vibe
+- Includes specific personal details (qualities, memories, gratitude)
+- Reflects the ${formData.theme} theme
+- Incorporates the ${formData.festiveLyricsLevel || 'lightly-festive'} festive level naturally
+- Ends with the sender's message or sentiment
 
-Output only the prompt string (max 280 chars). Aim for 200-280 characters to maximize detail while staying within the limit. Make it personal, specific, and emotionally resonant.`;
+Example structure: "Song for [Name], my [relationship], capturing [emotion] and [vibe], celebrating [qualities], remembering [memory], [festive element], [sender's message]"
+
+Output ONLY the prompt (max 280 chars). Be specific, personal, and emotionally rich. Every word counts!`;
 
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -142,56 +144,52 @@ Output ONLY the shortened prompt (max 280 chars):`;
         console.log('[CREATE-SONG-PROMPT] ✅ Final length:', finalPrompt.length);
 
         // Generate music_style from user's form selections
-        // This captures the festive feeling, vibe, and style preferences
-        const musicStyleComponents = [];
+        // IMPORTANT: music_style should ONLY contain MUSICAL characteristics (genre, tempo, energy)
+        // Emotional tone, vibe, and festive elements are now in the prompt
 
-        // Add user's selected style (if provided)
-        if (formData.style) {
-            musicStyleComponents.push(formData.style);
-        }
+        // Map custom style values to standard music genres/descriptors
+        const styleToMusicGenreMap: Record<string, string> = {
+            'bright-uplifting': 'Pop, Upbeat, Energetic',
+            'soft-heartfelt': 'Acoustic Ballad, Soft, Intimate',
+            'classic-timeless': 'Classic Pop, Timeless',
+            'romantic-heartfelt': 'Romantic Ballad, Emotional, Tender',
+            'warm-cosy': 'Acoustic, Warm, Cozy',
+            'orchestral-festive': 'Orchestral, Festive, Celebratory'
+        };
 
-        // Add vibe (e.g., "loving", "joyful", "melancholic")
-        if (formData.vibe) {
-            musicStyleComponents.push(formData.vibe);
-        }
-
-        // Add festive sound level for Christmas/holiday themes
-        if (formData.festiveSoundLevel) {
-            const festiveMap: Record<string, string> = {
-                'lightly-festive': 'subtle festive elements',
-                'moderately-festive': 'festive, holiday spirit',
-                'very-festive': 'very festive, celebratory, holiday cheer'
-            };
-            const festiveStyle = festiveMap[formData.festiveSoundLevel];
-            if (festiveStyle) {
-                musicStyleComponents.push(festiveStyle);
-            }
-        }
-
-        // Construct final music_style string
-        const music_style = musicStyleComponents.join(', ') || 'heartfelt, personalized';
+        // Use mapped genre if available, otherwise use the raw style value
+        const music_style = formData.style
+            ? (styleToMusicGenreMap[formData.style] || formData.style)
+            : 'Pop, Heartfelt';
 
         console.log('[CREATE-SONG-PROMPT] ✅ Generated music_style:', music_style);
 
         // NEW: Generate 3 contextually appropriate variation styles using AI
         console.log('[CREATE-SONG-PROMPT] Generating variation styles...');
 
-        const variationPrompt = `Based on this song context:
+        const variationPrompt = `You are generating 3 musical variation descriptors for a song.
+
+PRIMARY STYLE (MUST BE MAINTAINED IN ALL VARIATIONS): ${formData.style || 'heartfelt'}
+
+Song Context:
 - Theme: ${formData.theme}
 - Emotions: ${formData.emotions}
 - Vibe: ${formData.vibe}
-- Style: ${formData.style || 'not specified'}
 - Festive Level: ${formData.festiveSoundLevel || 'not specified'}
 
-Generate 3 DIFFERENT but contextually appropriate musical variation descriptors that would work well for this song. These should be subtle variations that maintain the same emotional tone and message.
+CRITICAL RULES:
+1. ALL 3 variations MUST maintain the SAME energy level and mood as "${formData.style || 'heartfelt'}"
+2. If the style is "bright-uplifting", ALL variations must be upbeat, energetic, and celebratory - NEVER sad, slow, or melancholic
+3. If the style is "soft-heartfelt", ALL variations must be gentle, intimate, and tender - NEVER loud or aggressive
+4. Variations should differ in subtle musical nuances (instrumentation, rhythm, vocal style) but NOT in overall energy or mood
 
-For example:
-- If it's a happy, festive song: variations could be "energetic", "celebratory", "joyful tempo"
-- If it's a sad, missing-you song: variations could be "melancholic", "reflective", "gentle and somber"
-- If it's a romantic song: variations could be "intimate", "passionate", "tender"
+Generate 3 DIFFERENT but contextually appropriate musical variation descriptors.
 
-Output ONLY 3 short descriptors (2-4 words each), separated by " | ". No explanations, no numbering.
-Example output: "energetic and bright | warm and celebratory | uplifting tempo"`;
+Examples for "bright-uplifting": "energetic and joyful | vibrant celebratory | uplifting tempo"
+Examples for "soft-heartfelt": "gentle acoustic | intimate and tender | soft ballad"
+Examples for "romantic-heartfelt": "passionate and warm | tender romantic | heartfelt emotional"
+
+Output ONLY 3 short descriptors (2-4 words each), separated by " | ". No explanations, no numbering.`;
 
         const variationResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
