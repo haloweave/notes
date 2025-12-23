@@ -41,263 +41,102 @@ export async function sendSongDeliveryEmail(data: SongEmailData) {
 
     const htmlContent = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f5f5f5;
-            -webkit-font-smoothing: antialiased;
-        }
-        .email-wrapper {
-            width: 100%;
-            background-color: #f5f5f5;
-            padding: 40px 20px;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #1a3d5f 0%, #2d5a7b 100%);
-            padding: 60px 40px;
-            text-align: center;
-            color: #ffffff;
-        }
-        .brand-mark {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-        .header-eyebrow {
-            font-size: 12px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #F5E6B8;
-            margin: 0 0 16px 0;
-            font-weight: 500;
-        }
-        .header-title {
-            font-size: 42px;
-            font-weight: 300;
-            line-height: 1.2;
-            margin: 0 0 16px 0;
-            color: #F5E6B8;
-        }
-        .header-subtitle {
-            font-size: 16px;
-            color: rgba(245, 230, 184, 0.8);
-            margin: 0;
-            font-weight: 300;
-        }
-        .content {
-            padding: 40px;
-        }
-        .text-block {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #333333;
-            margin: 0 0 20px 0;
-        }
-        .recipient-block {
-            text-align: center;
-            padding: 40px 0;
-            margin: 30px 0;
-        }
-        .recipient-label {
-            font-size: 12px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #999999;
-            margin: 0 0 12px 0;
-        }
-        .recipient-name {
-            font-size: 36px;
-            font-weight: 300;
-            color: #1a3d5f;
-            margin: 0 0 20px 0;
-        }
-        .recipient-decoration {
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #F5E6B8, transparent);
-            margin: 0 auto;
-        }
-        .cta-section {
-            text-align: center;
-            margin: 40px 0;
-        }
-        .cta-button {
-            display: inline-block;
-            padding: 16px 48px;
-            background: linear-gradient(135deg, #F5E6B8 0%, #d4c89a 100%);
-            color: #1a3d5f;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            box-shadow: 0 4px 12px rgba(245, 230, 184, 0.3);
-        }
-        .spacer {
-            height: 30px;
-        }
-        .features-list {
-            list-style: none;
-            padding: 0;
-            margin: 30px 0;
-        }
-        .features-list li {
-            padding: 12px 0 12px 32px;
-            position: relative;
-            font-size: 15px;
-            color: #555555;
-            line-height: 1.5;
-        }
-        .features-list li:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #F5E6B8;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        .info-rows {
-            border-top: 1px solid #e0e0e0;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 20px 0;
-            margin: 30px 0;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-        }
-        .info-row-label {
-            font-size: 14px;
-            color: #999999;
-            margin: 0;
-        }
-        .info-row-value {
-            font-size: 14px;
-            color: #333333;
-            font-weight: 500;
-            margin: 0;
-        }
-        .footer {
-            background-color: #f8f9fa;
-            padding: 40px;
-            text-align: center;
-            border-top: 1px solid #e0e0e0;
-        }
-        .footer-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1a3d5f;
-            margin: 0 0 16px 0;
-        }
-        .footer-text {
-            font-size: 14px;
-            color: #666666;
-            margin: 0 0 12px 0;
-            line-height: 1.6;
-        }
-        .footer-link {
-            color: #1a3d5f;
-            text-decoration: none;
-        }
-        .footer-legal {
-            font-size: 12px;
-            color: #999999;
-            margin: 20px 0 0 0;
-            line-height: 1.6;
-        }
-    </style>
+    <title>Your Bespoke Huggnote</title>
 </head>
-<body>
-    <div class="email-wrapper">
-        <div class="email-container">
-            
-            <!-- Header -->
-            <div class="header">
-                <div class="brand-mark">🎁</div>
-                <p class="header-eyebrow">Huggnote</p>
-                <h1 class="header-title">Your Song<br>is Ready</h1>
-                <p class="header-subtitle">A bespoke musical gift, crafted with care</p>
-            </div>
+<body style="margin: 0; padding: 0; font-family: 'Georgia', 'Times New Roman', serif; background-color: #2c4a6b;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #2c4a6b; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);">
 
-            <!-- Content -->
-            <div class="content">
-                <p class="text-block">
-                    Dear <strong>${senderName}</strong>,
-                </p>
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td style="background-color: #2c4a6b; padding: 50px 40px; text-align: center;">
+                            <div style="margin-bottom: 15px;">
+                                <h1 style="margin: 0; color: #F5E6B8; font-size: 36px; font-weight: 300; letter-spacing: 2px;">huggnōte</h1>
+                                <p style="margin: 5px 0 0 0; color: #F5E6B8; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">BESPOKE</p>
+                            </div>
+                            <p style="margin: 0; color: #F5E6B8; font-size: 15px; letter-spacing: 1px; font-style: italic;">
+                                Bespoke Songs... Giftwrapped in Emotion
+                            </p>
+                        </td>
+                    </tr>
 
-                <p class="text-block">
-                    We're delighted to inform you that your custom ${isSingle ? 'song has' : 'songs have'} been completed. 
-                    Every note has been carefully composed to create a truly personal and meaningful gift.
-                </p>
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 50px; background-color: #F8F6F0;">
+                            <p style="margin: 0 0 30px 0; color: #2c4a6b; font-size: 16px; line-height: 1.6;">
+                                Dear <strong>${senderName}</strong>,
+                            </p>
 
-                <!-- Recipient -->
-                <div class="recipient-block">
-                    <p class="recipient-label">For</p>
-                    <h2 class="recipient-name">${songLinks[0].recipientName}</h2>
-                    <div class="recipient-decoration"></div>
-                </div>
+                            <h2 style="margin: 0 0 25px 0; color: #2c4a6b; font-size: 22px; font-weight: 600; line-height: 1.4;">
+                                We are delighted to present your bespoke Huggnote${!isSingle ? 's' : ''} for <span style="color: #87CEEB;">${songLinks[0].recipientName}</span>
+                            </h2>
 
-                <!-- Song Links -->
-                ${songLinks.map((song, index) => `
-                    <div class="cta-section">
-                        <a href="${song.shareUrl}" class="cta-button">
-                            ${isSingle ? 'Access Your Song' : `Access Song ${song.songNumber}`}
-                        </a>
-                    </div>
-                    ${index < songLinks.length - 1 ? '<div class="spacer"></div>' : ''}
-                `).join('')}
+                            <p style="margin: 0 0 35px 0; color: #2c4a6b; font-size: 15px; line-height: 1.7;">
+                                Your personalised ${isSingle ? 'song has' : 'songs have'} been carefully created and ${isSingle ? 'is' : 'are'} now ready to share. ${isSingle ? 'This unique musical gift has' : 'These unique musical gifts have'} been thoughtfully crafted to capture the sentiment you wished to convey.
+                            </p>
 
-                <div class="spacer"></div>
+                            ${songLinks.map((song, index) => `
+                            <!-- CTA Button ${index + 1} -->
+                            <div style="text-align: left; margin: ${index > 0 ? '30px' : '40px'} 0;">
+                                ${!isSingle ? `<p style="margin: 0 0 10px 0; color: #7a7a7a; font-size: 13px; font-weight: 600;">Song ${song.songNumber} - ${song.theme}</p>` : ''}
+                                <a href="${song.shareUrl}"
+                                   target="_blank"
+                                   style="display: inline-block; background-color: #2c4a6b; color: #ffffff; padding: 16px 50px; text-decoration: none; font-weight: 600; font-size: 15px; letter-spacing: 1px; border-radius: 0; box-shadow: 0 4px 12px rgba(44, 74, 107, 0.3); text-transform: uppercase;">
+                                    ${isSingle ? 'ACCESS YOUR SONG' : `ACCESS SONG ${song.songNumber}`}
+                                </a>
+                            </div>
+                            `).join('')}
 
-                <!-- Features -->
-                <ul class="features-list">
-                    <li>Your professionally crafted personalized song</li>
-                    <li>Beautiful animated gift box presentation</li>
-                    <li>Unique shareable link for ${songLinks[0].recipientName}</li>
-                    <li>Magical snow and heart animations</li>
-                    <li>High-quality audio for keepsake</li>
-                </ul>
+                            <p style="margin: 15px 0 0 0; color: #5a6f87; font-size: 13px; line-height: 1.6; text-align: left; font-style: italic;">
+                                Simply click the button${!isSingle ? 's' : ''} above to experience your bespoke creation${!isSingle ? 's' : ''}
+                            </p>
 
-                <div class="spacer"></div>
+                            <p style="margin: 20px 0 0 0; color: #2c4a6b; font-size: 14px; line-height: 1.6;">
+                                Once accessed, you'll be able to preview your ${isSingle ? 'song' : 'songs'} and share ${isSingle ? 'it' : 'them'} with <span style="color: #87CEEB; font-weight: 600;">${songLinks[0].recipientName}</span> using your unique gift link${!isSingle ? 's' : ''}.
+                            </p>
 
-                <p class="text-block">
-                    Click the button above to access your ${isSingle ? 'song' : 'songs'}. 
-                    When you're ready, share ${isSingle ? 'it' : 'them'} with ${songLinks[0].recipientName} and create an unforgettable moment.
-                </p>
+                            <!-- Order Details Inside Cream Section -->
+                            <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid #d5d0c5;">
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #7a7a7a; font-size: 13px;">Package Type</td>
+                                        <td style="padding: 8px 0; color: #2c4a6b; font-size: 13px; text-align: right; font-weight: 600;">${packageType === 'holiday-hamper' ? 'Merry Medley Bundle' : 'Solo Serenade'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #7a7a7a; font-size: 13px;">${isSingle ? 'Song' : 'Songs'} Delivered</td>
+                                        <td style="padding: 8px 0; color: #87CEEB; font-size: 13px; text-align: right; font-weight: 600;">${songLinks.length} ${isSingle ? 'Song' : 'Songs'}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
 
-            </div>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 35px 50px; background-color: #2c4a6b; text-align: center;">
+                            <p style="margin: 0 0 15px 0; color: #F5E6B8; font-size: 18px; font-weight: 300; letter-spacing: 1px;">
+                                Huggnote
+                            </p>
+                            <p style="margin: 0 0 8px 0; color: #F5E6B8; font-size: 13px; line-height: 1.5; font-style: italic;">
+                                Thank you for choosing Huggnote for your bespoke musical gift.
+                            </p>
+                            <p style="margin: 15px 0 0 0; color: #a0b8d0; font-size: 12px; line-height: 1.5;">
+                                Questions? Contact us at
+                                <a href="mailto:vips@huggnote.com" style="color: #87CEEB; text-decoration: none;">vips@huggnote.com</a>
+                            </p>
+                        </td>
+                    </tr>
 
-            <!-- Footer -->
-            <div class="footer">
-                <p class="footer-title">Huggnote</p>
-                <p class="footer-text">
-                    Thank you for choosing Huggnote for your musical gift.
-                </p>
-                <p class="footer-text">
-                    Questions? Contact us at<br>
-                    <a href="mailto:support@huggnote.com" class="footer-link">support@huggnote.com</a>
-                </p>
-                <p class="footer-legal">
-                    © ${new Date().getFullYear()} Huggnote. All rights reserved.<br>
-                    Creating bespoke musical moments, one song at a time.
-                </p>
-            </div>
-
-        </div>
-    </div>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
     `;

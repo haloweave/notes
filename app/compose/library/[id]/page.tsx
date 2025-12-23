@@ -26,10 +26,12 @@ interface SongData {
 function SongPageContent() {
     const params = useParams();
     const searchParams = useSearchParams();
-    const router = useRouter(); // Initialize router
+    const router = useRouter();
     const id = params?.id as string;
     const indexParam = searchParams.get('index');
-    const songIndex = indexParam ? parseInt(indexParam, 10) : 0; // Default to 0
+    const variationIdParam = searchParams.get('variationId');
+    const songIndex = indexParam ? parseInt(indexParam, 10) : 0;
+    const variationId = variationIdParam ? parseInt(variationIdParam, 10) : null;
 
     const [isLoading, setIsLoading] = useState(true);
     const [song, setSong] = useState<SongData | null>(null);
@@ -58,8 +60,7 @@ function SongPageContent() {
 
                 const form = data.form;
 
-                // Use songIndex from URL params (default 0)
-                console.log(`[SONG PAGE] Loading song index: ${songIndex}`);
+                console.log(`[SONG PAGE] Loading song index: ${songIndex}, variation: ${variationId}`);
 
                 const variationAudioUrls = form.variationAudioUrls || {};
                 const variationTaskIds = form.variationTaskIds || {};
@@ -67,8 +68,8 @@ function SongPageContent() {
                 const variationLyrics = form.variationLyrics || {};
                 const selectedVariations = form.selectedVariations || {};
 
-                // Determine which variation was selected
-                let targetVarId = selectedVariations[songIndex];
+                // Use variationId from URL if provided, otherwise determine from selectedVariations
+                let targetVarId = variationId || selectedVariations[songIndex];
 
                 if (!targetVarId) {
                     const available = variationAudioUrls[songIndex] ? Object.keys(variationAudioUrls[songIndex]) : [];
@@ -78,6 +79,8 @@ function SongPageContent() {
                         targetVarId = 1;
                     }
                 }
+
+                console.log(`[SONG PAGE] Using variation ID: ${targetVarId}`);
 
                 const varKey = String(targetVarId);
                 let audioUrl = variationAudioUrls[songIndex]?.[varKey] || variationAudioUrls[songIndex]?.[Number(targetVarId)];
@@ -98,10 +101,13 @@ function SongPageContent() {
                 }
 
                 if (!audioUrl) {
+                    console.error('[SONG PAGE] No audio URL found for variation', targetVarId);
                     setError('Audio not available');
                     setIsLoading(false);
                     return;
                 }
+
+                console.log(`[SONG PAGE] Audio URL: ${audioUrl}, Task ID: ${taskId}`);
 
                 // Fallback: Extract Task ID from Audio URL if possible
                 if (!taskId && audioUrl) {
@@ -143,7 +149,7 @@ function SongPageContent() {
                 });
 
             } catch (err) {
-                console.error("Error fetching song:", err);
+                console.error("[SONG PAGE] Error fetching song:", err);
                 setError('Failed to load song');
             } finally {
                 setIsLoading(false);
@@ -151,7 +157,7 @@ function SongPageContent() {
         };
 
         fetchSong();
-    }, [id]);
+    }, [id, songIndex, variationId]);
 
     const handleDownload = () => {
         if (!song) return;

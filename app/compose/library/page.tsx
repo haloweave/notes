@@ -22,6 +22,7 @@ interface SongData {
     index?: number;
     uniqueKey?: string;
     taskId?: string;
+    variationId?: number; // Track which variation this is
 }
 
 function LibraryContent() {
@@ -55,7 +56,7 @@ function LibraryContent() {
                             const songCount = form.songCount || 1;
 
                             // Generate an array of song indices [0, 1, 2...] based on songCount
-                            return Array.from({ length: songCount }).map((_, i) => {
+                            return Array.from({ length: songCount }).flatMap((_, i) => {
                                 const songIndex = i;
                                 const variationAudioUrls = form.variationAudioUrls || {};
                                 const variationTaskIds = form.variationTaskIds || {};
@@ -70,111 +71,109 @@ function LibraryContent() {
                                     songIndex
                                 });
 
-                                // Determine which variation was 'purchased' or selected
-                                let targetVarId = selectedVariations[songIndex];
+                                // Get selected variation(s) for this song
+                                const rawSelection = selectedVariations[songIndex];
 
-                                // Handle potential type mismatches or missing selections
-                                if (!targetVarId) {
-                                    // If variationAudioUrls is an array-like object or has keys
-                                    const available = variationAudioUrls[songIndex] ? Object.keys(variationAudioUrls[songIndex]) : [];
-                                    if (available.length > 0) {
-                                        // Prefer the first available key
-                                        targetVarId = available[0];
-                                    } else {
-                                        targetVarId = 1;
+                                // Handle multi-variation purchases (e.g., [1, 2] when user bought 2 songs)
+                                const variationIds = Array.isArray(rawSelection) ? rawSelection : [rawSelection].filter(Boolean);
+
+                                console.log(`[LIBRARY] Song ${songIndex} has ${variationIds.length} purchased variation(s):`, variationIds);
+
+                                // Create a separate song entry for EACH purchased variation
+                                return variationIds.map((targetVarId: number) => {
+                                    const varKey = String(targetVarId);
+
+                                    // Try to get direct audio URL
+                                    let audioUrl = variationAudioUrls[songIndex]?.[varKey] || variationAudioUrls[songIndex]?.[Number(targetVarId)];
+
+                                    // Fallback: Construct URL from Task ID if possible
+                                    if (!audioUrl) {
+                                        const taskIdsForSong = variationTaskIds[songIndex];
+
+                                        if (Array.isArray(taskIdsForSong)) {
+                                            const index = Number(targetVarId) - 1;
+                                            const taskId = taskIdsForSong[index];
+                                            if (taskId) {
+                                                audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                                            }
+                                        } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
+                                            const taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
+                                            if (taskId) {
+                                                audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                                            }
+                                        }
                                     }
-                                }
 
-                                // Convert to string for safe lookup if keys are strings, but keep int for others if needed
-                                // Most likely keys are "1", "2", "3" strings in JSON
-                                const varKey = String(targetVarId);
+                                    // Extract Lyrics
+                                    const lyrics = variationLyrics[songIndex]?.[varKey] || variationLyrics[songIndex]?.[Number(targetVarId)];
 
-                                // Try to get direct audio URL
-                                let audioUrl = variationAudioUrls[songIndex]?.[varKey] || variationAudioUrls[songIndex]?.[Number(targetVarId)];
+                                    // Extract Metadata
+                                    const recipient = form.formData?.songs?.[songIndex]?.recipientName || form.formData?.recipientName || 'Unknown';
+                                    const relationship = form.formData?.songs?.[songIndex]?.relationship || form.formData?.relationship;
+                                    const theme = form.formData?.songs?.[songIndex]?.theme || form.formData?.theme;
 
-                                // Fallback: Construct URL from Task ID if possible
-                                // Use Task IDs which were confirmed to exist in DB
-                                if (!audioUrl) {
+                                    // Robust Title Extraction
+                                    let title = `Song for ${recipient}`;
+                                    const rawTitles = variationTitles[songIndex];
+
+                                    if (Array.isArray(rawTitles)) {
+                                        const index = Number(targetVarId) - 1;
+                                        if (rawTitles[index]) {
+                                            title = Array.isArray(rawTitles[index]) ? rawTitles[index][0] : rawTitles[index];
+                                        }
+                                    } else if (rawTitles && typeof rawTitles === 'object') {
+                                        const t = rawTitles[varKey] || rawTitles[Number(targetVarId)];
+                                        if (t) title = t;
+                                    }
+
+                                    // Determine Task ID for immersive playback
+                                    let taskId: string | undefined;
                                     const taskIdsForSong = variationTaskIds[songIndex];
 
                                     if (Array.isArray(taskIdsForSong)) {
-                                        // taskIdsForSong is ["id1", "id2", "id3"]
-                                        // targetVarId is likely 1-based index (1, 2, 3)
                                         const index = Number(targetVarId) - 1;
-                                        const taskId = taskIdsForSong[index];
-                                        if (taskId) {
-                                            audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
-                                        }
+                                        taskId = taskIdsForSong[index];
                                     } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
-                                        const taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
-                                        if (taskId) {
-                                            audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                                        taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
+                                    }
+
+                                    // Fallback: Extract Task ID from Audio URL if possible
+                                    if (!taskId && audioUrl) {
+                                        const match = audioUrl.match(/\/([a-f0-9\-]{36})\.mp3/);
+                                        if (match) {
+                                            taskId = match[1];
                                         }
                                     }
-                                }
 
-                                // Extract Lyrics
-                                const lyrics = variationLyrics[songIndex]?.[varKey] || variationLyrics[songIndex]?.[Number(targetVarId)];
+                                    console.log(`[LIBRARY] Created entry for variation ${targetVarId}:`, { title, audioUrl: audioUrl ? 'exists' : 'missing', taskId });
 
-                                // Extract Metadata
-                                const recipient = form.formData?.songs?.[songIndex]?.recipientName || form.formData?.recipientName || 'Unknown';
-                                const relationship = form.formData?.songs?.[songIndex]?.relationship || form.formData?.relationship;
-                                const theme = form.formData?.songs?.[songIndex]?.theme || form.formData?.theme;
-
-                                // Robust Title Extraction
-                                // DB might return variationTitles as array of arrays [["Title 1"], ["Title 2"]] or object {1: "Title 1"}
-                                let title = `Song for ${recipient}`;
-                                const rawTitles = variationTitles[songIndex];
-
-                                if (Array.isArray(rawTitles)) {
-                                    // If it's an array ["Title1", "Title2"]
-                                    const index = Number(targetVarId) - 1;
-                                    if (rawTitles[index]) {
-                                        title = Array.isArray(rawTitles[index]) ? rawTitles[index][0] : rawTitles[index];
-                                    }
-                                } else if (rawTitles && typeof rawTitles === 'object') {
-                                    // If it's an object {1: "Title1", 2: "Title2"}
-                                    const t = rawTitles[varKey] || rawTitles[Number(targetVarId)];
-                                    if (t) title = t;
-                                }
-
-                                // Determine Task ID for immersive playback
-                                let taskId: string | undefined;
-                                const taskIdsForSong = variationTaskIds[songIndex];
-
-                                if (Array.isArray(taskIdsForSong)) {
-                                    const index = Number(targetVarId) - 1;
-                                    taskId = taskIdsForSong[index];
-                                } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
-                                    taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
-                                }
-
-                                // Fallback: Extract Task ID from Audio URL if possible
-                                if (!taskId && audioUrl) {
-                                    const match = audioUrl.match(/\/([a-f0-9\-]{36})\.mp3/);
-                                    if (match) {
-                                        taskId = match[1];
-                                    }
-                                }
-
-                                return {
-                                    id: form.id,
-                                    index: songIndex, // Store index to identify specific song in bundle
-                                    uniqueKey: `${form.id}_${songIndex}`, // Unique key for React list
-                                    title: title,
-                                    description: `${theme || 'Special Song'} • ${relationship || 'Loved One'}`,
-                                    audioUrl: audioUrl,
-                                    taskId: taskId, // Pass the task ID
-                                    date: new Date(form.createdAt).toLocaleDateString(),
-                                    recipient: recipient,
-                                    relationship,
-                                    theme,
-                                    lyrics
-                                };
+                                    return {
+                                        id: form.id,
+                                        index: songIndex,
+                                        variationId: targetVarId, // Track which variation this is
+                                        uniqueKey: `${form.id}_${songIndex}_${targetVarId}`, // Unique key for React list
+                                        title: title,
+                                        description: `${theme || 'Special Song'} • ${relationship || 'Loved One'}`,
+                                        audioUrl: audioUrl,
+                                        taskId: taskId,
+                                        date: new Date(form.createdAt).toLocaleDateString(),
+                                        recipient: recipient,
+                                        relationship,
+                                        theme,
+                                        lyrics
+                                    };
+                                });
                             });
                         }).filter((song: any) => song.audioUrl);
 
-                        console.log('[LIBRARY] Formatted songs:', formattedSongs);
+                        // Sort by most recent first
+                        formattedSongs.sort((a: any, b: any) => {
+                            const dateA = new Date(a.date).getTime();
+                            const dateB = new Date(b.date).getTime();
+                            return dateB - dateA; // Most recent first
+                        });
+
+                        console.log('[LIBRARY] Formatted songs (sorted by most recent):', formattedSongs);
                         setSongs(formattedSongs);
                     }
                 }
@@ -476,7 +475,7 @@ function LibraryContent() {
                                                 <span>Share</span>
                                             </button>
                                             <Link
-                                                href={`/compose/library/${song.id}?index=${song.index || 0}`}
+                                                href={`/compose/library/${song.id}?index=${song.index || 0}&variationId=${song.variationId || 1}`}
                                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
                                             >
                                                 <Music className="w-4 h-4" />

@@ -169,7 +169,12 @@ export async function POST(req: NextRequest) {
                         console.log('[EMAIL] ✅ Updated form with Stripe session ID and status=payment_successful');
 
                         // Build song links array
-                        const songLinks = [];
+                        const songLinks: Array<{
+                            songNumber: number;
+                            recipientName: string;
+                            theme: string;
+                            shareUrl: string;
+                        }> = [];
                         const songs = formData.songs || [formData]; // Handle both bundle and single
                         console.log(`[EMAIL] Number of songs: ${songs.length}`);
 
@@ -178,11 +183,11 @@ export async function POST(req: NextRequest) {
                             const song = songs[i];
                             const rawSelection = selectedVariations[i];
                             // Normalize to array to handle multi-select (e.g. for solo-serenade multi-buys)
-                            const variationIds = Array.isArray(rawSelection) ? rawSelection : [rawSelection];
-                            // We use the first valid variation to generate the link/validate existence
-                            const primaryVariationId = variationIds[0];
+                            const variationIds = Array.isArray(rawSelection) ? rawSelection : [rawSelection].filter(Boolean);
 
                             const taskIdsForSong = variationTaskIds[i];
+                            const variationTitles = composeForm.variationTitles as any || {};
+                            const titlesForSong = variationTitles[i];
 
                             console.log(`[EMAIL]   Song ${i + 1}:`);
                             console.log(`[EMAIL]     - Recipient: ${song.recipientName}`);
@@ -190,27 +195,41 @@ export async function POST(req: NextRequest) {
                             console.log(`[EMAIL]     - Selected variation(s): ${JSON.stringify(variationIds)}`);
                             console.log(`[EMAIL]     - Task IDs for song: ${JSON.stringify(taskIdsForSong)}`);
 
-                            if (primaryVariationId && taskIdsForSong && taskIdsForSong[primaryVariationId - 1]) {
-                                const taskId = taskIdsForSong[primaryVariationId - 1];
-                                console.log(`[EMAIL]     - Selected task ID (primary): ${taskId}`);
+                            // Create a separate email link for EACH purchased variation
+                            variationIds.forEach((variationId: number) => {
+                                if (variationId && taskIdsForSong && taskIdsForSong[variationId - 1]) {
+                                    const taskId = taskIdsForSong[variationId - 1];
 
-                                // Generate share URL (using form ID/Session ID for the library page)
-                                // This points to the purchaser's library view
-                                const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://huggnote.com'}/compose/library/${formId}?index=${i}`;
-                                console.log(`[EMAIL]     - Share URL: ${shareUrl}`);
+                                    // Get title for this specific variation
+                                    let songTitle = song.theme || 'Your Song';
+                                    if (Array.isArray(titlesForSong)) {
+                                        const titleIndex = variationId - 1;
+                                        if (titlesForSong[titleIndex]) {
+                                            songTitle = Array.isArray(titlesForSong[titleIndex]) ? titlesForSong[titleIndex][0] : titlesForSong[titleIndex];
+                                        }
+                                    } else if (titlesForSong && typeof titlesForSong === 'object') {
+                                        const t = titlesForSong[String(variationId)] || titlesForSong[variationId];
+                                        if (t) songTitle = t;
+                                    }
 
-                                songLinks.push({
-                                    songNumber: i + 1,
-                                    recipientName: song.recipientName || 'Your Loved One',
-                                    theme: song.theme || 'Special Occasion',
-                                    shareUrl: shareUrl,
-                                });
-                                console.log(`[EMAIL]     ✅ Song link added`);
-                            } else {
-                                console.warn(`[EMAIL]     ⚠️ Missing data for song ${i + 1} - skipping`);
-                                console.warn(`[EMAIL]        primaryVariationId: ${primaryVariationId}`);
-                                console.warn(`[EMAIL]        taskIdsForSong: ${JSON.stringify(taskIdsForSong)}`);
-                            }
+                                    console.log(`[EMAIL]     - Variation ${variationId}: ${songTitle}`);
+                                    console.log(`[EMAIL]     - Task ID: ${taskId}`);
+
+                                    // Generate share URL with variationId parameter
+                                    const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://huggnote.com'}/compose/library/${formId}?index=${i}&variationId=${variationId}`;
+                                    console.log(`[EMAIL]     - Share URL: ${shareUrl}`);
+
+                                    songLinks.push({
+                                        songNumber: songLinks.length + 1, // Sequential numbering
+                                        recipientName: song.recipientName || 'Your Loved One',
+                                        theme: songTitle, // Use specific variation title
+                                        shareUrl: shareUrl,
+                                    });
+                                    console.log(`[EMAIL]     ✅ Song link added for variation ${variationId}`);
+                                } else {
+                                    console.warn(`[EMAIL]     ⚠️ Missing data for variation ${variationId} - skipping`);
+                                }
+                            });
                         }
 
                         console.log(`[EMAIL] ✅ Step 3 Complete: Built ${songLinks.length} song links`);
