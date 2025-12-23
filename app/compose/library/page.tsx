@@ -19,6 +19,8 @@ interface SongData {
     relationship?: string;
     theme?: string;
     lyrics?: string;
+    index?: number;
+    uniqueKey?: string;
 }
 
 function LibraryContent() {
@@ -48,100 +50,107 @@ function LibraryContent() {
                         );
                         console.log('[LIBRARY] Purchased forms:', purchased);
 
-                        const formattedSongs = purchased.map((form: any) => {
-                            const songIndex = 0;
-                            const variationAudioUrls = form.variationAudioUrls || {};
-                            const variationTaskIds = form.variationTaskIds || {};
-                            const variationTitles = form.variationTitles || {};
-                            const variationLyrics = form.variationLyrics || {};
-                            const selectedVariations = form.selectedVariations || {};
+                        const formattedSongs = purchased.flatMap((form: any) => {
+                            const songCount = form.songCount || 1;
 
-                            console.log(`[LIBRARY] Processing form ${form.id}`, {
-                                variationAudioUrls,
-                                variationTaskIds,
-                                selectedVariations,
-                                songIndex
-                            });
+                            // Generate an array of song indices [0, 1, 2...] based on songCount
+                            return Array.from({ length: songCount }).map((_, i) => {
+                                const songIndex = i;
+                                const variationAudioUrls = form.variationAudioUrls || {};
+                                const variationTaskIds = form.variationTaskIds || {};
+                                const variationTitles = form.variationTitles || {};
+                                const variationLyrics = form.variationLyrics || {};
+                                const selectedVariations = form.selectedVariations || {};
 
-                            // Determine which variation was 'purchased' or selected
-                            let targetVarId = selectedVariations[songIndex];
+                                console.log(`[LIBRARY] Processing form ${form.id} song ${songIndex}`, {
+                                    variationAudioUrls,
+                                    variationTaskIds,
+                                    selectedVariations,
+                                    songIndex
+                                });
 
-                            // Handle potential type mismatches or missing selections
-                            if (!targetVarId) {
-                                // If variationAudioUrls is an array-like object or has keys
-                                const available = variationAudioUrls[songIndex] ? Object.keys(variationAudioUrls[songIndex]) : [];
-                                if (available.length > 0) {
-                                    // Prefer the first available key
-                                    targetVarId = available[0];
-                                } else {
-                                    targetVarId = 1;
+                                // Determine which variation was 'purchased' or selected
+                                let targetVarId = selectedVariations[songIndex];
+
+                                // Handle potential type mismatches or missing selections
+                                if (!targetVarId) {
+                                    // If variationAudioUrls is an array-like object or has keys
+                                    const available = variationAudioUrls[songIndex] ? Object.keys(variationAudioUrls[songIndex]) : [];
+                                    if (available.length > 0) {
+                                        // Prefer the first available key
+                                        targetVarId = available[0];
+                                    } else {
+                                        targetVarId = 1;
+                                    }
                                 }
-                            }
 
-                            // Convert to string for safe lookup if keys are strings, but keep int for others if needed
-                            // Most likely keys are "1", "2", "3" strings in JSON
-                            const varKey = String(targetVarId);
+                                // Convert to string for safe lookup if keys are strings, but keep int for others if needed
+                                // Most likely keys are "1", "2", "3" strings in JSON
+                                const varKey = String(targetVarId);
 
-                            // Try to get direct audio URL
-                            let audioUrl = variationAudioUrls[songIndex]?.[varKey] || variationAudioUrls[songIndex]?.[Number(targetVarId)];
+                                // Try to get direct audio URL
+                                let audioUrl = variationAudioUrls[songIndex]?.[varKey] || variationAudioUrls[songIndex]?.[Number(targetVarId)];
 
-                            // Fallback: Construct URL from Task ID if possible
-                            // Use Task IDs which were confirmed to exist in DB
-                            if (!audioUrl) {
-                                const taskIdsForSong = variationTaskIds[songIndex];
+                                // Fallback: Construct URL from Task ID if possible
+                                // Use Task IDs which were confirmed to exist in DB
+                                if (!audioUrl) {
+                                    const taskIdsForSong = variationTaskIds[songIndex];
 
-                                if (Array.isArray(taskIdsForSong)) {
-                                    // taskIdsForSong is ["id1", "id2", "id3"]
-                                    // targetVarId is likely 1-based index (1, 2, 3)
+                                    if (Array.isArray(taskIdsForSong)) {
+                                        // taskIdsForSong is ["id1", "id2", "id3"]
+                                        // targetVarId is likely 1-based index (1, 2, 3)
+                                        const index = Number(targetVarId) - 1;
+                                        const taskId = taskIdsForSong[index];
+                                        if (taskId) {
+                                            audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                                        }
+                                    } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
+                                        const taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
+                                        if (taskId) {
+                                            audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                                        }
+                                    }
+                                }
+
+                                // Extract Lyrics
+                                const lyrics = variationLyrics[songIndex]?.[varKey] || variationLyrics[songIndex]?.[Number(targetVarId)];
+
+                                // Extract Metadata
+                                const recipient = form.formData?.songs?.[songIndex]?.recipientName || form.formData?.recipientName || 'Unknown';
+                                const relationship = form.formData?.songs?.[songIndex]?.relationship || form.formData?.relationship;
+                                const theme = form.formData?.songs?.[songIndex]?.theme || form.formData?.theme;
+
+                                // Robust Title Extraction
+                                // DB might return variationTitles as array of arrays [["Title 1"], ["Title 2"]] or object {1: "Title 1"}
+                                let title = `Song for ${recipient}`;
+                                const rawTitles = variationTitles[songIndex];
+
+                                if (Array.isArray(rawTitles)) {
+                                    // If it's an array ["Title1", "Title2"]
                                     const index = Number(targetVarId) - 1;
-                                    const taskId = taskIdsForSong[index];
-                                    if (taskId) {
-                                        audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                                    if (rawTitles[index]) {
+                                        title = Array.isArray(rawTitles[index]) ? rawTitles[index][0] : rawTitles[index];
                                     }
-                                } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
-                                    const taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
-                                    if (taskId) {
-                                        audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
-                                    }
+                                } else if (rawTitles && typeof rawTitles === 'object') {
+                                    // If it's an object {1: "Title1", 2: "Title2"}
+                                    const t = rawTitles[varKey] || rawTitles[Number(targetVarId)];
+                                    if (t) title = t;
                                 }
-                            }
 
-                            // Extract Lyrics
-                            const lyrics = variationLyrics[songIndex]?.[varKey] || variationLyrics[songIndex]?.[Number(targetVarId)];
-
-                            // Extract Metadata
-                            const recipient = form.formData?.songs?.[0]?.recipientName || form.formData?.recipientName || 'Unknown';
-                            const relationship = form.formData?.songs?.[0]?.relationship || form.formData?.relationship;
-                            const theme = form.formData?.songs?.[0]?.theme || form.formData?.theme;
-
-                            // Robust Title Extraction
-                            // DB might return variationTitles as array of arrays [["Title 1"], ["Title 2"]] or object {1: "Title 1"}
-                            let title = `Song for ${recipient}`;
-                            const rawTitles = variationTitles[songIndex];
-
-                            if (Array.isArray(rawTitles)) {
-                                // If it's an array ["Title1", "Title2"]
-                                const index = Number(targetVarId) - 1;
-                                if (rawTitles[index]) {
-                                    title = Array.isArray(rawTitles[index]) ? rawTitles[index][0] : rawTitles[index];
-                                }
-                            } else if (rawTitles && typeof rawTitles === 'object') {
-                                // If it's an object {1: "Title1", 2: "Title2"}
-                                const t = rawTitles[varKey] || rawTitles[Number(targetVarId)];
-                                if (t) title = t;
-                            }
-
-                            return {
-                                id: form.id,
-                                title: title,
-                                description: `${theme || 'Special Song'} • ${relationship || 'Loved One'}`,
-                                audioUrl: audioUrl,
-                                date: new Date(form.createdAt).toLocaleDateString(),
-                                recipient: recipient,
-                                relationship,
-                                theme,
-                                lyrics
-                            };
+                                return {
+                                    id: form.id,
+                                    index: songIndex, // Store index to identify specific song in bundle
+                                    uniqueKey: `${form.id}_${songIndex}`, // Unique key for React list
+                                    title: title,
+                                    description: `${theme || 'Special Song'} • ${relationship || 'Loved One'}`,
+                                    audioUrl: audioUrl,
+                                    date: new Date(form.createdAt).toLocaleDateString(),
+                                    recipient: recipient,
+                                    relationship,
+                                    theme,
+                                    lyrics
+                                };
+                            });
                         }).filter((song: any) => song.audioUrl);
 
                         console.log('[LIBRARY] Formatted songs:', formattedSongs);
@@ -353,7 +362,7 @@ function LibraryContent() {
     };
 
     const handleShare = async (song: SongData) => {
-        const shareUrl = `${window.location.origin}/share?session_id=${song.id}`;
+        const shareUrl = `${window.location.origin}/share?session_id=${song.id}&index=${song.index || 0}`;
 
         try {
             await navigator.clipboard.writeText(shareUrl);
@@ -403,7 +412,7 @@ function LibraryContent() {
 
                             return (
                                 <div
-                                    key={song.id}
+                                    key={song.uniqueKey}
                                     className={`group relative bg-white/5 backdrop-blur-md border border-[#87CEEB]/20 rounded-2xl p-6 transition-all duration-300 shadow-lg ${isPlaying ? 'border-[#87CEEB] bg-white/10' : 'hover:border-[#87CEEB]/50 hover:bg-white/10 hover:-translate-y-1'}`}
                                 >
                                     <div className="flex flex-col md:flex-row items-center gap-6">

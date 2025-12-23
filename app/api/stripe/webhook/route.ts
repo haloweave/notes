@@ -189,9 +189,9 @@ export async function POST(req: NextRequest) {
                                 const taskId = taskIdsForSong[selectedVariationId - 1];
                                 console.log(`[EMAIL]     - Selected task ID: ${taskId}`);
 
-                                // Generate share URL (we'll use the task ID as the slug for now)
-                                // In production, you might want to create proper share slugs
-                                const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://huggnote.com'}/play/${taskId}`;
+                                // Generate share URL (using form ID/Session ID for the library page)
+                                // This points to the purchaser's library view
+                                const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://huggnote.com'}/compose/library/${formId}?index=${i}`;
                                 console.log(`[EMAIL]     - Share URL: ${shareUrl}`);
 
                                 songLinks.push({

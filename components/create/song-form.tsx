@@ -336,11 +336,24 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                     <div className="grid grid-cols-2 gap-3">
                                         {emotions.slice(0, 2).map((emotion) => {
                                             const IconComponent = emotion.icon;
+                                            const isSelected = Array.isArray(field.value)
+                                                ? field.value.includes(emotion.value)
+                                                : field.value === emotion.value;
+
                                             return (
                                                 <div
                                                     key={emotion.value}
-                                                    onClick={() => field.onChange(emotion.value)}
-                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === emotion.value
+                                                    onClick={() => {
+                                                        const currentValues = Array.isArray(field.value) ? field.value : (field.value ? [field.value] : []);
+                                                        if (currentValues.includes(emotion.value)) {
+                                                            field.onChange(currentValues.filter((v: string) => v !== emotion.value));
+                                                        } else {
+                                                            if (currentValues.length < 2) {
+                                                                field.onChange([...currentValues, emotion.value]);
+                                                            }
+                                                        }
+                                                    }}
+                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${isSelected
                                                         ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
                                                         : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
                                                         }`}
@@ -359,11 +372,24 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                         {emotions.slice(2).map((emotion) => {
                                             const IconComponent = emotion.icon;
+                                            const isSelected = Array.isArray(field.value)
+                                                ? field.value.includes(emotion.value)
+                                                : field.value === emotion.value;
+
                                             return (
                                                 <div
                                                     key={emotion.value}
-                                                    onClick={() => field.onChange(emotion.value)}
-                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${field.value === emotion.value
+                                                    onClick={() => {
+                                                        const currentValues = Array.isArray(field.value) ? field.value : (field.value ? [field.value] : []);
+                                                        if (currentValues.includes(emotion.value)) {
+                                                            field.onChange(currentValues.filter((v: string) => v !== emotion.value));
+                                                        } else {
+                                                            if (currentValues.length < 2) {
+                                                                field.onChange([...currentValues, emotion.value]);
+                                                            }
+                                                        }
+                                                    }}
+                                                    className={`flex flex-col items-start p-4 rounded-lg border-2 transition-all duration-200 transform text-left cursor-pointer ${isSelected
                                                         ? 'border-[#87CEEB] bg-[#87CEEB]/20 scale-102'
                                                         : 'border-[#87CEEB]/30 bg-white/5 hover:border-[#87CEEB]/50 hover:bg-white/10 hover:scale-102'
                                                         }`}
@@ -377,6 +403,7 @@ export function SongForm({ index, title, onRemove, canRemove = false, namePrefix
                                             );
                                         })}
                                     </div>
+                                    <p className="text-xs text-[#87CEEB]/60 mt-2 italic">Select up to 2 emotions</p>
                                 </div>
                             </FormControl>
                             <FormMessage />

@@ -60,8 +60,9 @@ const songSchema = z.object({
         .optional(),
 
     // Emotions to Convey (NEW - Required)
-    emotions: z.string()
-        .min(1, "Please select the emotions you want to convey"),
+    emotions: z.array(z.string())
+        .min(1, "Please select at least one emotion")
+        .max(2, "Please select no more than 2 emotions"),
 
     // About Them - Detailed fields
     overallMessage: z.string()
@@ -168,7 +169,7 @@ const defaultSongValues = {
     childFriendly: false,
     faithBased: false,
     shortPhrase: "",
-    emotions: "love", // Preselect "Love" as default
+    emotions: ["love"], // Preselect "Love" as default
     overallMessage: "",
     storySummary: "",
     qualities: "",

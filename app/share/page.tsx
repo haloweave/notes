@@ -13,6 +13,9 @@ function ShareContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const sessionId = searchParams.get('session_id');
+    const indexParam = searchParams.get('index');
+    const songIndex = indexParam ? parseInt(indexParam, 10) : 0; // Default to 0
+
     const [recipientName, setRecipientName] = useState('Someone Special');
     const [senderName, setSenderName] = useState('John');
     const [loading, setLoading] = useState(true);
@@ -70,8 +73,8 @@ function ShareContent() {
                 const formData = form.formData;
                 if (formData?.recipientName) {
                     setRecipientName(formData.recipientName);
-                } else if (formData?.songs?.[0]?.recipientName) {
-                    setRecipientName(formData.songs[0].recipientName);
+                } else if (formData?.songs?.[songIndex]?.recipientName) {
+                    setRecipientName(formData.songs[songIndex].recipientName);
                 }
 
                 if (formData?.senderName) {
@@ -86,7 +89,7 @@ function ShareContent() {
                 console.log('[SHARE] Variation task IDs:', variationTaskIds);
 
                 // For solo-serenade, get the first (and only) song's selected variation
-                const songIndex = 0;
+                // For bundles, we use the parsed index
                 const selectedVariationId = selectedVariations[songIndex];
                 const taskIdsForSong = variationTaskIds[songIndex];
 
@@ -122,8 +125,9 @@ function ShareContent() {
 
     const handleOpenGift = () => {
         if (selectedTaskId) {
-            console.log('[SHARE] Opening song:', selectedTaskId);
-            router.push(`/play/${selectedTaskId}`);
+            console.log('[SHARE] Opening song for session:', sessionId);
+            // Redirect to the new public library page for this song (using the form ID/Session ID)
+            router.push(`/compose/library/${sessionId}?index=${songIndex}`);
         } else {
             console.error('[SHARE] No task ID available');
             // This should rarely happen now since we set error state earlier

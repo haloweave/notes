@@ -6,6 +6,11 @@ export async function POST(request: NextRequest) {
         const formData = await request.json();
         console.log('[CREATE-SONG-PROMPT] Form data:', JSON.stringify(formData, null, 2));
 
+        // Format emotions (handle array or string)
+        const emotionStr = Array.isArray(formData.emotions)
+            ? formData.emotions.join(' and ')
+            : (formData.emotions || 'loving');
+
         const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
         if (!GROQ_API_KEY) {
@@ -24,7 +29,7 @@ IMPORTANT CONTEXT:
 - Pronunciation: ${formData.pronunciation || formData.recipientName}
 - Relationship: ${formData.relationship}
 - Theme: ${formData.theme}
-- Emotional tone: ${formData.emotions || 'loving'}
+- Emotional tone: ${emotionStr}
 - Overall vibe: ${formData.vibe}
 - Who they are to you: ${formData.overallMessage}
 - Your story: ${formData.storySummary}
@@ -40,12 +45,12 @@ ${formData.locationDetails ? `- Special places: ${formData.locationDetails}` : '
 
 CRITICAL INSTRUCTIONS:
 1. Do NOT include musical style, genre, or tempo descriptors (e.g., "upbeat", "slow", "pop", "rock") - these are handled separately
-2. DO include emotional tone (${formData.emotions || 'loving'}), vibe (${formData.vibe}), and festive elements
+2. DO include emotional tone (${emotionStr}), vibe (${formData.vibe}), and festive elements
 3. Focus on the STORY, EMOTIONS, and PERSONAL DETAILS
 
 Create a prompt that:
 - Opens with the recipient's name and relationship
-- Conveys the ${formData.emotions || 'loving'} emotion and ${formData.vibe} vibe
+- Conveys the ${emotionStr} emotion and ${formData.vibe} vibe
 - Includes specific personal details (qualities, memories, gratitude)
 - Reflects the ${formData.theme} theme
 - Incorporates the ${formData.festiveLyricsLevel || 'lightly-festive'} festive level naturally
@@ -173,7 +178,7 @@ PRIMARY STYLE (MUST BE MAINTAINED IN ALL VARIATIONS): ${formData.style || 'heart
 
 Song Context:
 - Theme: ${formData.theme}
-- Emotions: ${formData.emotions}
+- Emotions: ${emotionStr}
 - Vibe: ${formData.vibe}
 - Festive Level: ${formData.festiveSoundLevel || 'not specified'}
 
