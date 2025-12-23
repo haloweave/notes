@@ -33,6 +33,7 @@
     "drizzle-orm": "^0.45.1",
     "hugeicons-react": "^0.3.0",
     "lucide-react": "^0.560.0",
+    "mixpanel-browser": "^2.72.0",
     "motion": "^12.23.26",
     "nanoid": "^5.1.6",
     "next": "16.0.8",

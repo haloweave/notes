@@ -1127,6 +1127,18 @@ function VariationsContent() {
         }
     };
 
+    const handleSwitchSelection = () => {
+        // User wants to switch to the new selection, discarding the old one (standard single-select behavior)
+        if (pendingUpgradeVariation) {
+            setSelections(prev => {
+                // Replace entire selection for this tab with the new one
+                return { ...prev, [activeTab]: [pendingUpgradeVariation] } as Record<number, number | number[]>;
+            });
+            setPendingUpgradeVariation(null);
+        }
+        setShowUpgradeDialog(false);
+    };
+
     const handleContinueSingle = () => {
         // User chose to pay simply for multiple songs without upgrading package
         setAllowMultiSolo(true);
@@ -1628,7 +1640,7 @@ function VariationsContent() {
                                     {/* Play Button */}
                                     <div className="mt-4 mb-6">
                                         <Button
-                                            onClick={() => togglePlay(variation.id)}
+                                            onClick={() => handlePlay(variation.id)}
                                             disabled={!audioUrls[activeTab]?.[variation.id]}
                                             className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 border-0 ${audioUrls[activeTab]?.[variation.id]
                                                 ? isPurchased
@@ -1767,18 +1779,11 @@ function VariationsContent() {
                             That's a savings of nearly €98 compared to buying 5 single songs!
                         </p>
                     </div>
-                    <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
-                        <Button
-                            variant="ghost"
-                            onClick={handleContinueSingle}
-                            className="text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
-                        >
-                            Purchase 2 Songs (€74)
-                        </Button>
+                    <DialogFooter className="flex flex-col gap-3">
                         <Button
                             onClick={handleUpgradeConfirm}
                             disabled={isLoadingSession}
-                            className="bg-gradient-to-r from-[#F5E6B8] to-[#E8DCC0] text-[#1a3d5f] hover:shadow-[0_0_20px_rgba(245,230,184,0.3)] transition-all font-semibold rounded-lg"
+                            className="w-full bg-gradient-to-r from-[#F5E6B8] to-[#E8DCC0] text-[#1a3d5f] hover:shadow-[0_0_20px_rgba(245,230,184,0.3)] transition-all font-semibold rounded-lg py-6 text-lg"
                         >
                             {isLoadingSession ? (
                                 <>
@@ -1787,6 +1792,24 @@ function VariationsContent() {
                                 </>
                             ) : "Upgrade & Save (€87)"}
                         </Button>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-2">
+                            <Button
+                                variant="outline"
+                                onClick={handleSwitchSelection}
+                                className="border-[#87CEEB]/30 text-[#87CEEB] hover:bg-[#87CEEB]/10 hover:text-[#87CEEB]"
+                            >
+                                Switch Selection
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                onClick={handleContinueSingle}
+                                className="text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
+                            >
+                                Purchase 2 Songs (€74)
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
