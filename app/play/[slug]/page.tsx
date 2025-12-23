@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Download, Music, Home } from 'lucide-react';
+import { Play, Pause, Download, Music, Home, Share2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SongData {
@@ -194,6 +194,32 @@ export default function PlayPage() {
             audioRef.current.play();
         }
         setIsPlaying(!isPlaying);
+    };
+
+    const [copied, setCopied] = useState(false);
+
+    const handleShare = async () => {
+        const shareData = {
+            title: song?.title || 'My Song',
+            text: 'Listen to this song I created with Huggnote!',
+            url: window.location.href,
+        };
+
+        if (navigator.share && isMobileDevice()) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.error('Error sharing:', err);
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
     };
 
 
@@ -427,6 +453,15 @@ export default function PlayPage() {
                                         </a>
                                     </Button>
                                 )}
+
+                                <Button
+                                    variant="outline"
+                                    onClick={handleShare}
+                                    className="h-14 px-6 rounded-full gap-2 bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border-white/30 hover:border-white/50"
+                                >
+                                    <Share2 className="w-6 h-6" />
+                                    <span className="font-medium">{copied ? 'Copied!' : 'Share'}</span>
+                                </Button>
 
                                 <Button
                                     variant="outline"
