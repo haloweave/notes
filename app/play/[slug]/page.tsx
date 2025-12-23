@@ -33,7 +33,7 @@ interface LyricLine {
 const BACKGROUND_VIDEOS_WEB = [
     '/player/Player Vids Web/Player Web Forest.mp4',
     '/player/Player Vids Web/Player Web Sun.mp4',
-    '/player/Player Vids Web/Web Player Northern Lights.mp4',
+    '/player/Player Vids Web/Web Player Norther Lights.mp4',
 ];
 
 const BACKGROUND_VIDEOS_MOBILE = [
