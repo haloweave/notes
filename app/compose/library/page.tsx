@@ -440,7 +440,7 @@ function LibraryContent() {
                                         <button
                                             onClick={() => {
                                                 if (song.taskId) {
-                                                    router.push(`/play/${song.taskId}`);
+                                                    window.open(`/play/${song.taskId}`, '_blank');
                                                 } else {
                                                     alert('Audio not ready yet');
                                                 }

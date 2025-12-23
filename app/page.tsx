@@ -175,14 +175,14 @@ export default function ComingSoonPage() {
               </div>
 
               {/* "Send a Bespoke Song" Button */}
-              <div className="mt-8">
+              {/* <div className="mt-8">
                 <button
                   onClick={() => router.push('/compose/select-package')}
                   className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium px-8 md:px-10 py-3 md:py-4 text-base md:text-lg rounded-lg bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.5)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.7)] transform hover:scale-105 transition-all duration-200 ${lora.className}`}
                 >
                   Send a Bespoke Song
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

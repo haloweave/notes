@@ -194,7 +194,7 @@ function VariationsContent() {
         checkIfFreshSubmission();
     }, [formIdParam]);
 
-    // Hide snow globe when generation is ready or error
+    // Hide snow globe ONLY when generation is fully ready or error
     useEffect(() => {
         if (generationStatus === 'ready' || generationStatus === 'error') {
             setShowSnowGlobeLoading(false);
