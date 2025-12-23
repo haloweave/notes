@@ -103,6 +103,14 @@ function SongPageContent() {
                     return;
                 }
 
+                // Fallback: Extract Task ID from Audio URL if possible
+                if (!taskId && audioUrl) {
+                    const match = audioUrl.match(/\/([a-f0-9\-]{36})\.mp3/);
+                    if (match) {
+                        taskId = match[1];
+                    }
+                }
+
                 const lyrics = variationLyrics[songIndex]?.[varKey] || variationLyrics[songIndex]?.[Number(targetVarId)];
                 const recipient = form.formData?.songs?.[0]?.recipientName || form.formData?.recipientName || 'Unknown';
                 const relationship = form.formData?.songs?.[0]?.relationship || form.formData?.relationship;

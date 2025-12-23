@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     try {
         console.log("Starting checkout process...");
         console.log("Request URL:", req.url);
-        
+
         const body = await req.json();
         const { packageId, selectedVariation, selections, formData, generatedPrompt, formId, selectedTaskIds } = body;
 
@@ -35,29 +35,41 @@ export async function POST(req: NextRequest) {
         const userId = session.user.id;
 
         let priceData;
+        let quantity = 1;
         let credits = 0;
+
+        // Calculate total selected items
+        let selectedCount = 0;
+        if (selections) {
+            selectedCount = Object.values(selections).reduce((acc: number, val: any) => {
+                return acc + (Array.isArray(val) ? val.length : 1);
+            }, 0);
+        }
+        if (selectedCount === 0) selectedCount = 1; // Default to at least 1 if checking out
 
         // Define packages - keeping original pricing in USD
         if (packageId === 'solo-serenade' || packageId === 'single') {
             priceData = {
                 currency: 'eur',
                 product_data: {
-                    name: '1 Song Credit',
-                    description: 'Create 1 Custom AI Song',
+                    name: selectedCount > 1 ? `${selectedCount} Custom Songs` : '1 Song Credit',
+                    description: `Create ${selectedCount} Custom AI Song${selectedCount > 1 ? 's' : ''}`,
                 },
                 unit_amount: 3700, // €37
             };
-            credits = 1;
+            credits = selectedCount;
+            quantity = selectedCount;
         } else if (packageId === 'holiday-hamper' || packageId === 'bundle') {
             priceData = {
                 currency: 'eur',
                 product_data: {
-                    name: '3 Song Bundle',
-                    description: 'Create 3 Custom AI Songs',
+                    name: 'Merry Medley Bundle',
+                    description: 'Create 5 Custom AI Songs',
                 },
                 unit_amount: 8700, // €87
             };
-            credits = 3;
+            credits = 5; // Updated to 5 based on user copy "5 songs for the price of 2"
+            quantity = 1;
         } else {
             return NextResponse.json({ error: "Invalid package" }, { status: 400 });
         }
@@ -108,7 +120,7 @@ export async function POST(req: NextRequest) {
             line_items: [
                 {
                     price_data: priceData,
-                    quantity: 1,
+                    quantity: quantity,
                 },
             ],
             mode: "payment",

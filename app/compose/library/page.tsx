@@ -149,6 +149,14 @@ function LibraryContent() {
                                     taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
                                 }
 
+                                // Fallback: Extract Task ID from Audio URL if possible
+                                if (!taskId && audioUrl) {
+                                    const match = audioUrl.match(/\/([a-f0-9\-]{36})\.mp3/);
+                                    if (match) {
+                                        taskId = match[1];
+                                    }
+                                }
+
                                 return {
                                     id: form.id,
                                     index: songIndex, // Store index to identify specific song in bundle

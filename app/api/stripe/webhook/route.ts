@@ -176,18 +176,23 @@ export async function POST(req: NextRequest) {
                         console.log('[EMAIL] 🔗 Step 3: Building song links...');
                         for (let i = 0; i < songs.length; i++) {
                             const song = songs[i];
-                            const selectedVariationId = selectedVariations[i];
+                            const rawSelection = selectedVariations[i];
+                            // Normalize to array to handle multi-select (e.g. for solo-serenade multi-buys)
+                            const variationIds = Array.isArray(rawSelection) ? rawSelection : [rawSelection];
+                            // We use the first valid variation to generate the link/validate existence
+                            const primaryVariationId = variationIds[0];
+
                             const taskIdsForSong = variationTaskIds[i];
 
                             console.log(`[EMAIL]   Song ${i + 1}:`);
                             console.log(`[EMAIL]     - Recipient: ${song.recipientName}`);
                             console.log(`[EMAIL]     - Theme: ${song.theme}`);
-                            console.log(`[EMAIL]     - Selected variation: ${selectedVariationId}`);
+                            console.log(`[EMAIL]     - Selected variation(s): ${JSON.stringify(variationIds)}`);
                             console.log(`[EMAIL]     - Task IDs for song: ${JSON.stringify(taskIdsForSong)}`);
 
-                            if (selectedVariationId && taskIdsForSong && taskIdsForSong[selectedVariationId - 1]) {
-                                const taskId = taskIdsForSong[selectedVariationId - 1];
-                                console.log(`[EMAIL]     - Selected task ID: ${taskId}`);
+                            if (primaryVariationId && taskIdsForSong && taskIdsForSong[primaryVariationId - 1]) {
+                                const taskId = taskIdsForSong[primaryVariationId - 1];
+                                console.log(`[EMAIL]     - Selected task ID (primary): ${taskId}`);
 
                                 // Generate share URL (using form ID/Session ID for the library page)
                                 // This points to the purchaser's library view
@@ -203,7 +208,7 @@ export async function POST(req: NextRequest) {
                                 console.log(`[EMAIL]     ✅ Song link added`);
                             } else {
                                 console.warn(`[EMAIL]     ⚠️ Missing data for song ${i + 1} - skipping`);
-                                console.warn(`[EMAIL]        selectedVariationId: ${selectedVariationId}`);
+                                console.warn(`[EMAIL]        primaryVariationId: ${primaryVariationId}`);
                                 console.warn(`[EMAIL]        taskIdsForSong: ${JSON.stringify(taskIdsForSong)}`);
                             }
                         }

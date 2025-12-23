@@ -13,6 +13,14 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LoginDialog } from '@/components/auth/login-dialog';
 import { useSession } from '@/lib/auth-client';
 import { useLoginDialog } from '@/contexts/login-dialog-context';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog";
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -47,14 +55,18 @@ function VariationsContent() {
     // State
     const [songs, setSongs] = useState<SongData[]>([]);
     const [activeTab, setActiveTab] = useState(0);
-    const [selections, setSelections] = useState<Record<number, number>>({}); // { songIndex: variationId }
+    const [selections, setSelections] = useState<Record<number, number | number[]>>({}); // { songIndex: variationId | variationId[] }
     const [loading, setLoading] = useState(false);
     const [playingId, setPlayingId] = useState<number | null>(null);
     const [isBundle, setIsBundle] = useState(false);
+    const [packageId, setPackageId] = useState<string>('solo-serenade');
+    const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+    const [pendingUpgradeVariation, setPendingUpgradeVariation] = useState<number | null>(null);
+    const [allowMultiSolo, setAllowMultiSolo] = useState(false);
     const [isLoadingSession, setIsLoadingSession] = useState(false);
     const [showSnowGlobeLoading, setShowSnowGlobeLoading] = useState(true); // Show snow globe for 8 seconds
     const [formStatus, setFormStatus] = useState<string | null>(null);
-    const [purchasedVariations, setPurchasedVariations] = useState<Record<number, number>>({});
+    const [purchasedVariations, setPurchasedVariations] = useState<Record<number, number | number[]>>({}); // Updated to support multi-select
 
     // Music Generation State
     const [taskIds, setTaskIds] = useState<Record<number, (string | null)[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
@@ -214,12 +226,18 @@ function VariationsContent() {
                             if (data.form.status) setFormStatus(data.form.status);
                             if (data.form.selectedVariations) {
                                 setPurchasedVariations(data.form.selectedVariations);
-                                // Auto-select purchased variations
-                                setSelections(data.form.selectedVariations);
+                                // Only restore selections for checkout if NOT already purchased
+                                const isPurchased = ['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(data.form.status || '');
+                                if (!isPurchased) {
+                                    setSelections(data.form.selectedVariations);
+                                }
                             }
                             if (data.form.variationStyles) setVariationStyles(data.form.variationStyles);
+                            if (data.form.packageId) setPackageId(data.form.packageId);
 
-                            console.log('[VARIATIONS] ✅ Loaded from database');
+                            console.log('[VARIATIONS] ✅ Loaded data from database');
+                            console.log('[VARIATIONS] Form Status:', data.form.status);
+                            console.log('[VARIATIONS] Purchased Variations:', data.form.selectedVariations);
                             console.log('[VARIATIONS] Existing taskIds:', dbTaskIds);
                             console.log('[VARIATIONS] Existing audioUrls:', dbAudioUrls);
                         }
@@ -1073,15 +1091,132 @@ function VariationsContent() {
         }
     };
 
+    const handleUpgradeConfirm = async () => {
+        setIsLoadingSession(true);
+        try {
+            // Update package to Merry Medley
+            setPackageId('holiday-hamper');
+
+            // Add the pending variation to selection
+            if (pendingUpgradeVariation) {
+                setSelections(prev => {
+                    const currentList = prev[activeTab] ? (Array.isArray(prev[activeTab]) ? prev[activeTab] : [prev[activeTab]]) : [];
+                    if (currentList.includes(pendingUpgradeVariation)) return prev;
+                    return { ...prev, [activeTab]: [...currentList, pendingUpgradeVariation] } as Record<number, number | number[]>;
+                });
+                setPendingUpgradeVariation(null);
+            }
+
+            // Update DB
+            if (formIdParam) {
+                await fetch('/api/compose/forms', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        formId: formIdParam,
+                        packageId: 'holiday-hamper',
+                        // Also update status to ensure consistency?
+                    })
+                });
+            }
+            setShowUpgradeDialog(false);
+        } catch (e) {
+            console.error("Upgrade failed", e);
+        } finally {
+            setIsLoadingSession(false);
+        }
+    };
+
+    const handleContinueSingle = () => {
+        // User chose to pay simply for multiple songs without upgrading package
+        setAllowMultiSolo(true);
+
+        // Add the pending selection
+        if (pendingUpgradeVariation) {
+            setSelections(prev => {
+                const currentList = prev[activeTab] ? (Array.isArray(prev[activeTab]) ? prev[activeTab] : [prev[activeTab]]) : [];
+                // Allow adding to list for solo package (pseudo-list)
+                if (currentList.includes(pendingUpgradeVariation)) return prev;
+                return { ...prev, [activeTab]: [...currentList, pendingUpgradeVariation] } as Record<number, number | number[]>;
+            });
+            setPendingUpgradeVariation(null);
+        }
+        setShowUpgradeDialog(false);
+    };
+
     const handleSelectVariation = (variationId: number) => {
-        setSelections(prev => ({
-            ...prev,
-            [activeTab]: variationId
-        }));
+        console.log('[VARIATIONS] User clicking variation:', variationId);
+        setSelections(prev => {
+            const current = prev[activeTab];
+            const currentList = Array.isArray(current) ? current : (current ? [current] : []);
+
+            // If Merry Medley (holiday-hamper), allow multi-select
+            if (packageId === 'holiday-hamper') {
+                // Toggle logic
+                if (currentList.includes(variationId)) {
+                    const newList = currentList.filter(id => id !== variationId);
+                    // Look for remaining items or revert to single/undefined
+                    return {
+                        ...prev,
+                        [activeTab]: newList.length === 1 ? newList[0] : (newList.length === 0 ? undefined : newList)
+                    } as Record<number, number | number[]>;
+                } else {
+                    // Add logic
+                    // Limit to 5 total? Or per implementation.
+                    // For now allow adding.
+                    return { ...prev, [activeTab]: [...currentList, variationId] };
+                }
+            } else {
+                // Solo Serenade logic (single select default)
+
+                // 1. Toggle OFF logic: If clicking the ALREADY selected item, unselect it.
+                if (currentList.includes(variationId)) {
+                    // Logic to unselect if it's the only one selected (which it should be in solo mode)
+                    const newList = currentList.filter(id => id !== variationId);
+                    return {
+                        ...prev,
+                        [activeTab]: newList.length === 0 ? undefined : (newList.length === 1 ? newList[0] : newList)
+                    } as Record<number, number | number[]>;
+                }
+
+                // 2. Filter out purchased items for the "limit" check
+                const purchasedId = purchasedVariations[activeTab];
+                const activeNewSelections = currentList.filter(id => id !== purchasedId);
+
+                if (activeNewSelections.length > 0) {
+                    // If existing NEW selection exists and user clicks DIFFERENT one
+
+                    // If user has NOT explicitly allowed multi-solo, prompt them
+                    if (!allowMultiSolo) {
+                        setPendingUpgradeVariation(variationId);
+                        setShowUpgradeDialog(true);
+                        return prev; // No change yet
+                    }
+                    // If allowed, fall through to add to list
+                }
+
+                // If 0 active new selections (or same selected), allow adding.
+                // We append to ensure we don't remove purchased item if it's there.
+                return { ...prev, [activeTab]: [...currentList, variationId] };
+            }
+        });
     };
 
     const isCurrentSelected = (variationId: number) => {
-        return selections[activeTab] === variationId;
+        // If this variation is already purchased, don't show it as "selected" for the payment flow
+        // The "Purchased" badge handles its status display
+        const purchased = purchasedVariations[activeTab];
+        const isPurchased = Array.isArray(purchased)
+            ? purchased.includes(variationId)
+            : purchased === variationId;
+
+        if (isPurchased) return false;
+
+        const current = selections[activeTab];
+        if (Array.isArray(current)) {
+            return current.includes(variationId);
+        }
+        return current === variationId;
     };
 
     const handleContinue = async () => {
@@ -1108,7 +1243,7 @@ function VariationsContent() {
                     const updatedData = {
                         ...parsedData,
                         selections: selections,
-                        selectedVariationId: selections[0],
+                        selectedVariationId: selections[0], // Keep legacy field just in case
                         status: 'payment_initiated',
                         lastUpdated: new Date().toISOString()
                     };
@@ -1123,7 +1258,8 @@ function VariationsContent() {
                         body: JSON.stringify({
                             formId: formId,
                             selectedVariations: selections,
-                            status: 'payment_initiated'
+                            status: 'payment_initiated',
+                            packageId: packageId // Ensure package ID is persisted
                         })
                     });
 
@@ -1134,22 +1270,32 @@ function VariationsContent() {
                     }
                 } catch (dbError) {
                     console.error('[VARIATIONS] Error saving selections:', dbError);
-                    // Continue anyway - localStorage has the data
                 }
             }
 
-            const selectedPackage = sessionStorage.getItem('selectedPackageId') || (songs.length > 1 ? 'holiday-hamper' : 'solo-serenade');
+            const selectedPackage = packageId;
 
             // Prepare task IDs for selected variations
-            const selectedTaskIds: Record<number, string> = {};
+            const selectedTaskIds: Record<number, string | string[]> = {};
+
             Object.keys(selections).forEach(songIndexStr => {
                 const songIndex = parseInt(songIndexStr);
-                const variationId = selections[songIndex];
+                const selection = selections[songIndex];
                 const songTaskIds = taskIds[songIndex];
 
-                const taskId = songTaskIds[variationId - 1];
-                if (songTaskIds && taskId) {
-                    selectedTaskIds[songIndex] = taskId;
+                if (!songTaskIds) return;
+
+                if (Array.isArray(selection)) {
+                    // Map all selected variations to their task IDs
+                    const tasks = selection.map(vid => songTaskIds[vid - 1]).filter(Boolean) as string[];
+                    if (tasks.length > 0) {
+                        selectedTaskIds[songIndex] = tasks.length === 1 ? tasks[0] : tasks;
+                    }
+                } else {
+                    const taskId = songTaskIds[selection - 1];
+                    if (taskId) {
+                        selectedTaskIds[songIndex] = taskId;
+                    }
                 }
             });
 
@@ -1385,205 +1531,202 @@ function VariationsContent() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-                    {variations.map((variation) => (
-                        <Card
-                            key={variation.id}
-                            className={`bg-white/5 backdrop-blur-md rounded-2xl border-2 shadow-lg transition-all duration-200 relative overflow-hidden ${isCurrentSelected(variation.id)
-                                ? 'border-[#F5E6B8] shadow-[0_8px_30px_rgba(245,230,184,0.5)] bg-[#F5E6B8]/10'
-                                : 'border-[#87CEEB]/40 hover:border-[#87CEEB] hover:shadow-[0_8px_30px_rgba(135,206,235,0.3)]'
-                                }`}
-                        >
-                            <CardContent className="p-6">
-                                {/* Purchased Badge */}
-                                {['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') && purchasedVariations[activeTab] === variation.id && (
-                                    <div className="absolute top-0 right-0 z-20 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-lg flex items-center gap-1">
-                                        <CheckmarkCircle01Icon className="w-3 h-3" />
-                                        PURCHASED
-                                    </div>
-                                )}
-                                {/* Variation Header */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                                        <Music className="w-5 h-5 text-[#87CEEB] shrink-0" />
-                                        <h3
-                                            className={`text-lg font-medium truncate ${isCurrentSelected(variation.id) ? 'text-[#F5E6B8]' : 'text-white'}`}
-                                            title={titles[activeTab]?.[variation.id] || `Option ${variation.id} - ${recipientName}`}
-                                        >
-                                            {titles[activeTab]?.[variation.id] || `Option ${variation.id} - ${recipientName}`}
-                                        </h3>
-                                    </div>
-                                    {isCurrentSelected(variation.id) && (
-                                        <div className="bg-[#F5E6B8] text-[#1a3d5f] rounded-full p-1">
-                                            <CheckmarkCircle01Icon className="w-4 h-4" />
-                                        </div>
-                                    )}
-                                </div>
+                    {variations.map((variation) => {
+                        const purchased = purchasedVariations[activeTab];
+                        const isPurchased = ['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') &&
+                            (Array.isArray(purchased) ? purchased.includes(variation.id) : purchased === variation.id);
 
-                                {/* Style Badge */}
-                                <div className="mb-3">
-                                    <span className="text-xs text-[#87CEEB] bg-[#87CEEB]/10 px-3 py-1 rounded-full">
-                                        {variation.style}
-                                    </span>
-                                </div>
+                        const isSelected = isCurrentSelected(variation.id);
 
-                                {/* Status Indicator */}
-                                <div className="mb-3">
-                                    {/* Failed State - Only show if generation is complete, no audio URL, and no lyrics */}
-                                    {(generationStatus === 'ready' || generationStatus === 'error') && !audioUrls[activeTab]?.[variation.id] && !lyrics[activeTab]?.[variation.id] && taskIds[activeTab] && taskIds[activeTab][variation.id - 1] === null && (
-                                        <div className="flex items-center gap-2 text-sm text-red-400">
-                                            <span>❌</span>
-                                            <span>Composition Failed</span>
+                        return (
+                            <Card
+                                key={variation.id}
+                                className={`backdrop-blur-md rounded-2xl border-2 shadow-lg transition-all duration-200 relative overflow-hidden ${isPurchased
+                                    ? 'bg-emerald-500/10 border-emerald-500/50 shadow-[0_8px_30px_rgba(16,185,129,0.2)]'
+                                    : isSelected
+                                        ? 'border-[#F5E6B8] shadow-[0_8px_30px_rgba(245,230,184,0.5)] bg-[#F5E6B8]/10'
+                                        : 'bg-white/5 border-[#87CEEB]/40 hover:border-[#87CEEB] hover:shadow-[0_8px_30px_rgba(135,206,235,0.3)]'
+                                    }`}
+                            >
+                                <CardContent className="p-6">
+                                    {/* Purchased Badge */}
+                                    {isPurchased && (
+                                        <div className="absolute top-0 right-0 z-20 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-lg flex items-center gap-1">
+                                            <CheckmarkCircle01Icon className="w-3 h-3" />
+                                            PURCHASED
                                         </div>
                                     )}
-
-                                    {/* Composing State (only if task ID exists or not loaded yet) */}
-                                    {!lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (!taskIds[activeTab] || taskIds[activeTab][variation.id - 1]) && (
-                                        <div className="flex items-center gap-2 text-sm text-white/60">
-                                            <LoadingSpinner size="xs" variant="dots" color="primary" />
-                                            <span>Composing your song...</span>
+                                    {/* Variation Header */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                            <Music className={`w-5 h-5 shrink-0 ${isPurchased ? 'text-emerald-400' : 'text-[#87CEEB]'}`} />
+                                            <h3
+                                                className={`text-lg font-medium truncate ${isPurchased ? 'text-emerald-100' : isSelected ? 'text-[#F5E6B8]' : 'text-white'}`}
+                                                title={titles[activeTab]?.[variation.id] || `Option ${variation.id} - ${recipientName}`}
+                                            >
+                                                {titles[activeTab]?.[variation.id] || `Option ${variation.id} - ${recipientName}`}
+                                            </h3>
                                         </div>
-                                    )}
-                                    {lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <span className="text-[#F5E6B8]">✓</span>
-                                            <span className="text-[#F5E6B8]">Lyrics ready</span>
-                                            <span className="text-white/40">•</span>
-                                            <LoadingSpinner size="xs" variant="dots" color="primary" />
-                                            <span className="text-white/60">Composing audio...</span>
-                                        </div>
-                                    )}
-                                    {audioUrls[activeTab]?.[variation.id] && (
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex items-center gap-2 text-sm text-[#87CEEB]">
-                                                <span>✓</span>
-                                                <span>Ready to play!</span>
+                                        {isSelected && !isPurchased && (
+                                            <div className="bg-[#F5E6B8] text-[#1a3d5f] rounded-full p-1">
+                                                <CheckmarkCircle01Icon className="w-4 h-4" />
                                             </div>
-                                            <div className="text-xs text-white/50">
-                                                🎵 Preview: 20s from start • 5s snippets when seeking
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Lyrics Preview - Show even if audio isn't ready */}
-                                {lyrics[activeTab]?.[variation.id] && (
-                                    <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
-                                        <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Full Lyrics</h4>
-                                        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto">
-                                            {lyrics[activeTab][variation.id]}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Play Button */}
-                                <div className="mb-4">
-                                    <Button
-                                        onClick={() => handlePlay(variation.id)}
-                                        disabled={!audioUrls[activeTab]?.[variation.id]}
-                                        className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 border-0 ${audioUrls[activeTab]?.[variation.id]
-                                            ? 'bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white shadow-[0_4px_20px_rgba(135,206,235,0.4)] hover:shadow-[0_6px_25px_rgba(135,206,235,0.5)]'
-                                            : 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
-                                            }`}
-                                    >
-                                        {!audioUrls[activeTab]?.[variation.id] ? (
-                                            <>
-                                                <LoadingSpinner size="sm" variant="dots" color="white" />
-                                                <span className="font-medium">Audio Generating...</span>
-                                            </>
-                                        ) : playingId === variation.id ? (
-                                            <>
-                                                <Pause className="w-5 h-5" />
-                                                <span className="font-medium">Pause</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Play className="w-5 h-5" />
-                                                <span className="font-medium">Play</span>
-                                            </>
                                         )}
-                                    </Button>
-
-                                    {/* Seek Slider */}
-                                    {audioUrls[activeTab]?.[variation.id] && audioProgress[variation.id] && (
-                                        <div className="mt-3 px-2">
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max={audioProgress[variation.id]?.duration || 0}
-                                                value={audioProgress[variation.id]?.currentTime || 0}
-                                                onChange={(e) => handleSeek(variation.id, parseFloat(e.target.value))}
-                                                className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#87CEEB] hover:accent-[#5BA5D0]"
-                                                style={{
-                                                    background: `linear-gradient(to right, #87CEEB 0%, #87CEEB ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
-                                                }}
-                                            />
-                                            <div className="flex justify-between text-xs text-white/60 mt-1">
-                                                <span>{formatTime(audioProgress[variation.id]?.currentTime || 0)}</span>
-                                                <span>{formatTime(audioProgress[variation.id]?.duration || 0)}</span>
+                                        {isPurchased && (
+                                            <div className="bg-emerald-500 text-white rounded-full p-1">
+                                                <CheckmarkCircle01Icon className="w-4 h-4" />
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
 
-                                {/* Select Button */}
-                                {isCurrentSelected(variation.id) ? (
-                                    <button
-                                        className={`w-full py-3 rounded-xl font-medium transition-all duration-200 shadow-lg border-0 pointer-events-none font-semibold ${['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') && purchasedVariations[activeTab] === variation.id
-                                            ? 'bg-emerald-500 text-white'
-                                            : 'bg-[#F5E6B8] text-[#1a3d5f]'
-                                            }`}
-                                    >
-                                        {['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') && purchasedVariations[activeTab] === variation.id
-                                            ? 'Purchased ✓'
-                                            : 'Selected ✓'
-                                        }
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => handleSelectVariation(variation.id)}
-                                        disabled={!audioUrls[activeTab]?.[variation.id]}
-                                        className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 border-2 min-w-[200px] ${!audioUrls[activeTab]?.[variation.id]
-                                            ? 'bg-white/5 text-white/40 border-white/10 cursor-not-allowed'
-                                            : 'bg-white/10 text-[#87CEEB] border-[#87CEEB]/40 hover:border-[#87CEEB] hover:bg-white/20'
-                                            }`}
-                                    >
-                                        Select This Version
-                                    </button>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))}
+                                    {/* Style Badge */}
+                                    <div className="mb-3">
+                                        <span className={`text-xs px-3 py-1 rounded-full ${isPurchased
+                                            ? 'text-emerald-300 bg-emerald-500/20'
+                                            : 'text-[#87CEEB] bg-[#87CEEB]/10'
+                                            }`}>
+                                            {variation.style}
+                                        </span>
+                                    </div>
+
+                                    {/* Status Indicator */}
+                                    <div className="mb-3">
+                                        {/* Failed State - Only show if generation is complete, no audio URL, and no lyrics */}
+                                        {(generationStatus === 'ready' || generationStatus === 'error') && !audioUrls[activeTab]?.[variation.id] && !lyrics[activeTab]?.[variation.id] && taskIds[activeTab] && taskIds[activeTab][variation.id - 1] === null && (
+                                            <div className="flex items-center gap-2 text-sm text-red-400">
+                                                <span>❌</span>
+                                                <span>Composition Failed</span>
+                                            </div>
+                                        )}
+
+                                        {/* Composing State (only if task ID exists or not loaded yet) */}
+                                        {!lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (!taskIds[activeTab] || taskIds[activeTab][variation.id - 1]) && (
+                                            <div className="flex items-center gap-2 text-sm text-white/60">
+                                                <LoadingSpinner size="xs" variant="dots" color="primary" />
+                                                <span>Composing your song...</span>
+                                            </div>
+                                        )}
+                                        {lyrics[activeTab]?.[variation.id] && !audioUrls[activeTab]?.[variation.id] && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="text-[#F5E6B8]">✓</span>
+                                                <span className="text-[#F5E6B8]">Lyrics ready</span>
+                                                <span className="text-white/40">•</span>
+                                                <LoadingSpinner size="xs" variant="dots" color="primary" />
+                                                <span className="text-white/60">Composing audio...</span>
+                                            </div>
+                                        )}
+                                        {audioUrls[activeTab]?.[variation.id] && (
+                                            <div className="flex flex-col gap-1">
+                                                <div className={`flex items-center gap-2 text-sm ${isPurchased ? 'text-emerald-400' : 'text-[#87CEEB]'}`}>
+                                                    <span>✓</span>
+                                                    <span>Ready to play!</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Play Button */}
+                                    <div className="mt-4 mb-6">
+                                        <Button
+                                            onClick={() => togglePlay(variation.id)}
+                                            disabled={!audioUrls[activeTab]?.[variation.id]}
+                                            className={`w-full py-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-200 border-0 ${audioUrls[activeTab]?.[variation.id]
+                                                ? isPurchased
+                                                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-[0_4px_20px_rgba(16,185,129,0.4)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)]'
+                                                    : 'bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white shadow-[0_4px_20px_rgba(135,206,235,0.4)] hover:shadow-[0_6px_25px_rgba(135,206,235,0.5)]'
+                                                : 'bg-gray-600/50 text-gray-400 cursor-not-allowed'
+                                                }`}
+                                        >
+                                            {!audioUrls[activeTab]?.[variation.id] ? (
+                                                <>
+                                                    <LoadingSpinner size="sm" variant="dots" color="white" />
+                                                    <span className="font-medium">Audio Generating...</span>
+                                                </>
+                                            ) : playingId === variation.id ? (
+                                                <>
+                                                    <Pause className="w-5 h-5" />
+                                                    <span className="font-medium">Pause</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Play className="w-5 h-5" />
+                                                    <span className="font-medium">Play</span>
+                                                </>
+                                            )}
+                                        </Button>
+
+                                        {/* Seek Slider */}
+                                        {audioUrls[activeTab]?.[variation.id] && audioProgress[variation.id] && (
+                                            <div className="mt-3 px-2">
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max={audioProgress[variation.id]?.duration || 0}
+                                                    value={audioProgress[variation.id]?.currentTime || 0}
+                                                    onChange={(e) => handleSeek(variation.id, parseFloat(e.target.value))}
+                                                    className={`w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer ${isPurchased ? 'accent-emerald-500 hover:accent-emerald-400' : 'accent-[#87CEEB] hover:accent-[#5BA5D0]'}`}
+                                                    style={{
+                                                        background: `linear-gradient(to right, ${isPurchased ? '#10B981' : '#87CEEB'} 0%, ${isPurchased ? '#10B981' : '#87CEEB'} ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
+                                                    }}
+                                                />
+                                                <div className="flex justify-between text-xs text-white/60 mt-1">
+                                                    <span>{formatTime(audioProgress[variation.id]?.currentTime || 0)}</span>
+                                                    <span>{formatTime(audioProgress[variation.id]?.duration || 0)}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Select Button */}
+                                    {isPurchased ? (
+                                        <button
+                                            disabled
+                                            className="w-full py-3 rounded-xl font-medium transition-all duration-200 shadow-lg border-0 bg-emerald-500 text-white cursor-default opacity-90"
+                                        >
+                                            Purchased ✓
+                                        </button>
+                                    ) : isSelected ? (
+                                        <button
+                                            className="w-full py-3 rounded-xl font-medium transition-all duration-200 shadow-lg border-0 pointer-events-none font-semibold bg-[#F5E6B8] text-[#1a3d5f]"
+                                        >
+                                            Selected ✓
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleSelectVariation(variation.id)}
+                                            disabled={!audioUrls[activeTab]?.[variation.id]}
+                                            className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 border-2 min-w-[200px] ${!audioUrls[activeTab]?.[variation.id]
+                                                ? 'bg-white/5 text-white/40 border-white/10 cursor-not-allowed'
+                                                : 'bg-white/10 text-[#87CEEB] border-[#87CEEB]/40 hover:border-[#87CEEB] hover:bg-white/20'
+                                                }`}
+                                        >
+                                            Select This Version
+                                        </button>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
 
                 {/* Login prompt removed */}
 
-                {/* Payment Button - Only show if logged in OR show Login button */}
+                {/* Payment Button - Always show Proceed to Payment button */}
                 <div className="mt-6 flex justify-center">
-                    {/* Check if already purchased */}
-                    {['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') ? (
-                        <button
-                            onClick={() => router.push(`/compose/library/${formIdParam}?index=${activeTab}`)}
-                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] hover:from-[#5BA5D0] hover:to-[#4A90E2] text-white shadow-[0_8px_30px_rgba(135,206,235,0.4)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.6)] px-8 py-6 border-3 border-[#87CEEB]/50 rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${lora.className}`}
-                        >
-                            View in Library
-                        </button>
-                    ) : (
-                        /* Logged in - Show Proceed to Payment button */
-                        <button
-                            onClick={handleContinue}
-                            disabled={loading || (isBundle && completedCount < totalSongs)}
-                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
-                        >
-                            {loading ? (
-                                <>
-                                    <LoadingSpinner size="md" variant="dots" color="primary" />
-                                    Processing...
-                                </>
-                            ) : (
-                                isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
-                            )}
-                        </button>
-                    )}
+                    <button
+                        onClick={handleContinue}
+                        disabled={loading || (isBundle && completedCount < totalSongs)}
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
+                    >
+                        {loading ? (
+                            <>
+                                <LoadingSpinner size="md" variant="dots" color="primary" />
+                                Processing...
+                            </>
+                        ) : (
+                            isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
+                        )}
+                    </button>
                 </div>
             </div>
 
@@ -1599,13 +1742,62 @@ function VariationsContent() {
                 description="Sign in to save your generated song and access it anytime from your dashboard."
             />
 
+            {/* Upgrade Dialog */}
+            <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+                <DialogContent className="bg-[#1e293b] border-[#F5E6B8]/40 text-white max-w-md shadow-2xl">
+                    <DialogHeader>
+                        <DialogTitle className={`text-2xl text-[#E8DCC0] ${lora.className}`}>Purchase Additional Song?</DialogTitle>
+                        <DialogDescription className="text-white/80 text-base">
+                            You are selecting multiple songs.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <div className="border border-[#F5E6B8]/30 bg-[#F5E6B8]/5 rounded-xl p-4 mb-4">
+                            <p className="text-[#E8DCC0] font-medium mb-1">Current Choice: Purchase 2 Songs</p>
+                            <p className="text-white/60 text-sm">
+                                You can continue to purchase standard songs individually at €37 each.
+                                <br />
+                                <span className="font-semibold text-white mt-1 block">Total: €74</span>
+                            </p>
+                        </div>
+
+                        <p className="text-sm text-white/90 mb-4 leading-relaxed">
+                            OR upgrade to our <b>Merry Medley</b> package to get <b>5 songs</b> for just <b>€87</b>!
+                            <br />
+                            That's a savings of nearly €98 compared to buying 5 single songs!
+                        </p>
+                    </div>
+                    <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+                        <Button
+                            variant="ghost"
+                            onClick={handleContinueSingle}
+                            className="text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
+                        >
+                            Purchase 2 Songs (€74)
+                        </Button>
+                        <Button
+                            onClick={handleUpgradeConfirm}
+                            disabled={isLoadingSession}
+                            className="bg-gradient-to-r from-[#F5E6B8] to-[#E8DCC0] text-[#1a3d5f] hover:shadow-[0_0_20px_rgba(245,230,184,0.3)] transition-all font-semibold rounded-lg"
+                        >
+                            {isLoadingSession ? (
+                                <>
+                                    <LoadingSpinner size="sm" variant="dots" color="primary" />
+                                    Updating...
+                                </>
+                            ) : "Upgrade & Save (€87)"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Custom Scrollbar CSS */}
             <style jsx>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(135, 206, 235, 0.3); border-radius: 10px; }
             `}</style>
-        </div >
+        </div>
     );
 }
 
