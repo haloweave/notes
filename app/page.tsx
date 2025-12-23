@@ -108,7 +108,7 @@ export default function ComingSoonPage() {
                     lineHeight: '1.2'
                   }}
                 >
-                  Launching 23<sup style={{ fontSize: '0.6em' }}>rd</sup> December 2025
+                  Launching Soon!
                 </h2>
               </div>
 
@@ -161,6 +161,17 @@ export default function ComingSoonPage() {
                     ⚠️ {errorMessage}
                   </p>
                 )}
+
+                {/* Back to Huggnote Button */}
+                <div className="mt-8 flex justify-center">
+                  <a
+                    href="https://app.huggnote.com"
+                    className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-[#87CEEB]/30 text-[#87CEEB] hover:bg-[#87CEEB]/10 hover:border-[#F5E6B8]/50 hover:text-[#F5E6B8] transition-all duration-300 ${lora.className}`}
+                  >
+                    <span>←</span>
+                    <span>Back to Huggnote</span>
+                  </a>
+                </div>
               </div>
 
               {/* "Let Me In" Button */}
