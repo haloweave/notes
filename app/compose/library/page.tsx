@@ -353,7 +353,7 @@ function LibraryContent() {
     };
 
     const handleShare = async (song: SongData) => {
-        const shareUrl = `${window.location.origin}`;
+        const shareUrl = `${window.location.origin}/share?session_id=${song.id}`;
 
         try {
             await navigator.clipboard.writeText(shareUrl);

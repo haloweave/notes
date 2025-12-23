@@ -69,6 +69,28 @@ function VariationsContent() {
     // 🔥 CRITICAL: Prevent duplicate generation (React Strict Mode + effect re-runs)
     const generationStartedRef = useRef<boolean>(false);
 
+    // Loading facts
+    const facts = [
+        "The first song ever played in space was 'Jingle Bells' (Gemini 6, 1965).",
+        "Jingle Bells was originally written for Thanksgiving, not Christmas!",
+        "Brenda Lee recorded 'Rockin' Around the Christmas Tree' at just 13 years old.",
+        "The Nutcracker Suite is one of the most performed pieces of music in the world.",
+        "Your unique holiday song is being composed note-by-note using advanced AI.",
+        "The tradition of Christmas caroling began in the 13th century.",
+        "Silent Night was declared an intangible cultural heritage by UNESCO in 2011.",
+        "Bing Crosby's 'White Christmas' is the best-selling single of all time."
+    ];
+    const [currentFactIndex, setCurrentFactIndex] = useState(0);
+
+    // Cycle facts during loading
+    useEffect(() => {
+        if (!showSnowGlobeLoading) return;
+        const interval = setInterval(() => {
+            setCurrentFactIndex((prev) => (prev + 1) % facts.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [showSnowGlobeLoading]);
+
     const formIdParam = searchParams.get('formId');
 
     // Associate form with logged-in user
@@ -1176,33 +1198,69 @@ function VariationsContent() {
         <div className="w-full relative">
             {/* Snow Globe Loading Screen - Shows until generation is complete */}
             {showSnowGlobeLoading && (
-                <div className="w-full min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500 py-8">
-                    {/* Desktop Snow Globe */}
-                    <div className="hidden md:flex flex-col items-center justify-center w-full max-w-2xl p-8">
+                <div className="w-full min-h-[70vh] flex flex-col items-center justify-center animate-in fade-in duration-1000 py-8">
+                    {/* Desktop Snow Globe Layout */}
+                    <div className="hidden md:flex flex-col items-center justify-center w-full max-w-4xl p-8 relative">
+                        {/* Decorative background glow */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#87CEEB]/5 rounded-full blur-3xl pointer-events-none"></div>
+
                         <img
                             src="/snowGlobeDesktop.gif"
                             alt="Loading your magical song..."
-                            className="w-full h-auto object-contain mb-8"
+                            className="w-full max-w-2xl h-auto object-contain mb-8 drop-shadow-[0_0_25px_rgba(135,206,235,0.2)] z-10"
                             style={{ imageRendering: 'auto' }}
                         />
-                        <div className="text-center space-y-4">
-                             <h3 className={`text-[#F5E6B8] text-3xl ${lora.className}`}>Creating your masterpiece...</h3>
-                             <p className="text-[#87CEEB] text-lg animate-pulse">{generationProgress || "Generating your song..."}</p>
-                             <p className="text-white/60 text-sm">This typically takes 2-3 minutes. We're crafting 3 unique variations for you.</p>
+
+                        <div className="text-center space-y-6 z-10 max-w-xl">
+                            <div className="space-y-2">
+                                <h3 className={`text-[#F5E6B8] text-4xl ${lora.className} font-medium tracking-wide drop-shadow-md`}>
+                                    Creating Magic...
+                                </h3>
+                                <p className="text-[#87CEEB] text-lg font-light tracking-wider animate-pulse uppercase">
+                                    {generationProgress || "Composing your custom song"}
+                                </p>
+                            </div>
+
+                            {/* Fact Card */}
+                            <div className="bg-[#1a2a3f]/40 backdrop-blur-md border border-[#87CEEB]/20 rounded-xl p-6 shadow-xl transition-all duration-500 hover:bg-[#1a2a3f]/50 hover:border-[#87CEEB]/30 group">
+                                <div className="flex items-center justify-center gap-2 mb-3 opacity-80">
+                                    <span className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#F5E6B8]"></span>
+                                    <span className="text-[#F5E6B8] text-xs uppercase tracking-[0.2em] font-semibold">Did You Know?</span>
+                                    <span className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#F5E6B8]"></span>
+                                </div>
+                                <p className={`text-white/90 text-xl leading-relaxed ${lora.className} min-h-[3.5rem] flex items-center justify-center italic group-hover:text-white transition-colors`}>
+                                    "{facts[currentFactIndex]}"
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    {/* Mobile Snow Globe */}
-                    <div className="flex flex-col md:hidden items-center justify-center w-full p-4">
+
+                    {/* Mobile Snow Globe Layout */}
+                    <div className="flex flex-col md:hidden items-center justify-center w-full p-4 relative">
+                        {/* Decorative background glow */}
+                        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#87CEEB]/5 rounded-full blur-3xl pointer-events-none"></div>
+
                         <img
                             src="/snowglobeMobile.gif"
                             alt="Loading your magical song..."
-                            className="w-full h-auto object-contain mb-6"
+                            className="w-full h-auto object-contain mb-6 drop-shadow-[0_0_15px_rgba(135,206,235,0.2)] z-10"
                             style={{ imageRendering: 'auto' }}
                         />
-                         <div className="text-center space-y-3">
-                             <h3 className={`text-[#F5E6B8] text-2xl ${lora.className}`}>Creating your masterpiece...</h3>
-                             <p className="text-[#87CEEB] animate-pulse">{generationProgress || "Generating your song..."}</p>
-                             <p className="text-white/60 text-xs">This typically takes 2-3 minutes.</p>
+                        <div className="text-center space-y-4 z-10 w-full max-w-sm">
+                            <div className="space-y-1">
+                                <h3 className={`text-[#F5E6B8] text-3xl ${lora.className} font-medium`}>Creating Magic...</h3>
+                                <p className="text-[#87CEEB] text-sm font-light tracking-wider animate-pulse uppercase">
+                                    {generationProgress || "Composing your song"}
+                                </p>
+                            </div>
+
+                            {/* Mobile Fact Card */}
+                            <div className="bg-[#1a2a3f]/40 backdrop-blur-md border border-[#87CEEB]/20 rounded-xl p-4 shadow-lg mx-2">
+                                <div className="text-[#F5E6B8] text-[10px] uppercase tracking-[0.2em] font-semibold mb-2 opacity-80">Did You Know?</div>
+                                <p className={`text-white/90 text-lg leading-relaxed ${lora.className} min-h-[4rem] flex items-center justify-center italic`}>
+                                    "{facts[currentFactIndex]}"
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
