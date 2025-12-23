@@ -7,6 +7,8 @@ import { ArrowLeft, Menu } from 'lucide-react';
 import { HistoryMenu } from '@/components/compose/history-menu';
 import { LoginDialogProvider, useLoginDialog } from '@/contexts/login-dialog-context';
 import { LoginDialog } from '@/components/auth/login-dialog';
+import { AuthGuard } from '@/components/auth/auth-guard';
+
 
 const lora = Lora({ subsets: ['latin'] });
 
@@ -132,7 +134,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                     </div>
 
                     {/* Page Content */}
-                    {children}
+                    <AuthGuard>
+                        {children}
+                    </AuthGuard>
                 </div>
             </div>
 

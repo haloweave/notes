@@ -12,15 +12,20 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: NextRequest) {
     try {
         console.log("Starting checkout process...");
+        console.log("Request URL:", req.url);
+        
         const body = await req.json();
         const { packageId, selectedVariation, selections, formData, generatedPrompt, formId, selectedTaskIds } = body;
 
+        console.log("Fetching session...");
         const session = await auth.api.getSession({
             headers: await headers()
         });
+        console.log("Session fetched:", session ? "Session exists" : "No session");
 
         // Require login - no guest checkout
         if (!session?.user?.id || !session?.user?.email) {
+            console.log("Authentication failed - returning 401");
             return NextResponse.json({
                 error: "Authentication required. Please log in to complete your purchase."
             }, { status: 401 });
