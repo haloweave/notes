@@ -46,6 +46,15 @@ interface SongData {
     vibe?: string;
 }
 
+interface LyricSection {
+    type: 'Chorus' | 'Bridge' | 'Breakdown';
+    startLine: number;
+    endLine: number;
+    estimatedTime: number; // in seconds
+    text: string;
+}
+
+
 function VariationsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -1023,8 +1032,6 @@ function VariationsContent() {
 
             // 🎵 PREVIEW MODE: Play 20 seconds from start initially
             const INITIAL_PREVIEW_DURATION = 20; // 20 seconds for first play
-            let previewStartTime = 0;
-            let previewDuration = INITIAL_PREVIEW_DURATION;
 
             audio.play();
 
@@ -1034,10 +1041,17 @@ function VariationsContent() {
                 [id]: audio
             }));
 
+            // 🎵 Store preview settings on audio element (before setting up handlers)
+            (audio as any).previewStartTime = 0;
+            (audio as any).previewDuration = INITIAL_PREVIEW_DURATION;
+
             // Track progress for seek slider
             audio.ontimeupdate = () => {
-                // 🎵 Auto-stop after preview duration
-                if (audio.currentTime >= previewStartTime + previewDuration) {
+                // 🎵 Auto-stop after preview duration - read from audio element properties
+                const previewStart = (audio as any).previewStartTime || 0;
+                const previewDur = (audio as any).previewDuration || INITIAL_PREVIEW_DURATION;
+
+                if (audio.currentTime >= previewStart + previewDur) {
                     audio.pause();
                     setPlayingId(null);
                     setAudioRefs(prev => ({
@@ -1078,10 +1092,6 @@ function VariationsContent() {
                     [id]: { currentTime: 0, duration: prev[id]?.duration || 0 }
                 }));
             };
-
-            // 🎵 Store preview settings on audio element for handleSeek to access
-            (audio as any).previewStartTime = previewStartTime;
-            (audio as any).previewDuration = previewDuration;
         }
     };
 
@@ -1092,32 +1102,123 @@ function VariationsContent() {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const handleSeek = (id: number, newTime: number) => {
-        const audio = audioRefs[id];
-        if (audio) {
-            // 🎵 PREVIEW MODE: When seeking, play only 5 seconds from new position
-            const SEEK_PREVIEW_DURATION = 5; // 5 seconds when seeking
+    // Parse lyrics to find key sections (Chorus, Bridge, Breakdown) with timestamps
+    const parseLyricsSections = (lyricsText: string, totalDuration: number): LyricSection[] => {
+        if (!lyricsText) return [];
 
+        const lines = lyricsText.split('\n');
+        const sections: LyricSection[] = [];
+
+        type SectionData = { type: 'Chorus' | 'Bridge' | 'Breakdown'; startLine: number; lines: string[] };
+        let currentSection: SectionData | null = null;
+
+        // Helper function to save a section
+        const saveSection = (section: SectionData, endLine: number) => {
+            const estimatedTime = (section.startLine / lines.length) * totalDuration;
+            sections.push({
+                type: section.type,
+                startLine: section.startLine,
+                endLine,
+                estimatedTime: Math.max(0, estimatedTime),
+                text: section.lines.join('\n')
+            });
+        };
+
+        lines.forEach((line, index) => {
+            const trimmedLine = line.trim();
+
+            // Check if this line is a section header
+            if (trimmedLine.match(/^\[.*\]$/)) {
+                // Save previous section if exists
+                if (currentSection) {
+                    saveSection(currentSection, index - 1);
+                    currentSection = null;
+                }
+
+                // Check if it's a section we care about
+                const sectionType = trimmedLine.toLowerCase();
+                if (sectionType.includes('chorus')) {
+                    currentSection = { type: 'Chorus', startLine: index, lines: [] };
+                } else if (sectionType.includes('bridge')) {
+                    currentSection = { type: 'Bridge', startLine: index, lines: [] };
+                } else if (sectionType.includes('breakdown')) {
+                    currentSection = { type: 'Breakdown', startLine: index, lines: [] };
+                }
+            } else if (currentSection && trimmedLine) {
+                // Add line to current section
+                currentSection.lines.push(line);
+            }
+        });
+
+        // Save last section if exists
+        if (currentSection) {
+            saveSection(currentSection, lines.length - 1);
+        }
+
+        return sections;
+    };
+
+    const handleSeek = (id: number, newTime: number) => {
+        let audio = audioRefs[id];
+
+        // If no audio exists yet, create it (user clicked marker before playing)
+        if (!audio) {
+            const currentSongAudioUrls = audioUrls[activeTab] || {};
+            const audioUrl = currentSongAudioUrls[id];
+            if (!audioUrl) return;
+
+            // Create new audio and start from the clicked position
+            audio = new Audio(audioUrl);
             audio.currentTime = newTime;
 
-            // Update preview settings for this seek
-            (audio as any).previewStartTime = newTime;
-            (audio as any).previewDuration = SEEK_PREVIEW_DURATION;
+            // Store it
+            setAudioRefs(prev => ({ ...prev, [id]: audio }));
+            setPlayingId(id);
 
-            // If audio was paused, start playing the 5-second snippet
-            if (audio.paused) {
-                audio.play();
-                setPlayingId(id);
-            }
+            // Set up basic handlers
+            audio.onloadedmetadata = () => {
+                setAudioProgress(prev => ({
+                    ...prev,
+                    [id]: { currentTime: newTime, duration: audio!.duration }
+                }));
+            };
 
-            setAudioProgress(prev => ({
-                ...prev,
-                [id]: {
-                    ...prev[id],
-                    currentTime: newTime
+            audio.ontimeupdate = () => {
+                const previewStart = (audio as any).previewStartTime || 0;
+                const previewDur = (audio as any).previewDuration || 10;
+
+                if (audio!.currentTime >= previewStart + previewDur) {
+                    audio!.pause();
+                    setPlayingId(null);
                 }
-            }));
+
+                setAudioProgress(prev => ({
+                    ...prev,
+                    [id]: { currentTime: audio!.currentTime, duration: audio!.duration || 0 }
+                }));
+            };
+
+            audio.onended = () => {
+                setPlayingId(null);
+                setAudioRefs(prev => ({ ...prev, [id]: null }));
+            };
         }
+
+        // Set preview settings and seek
+        (audio as any).previewStartTime = newTime;
+        (audio as any).previewDuration = 10; // Always 10 seconds for section previews
+        audio.currentTime = newTime;
+
+        // Start playing if paused
+        if (audio.paused) {
+            audio.play();
+            setPlayingId(id);
+        }
+
+        setAudioProgress(prev => ({
+            ...prev,
+            [id]: { ...prev[id], currentTime: newTime }
+        }));
     };
 
     const handleUpgradeConfirm = async () => {
@@ -1691,7 +1792,15 @@ function VariationsContent() {
                                     {/* Lyrics Preview - Show even if audio isn't ready */}
                                     {lyrics[activeTab]?.[variation.id] && (
                                         <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
-                                            <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Full Lyrics</h4>
+                                            <h4 className="text-[#87CEEB] text-sm font-medium mb-3 flex items-center gap-2">
+                                                📝 Full Lyrics
+                                                {audioUrls[activeTab]?.[variation.id] && (
+                                                    <span className="text-[#F5E6B8]/60 text-xs font-normal">
+                                                        (See markers on player)
+                                                    </span>
+                                                )}
+                                            </h4>
+
                                             <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-[#87CEEB]/30 scrollbar-track-transparent hover:scrollbar-thumb-[#87CEEB]/50">
                                                 {lyrics[activeTab][variation.id]}
                                             </div>
@@ -1728,20 +1837,66 @@ function VariationsContent() {
                                             )}
                                         </Button>
 
-                                        {/* Seek Slider */}
+                                        {/* Seek Slider with Section Markers */}
                                         {audioUrls[activeTab]?.[variation.id] && audioProgress[variation.id] && (
                                             <div className="mt-3 px-2">
-                                                <input
-                                                    type="range"
-                                                    min="0"
-                                                    max={audioProgress[variation.id]?.duration || 0}
-                                                    value={audioProgress[variation.id]?.currentTime || 0}
-                                                    onChange={(e) => handleSeek(variation.id, parseFloat(e.target.value))}
-                                                    className={`w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer ${isPurchased ? 'accent-emerald-500 hover:accent-emerald-400' : 'accent-[#87CEEB] hover:accent-[#5BA5D0]'}`}
-                                                    style={{
-                                                        background: `linear-gradient(to right, ${isPurchased ? '#10B981' : '#87CEEB'} 0%, ${isPurchased ? '#10B981' : '#87CEEB'} ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
-                                                    }}
-                                                />
+                                                {/* Slider Container with Section Markers */}
+                                                <div className="relative w-full">
+                                                    {/* Section Markers - Render behind the slider */}
+                                                    {(() => {
+                                                        const sections = parseLyricsSections(
+                                                            lyrics[activeTab]?.[variation.id] || '',
+                                                            audioProgress[variation.id].duration
+                                                        );
+
+                                                        return sections.map((section, idx) => {
+                                                            const position = (section.estimatedTime / audioProgress[variation.id].duration) * 100;
+
+                                                            return (
+                                                                <div
+                                                                    key={idx}
+                                                                    className="absolute top-1/2 -translate-y-1/2 group cursor-pointer z-30"
+                                                                    style={{ left: `${position}%`, transform: 'translate(-50%, -50%)' }}
+                                                                    onClick={() => handleSeek(variation.id, section.estimatedTime)}
+                                                                    title={`${section.type} at ${formatTime(section.estimatedTime)}`}
+                                                                >
+                                                                    {/* Glassmorphism Circle Marker */}
+                                                                    <div
+                                                                        className="w-3 h-3 rounded-full backdrop-blur-md bg-white/20 border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.3)] transition-all duration-200 group-hover:w-4 group-hover:h-4 group-hover:bg-white/30 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] group-hover:border-white/60"
+                                                                    />
+
+                                                                    {/* Glassmorphism Tooltip on hover */}
+                                                                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-40">
+                                                                        <div className="px-3 py-1.5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
+                                                                            <span className="text-white text-xs font-medium">
+                                                                                {section.type}
+                                                                            </span>
+                                                                        </div>
+                                                                        {/* Tooltip arrow */}
+                                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+                                                                            <div className="w-2 h-2 rotate-45 bg-white/10 border-r border-b border-white/20"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        });
+                                                    })()}
+
+                                                    {/* Progress Bar Input */}
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max={audioProgress[variation.id]?.duration || 0}
+                                                        value={audioProgress[variation.id]?.currentTime || 0}
+                                                        onChange={(e) => handleSeek(variation.id, parseFloat(e.target.value))}
+                                                        className={`w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer relative z-10 ${isPurchased ? 'accent-emerald-500 hover:accent-emerald-400' : 'accent-[#87CEEB] hover:accent-[#5BA5D0]'}`}
+                                                        style={{
+                                                            background: `linear-gradient(to right, ${isPurchased ? '#10B981' : '#87CEEB'} 0%, ${isPurchased ? '#10B981' : '#87CEEB'} ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                {/* Time Display */}
                                                 <div className="flex justify-between text-xs text-white/60 mt-1">
                                                     <span>{formatTime(audioProgress[variation.id]?.currentTime || 0)}</span>
                                                     <span>{formatTime(audioProgress[variation.id]?.duration || 0)}</span>

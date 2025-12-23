@@ -9,6 +9,13 @@ interface AuthGuardProps {
     children: React.ReactNode;
 }
 
+// Routes that don't require authentication
+const PUBLIC_ROUTES = [
+    '/compose/variations', // Allow users to preview songs without login
+    '/compose/select-package',
+    '/compose/create',
+];
+
 export function AuthGuard({ children }: AuthGuardProps) {
     const { data: session, isPending } = useSession();
     const router = useRouter();
@@ -16,9 +23,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const { openDialog } = useLoginDialog();
     const [isChecking, setIsChecking] = useState(true);
 
+    // Check if current route is public
+    const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route));
+
     useEffect(() => {
         if (!isPending) {
-            // Check if user is authenticated
+            // If it's a public route, allow access without authentication
+            if (isPublicRoute) {
+                setIsChecking(false);
+                return;
+            }
+
+            // For protected routes, check authentication
             if (!session) {
                 // User is not authenticated, show the login dialog
                 openDialog();
@@ -28,7 +44,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
                 setIsChecking(false);
             }
         }
-    }, [session, isPending, openDialog]);
+    }, [session, isPending, openDialog, isPublicRoute]);
 
     // Show loading state while checking authentication
     if (isPending || isChecking) {
@@ -42,8 +58,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
         );
     }
 
-    // If user is not authenticated, show a placeholder while login dialog is open
-    // The login dialog is shown from the layout
+    // If it's a public route, render children regardless of auth status
+    if (isPublicRoute) {
+        return <>{children}</>;
+    }
+
+    // If user is not authenticated on a protected route, show placeholder
     if (!session) {
         return (
             <div className="min-h-screen flex items-center justify-center">
