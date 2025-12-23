@@ -90,20 +90,12 @@ export function HistoryMenu() {
         setHasLoaded(true);
     };
 
-    const draftSessions = sessions.filter(s =>
-        !s.status ||
-        s.status === 'prompt_generated' ||
-        s.status === 'variations_generating' ||
-        s.status === 'variations_ready' ||
-        s.status === 'payment_initiated'
-    );
-
-    // Filter to ONLY show drafts/generations in the list
-    const displaySessions = draftSessions;
+    // Show all sessions in history
+    const displaySessions = sessions;
 
     const deleteSession = (formId: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm('Delete this song draft?')) {
+        if (confirm('Delete this song from history?')) {
             localStorage.removeItem(`songForm_${formId}`);
             setHasLoaded(false);
             loadSessions();
@@ -226,13 +218,13 @@ export function HistoryMenu() {
                                 </button>
 
                                 <div className="mt-4 pt-2 border-t border-white/10">
-                                    <h3 className="text-[#87CEEB] font-semibold text-sm uppercase tracking-wider mb-2">Previous Drafts</h3>
+                                    <h3 className="text-[#87CEEB] font-semibold text-sm uppercase tracking-wider mb-2">History</h3>
                                     <p className="text-white/60 text-xs">
                                         {isLoading ? (
                                             'Loading...'
                                         ) : (
                                             <>
-                                                {displaySessions.length} draft{displaySessions.length !== 1 ? 's' : ''}
+                                                {displaySessions.length} song{displaySessions.length !== 1 ? 's' : ''}
                                             </>
                                         )}
                                     </p>
@@ -244,12 +236,12 @@ export function HistoryMenu() {
                                 {isLoading ? (
                                     <div className="flex flex-col items-center justify-center py-12 text-white/60">
                                         <LoadingSpinner size="md" variant="dots" customColor="#87CEEB" />
-                                        <p className="text-sm mt-4">Loading your sessions...</p>
+                                        <p className="text-sm mt-4">Loading your history...</p>
                                     </div>
                                 ) : displaySessions.length === 0 ? (
                                     <div className="text-center py-12 text-white/60">
-                                        <p>No processed drafts</p>
-                                        <p className="text-sm mt-2">Start a new song to see drafts here!</p>
+                                        <p>No history yet</p>
+                                        <p className="text-sm mt-2">Start a new song to see it here!</p>
                                     </div>
                                 ) : (
                                     displaySessions.map((session) => {

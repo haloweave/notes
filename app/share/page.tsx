@@ -126,8 +126,8 @@ function ShareContent() {
     const handleOpenGift = () => {
         if (selectedTaskId) {
             console.log('[SHARE] Opening song for session:', sessionId);
-            // Redirect to the new public library page for this song (using the form ID/Session ID)
-            router.push(`/compose/library/${sessionId}?index=${songIndex}`);
+            // Redirect to the immersive play page for this song
+            router.push(`/play/${selectedTaskId}`);
         } else {
             console.error('[SHARE] No task ID available');
             // This should rarely happen now since we set error state earlier

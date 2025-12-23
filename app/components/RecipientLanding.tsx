@@ -4,7 +4,7 @@ import { useState } from "react";
 
 // Image paths
 const logoImage = "/images/huggnote-logo.png";
-const giftBoxImage = "/images/gift-box.svg";
+const giftBoxImage = "/images/gift-box.png";
 const musicNotesImage = "/images/music-notes.png";
 const bgImage = "/images/background.png";
 

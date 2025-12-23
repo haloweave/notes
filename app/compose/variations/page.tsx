@@ -61,6 +61,7 @@ function VariationsContent() {
     const [audioUrls, setAudioUrls] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: audioUrl } }
     const [lyrics, setLyrics] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: lyrics } }
     const [titles, setTitles] = useState<Record<number, Record<number, string>>>({}); // { songIndex: { variationId: title } }
+    const [variationStyles, setVariationStyles] = useState<string[][]>([]); // [[style1, style2, style3], ...]
     const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'polling' | 'waiting' | 'ready' | 'error'>('idle');
     const [generationProgress, setGenerationProgress] = useState<string>('');
     const [audioRefs, setAudioRefs] = useState<Record<number, HTMLAudioElement | null>>({});
@@ -211,7 +212,12 @@ function VariationsContent() {
 
                             // Load status and purchased variations
                             if (data.form.status) setFormStatus(data.form.status);
-                            if (data.form.selectedVariations) setPurchasedVariations(data.form.selectedVariations);
+                            if (data.form.selectedVariations) {
+                                setPurchasedVariations(data.form.selectedVariations);
+                                // Auto-select purchased variations
+                                setSelections(data.form.selectedVariations);
+                            }
+                            if (data.form.variationStyles) setVariationStyles(data.form.variationStyles);
 
                             console.log('[VARIATIONS] ✅ Loaded from database');
                             console.log('[VARIATIONS] Existing taskIds:', dbTaskIds);
@@ -622,15 +628,14 @@ function VariationsContent() {
     const relationship = currentSong.relationship || 'Friend';
     const theme = currentSong.theme || 'Special Occasion';
 
-    // Get AI-generated variation styles from sessionStorage (client-side only)
-    const allVariationStyles = typeof window !== 'undefined'
-        ? JSON.parse(sessionStorage.getItem('allVariationStyles') || '[]')
-        : [];
-    const currentVariationStyles = allVariationStyles[activeTab] || [
-        'standard tempo',
-        'slightly varied',
-        'alternative interpretation'
-    ];
+    // Use loaded variation styles from state, fallback to defaults
+    const currentVariationStyles = (variationStyles[activeTab] && variationStyles[activeTab].length > 0)
+        ? variationStyles[activeTab]
+        : [
+            'standard tempo',
+            'slightly varied',
+            'alternative interpretation'
+        ];
 
     // Capitalize each word of variation style for display (Title Case)
     const formatVariationName = (style: string) => {
@@ -1523,9 +1528,15 @@ function VariationsContent() {
                                 {/* Select Button */}
                                 {isCurrentSelected(variation.id) ? (
                                     <button
-                                        className="w-full py-3 rounded-xl font-medium transition-all duration-200 bg-[#F5E6B8] text-[#1a3d5f] shadow-lg hover:bg-[#F5E6B8] border-0 pointer-events-none font-semibold"
+                                        className={`w-full py-3 rounded-xl font-medium transition-all duration-200 shadow-lg border-0 pointer-events-none font-semibold ${['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') && purchasedVariations[activeTab] === variation.id
+                                            ? 'bg-emerald-500 text-white'
+                                            : 'bg-[#F5E6B8] text-[#1a3d5f]'
+                                            }`}
                                     >
-                                        Selected ✓
+                                        {['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') && purchasedVariations[activeTab] === variation.id
+                                            ? 'Purchased ✓'
+                                            : 'Selected ✓'
+                                        }
                                     </button>
                                 ) : (
                                     <button
@@ -1548,21 +1559,31 @@ function VariationsContent() {
 
                 {/* Payment Button - Only show if logged in OR show Login button */}
                 <div className="mt-6 flex justify-center">
-                    {/* Logged in - Show Proceed to Payment button */}
-                    <button
-                        onClick={handleContinue}
-                        disabled={loading || (isBundle && completedCount < totalSongs)}
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
-                    >
-                        {loading ? (
-                            <>
-                                <LoadingSpinner size="md" variant="dots" color="primary" />
-                                Processing...
-                            </>
-                        ) : (
-                            isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
-                        )}
-                    </button>
+                    {/* Check if already purchased */}
+                    {['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') ? (
+                        <button
+                            onClick={() => router.push(`/compose/library/${formIdParam}?index=${activeTab}`)}
+                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] hover:from-[#5BA5D0] hover:to-[#4A90E2] text-white shadow-[0_8px_30px_rgba(135,206,235,0.4)] hover:shadow-[0_12px_40px_rgba(135,206,235,0.6)] px-8 py-6 border-3 border-[#87CEEB]/50 rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${lora.className}`}
+                        >
+                            View in Library
+                        </button>
+                    ) : (
+                        /* Logged in - Show Proceed to Payment button */
+                        <button
+                            onClick={handleContinue}
+                            disabled={loading || (isBundle && completedCount < totalSongs)}
+                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
+                        >
+                            {loading ? (
+                                <>
+                                    <LoadingSpinner size="md" variant="dots" color="primary" />
+                                    Processing...
+                                </>
+                            ) : (
+                                isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
 

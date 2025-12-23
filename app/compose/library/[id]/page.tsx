@@ -1,10 +1,10 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Lora } from 'next/font/google';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Share2, Download, Music, Play, Pause } from 'lucide-react';
+import { Share2, Download, Music, Play, Pause, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -20,21 +20,19 @@ interface SongData {
     relationship?: string;
     theme?: string;
     lyrics?: string;
+    taskId?: string;
 }
 
 function SongPageContent() {
     const params = useParams();
     const searchParams = useSearchParams();
+    const router = useRouter(); // Initialize router
     const id = params?.id as string;
     const indexParam = searchParams.get('index');
     const songIndex = indexParam ? parseInt(indexParam, 10) : 0; // Default to 0
 
     const [isLoading, setIsLoading] = useState(true);
     const [song, setSong] = useState<SongData | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-    const [progress, setProgress] = useState(0);
-    const [duration, setDuration] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -84,15 +82,18 @@ function SongPageContent() {
                 const varKey = String(targetVarId);
                 let audioUrl = variationAudioUrls[songIndex]?.[varKey] || variationAudioUrls[songIndex]?.[Number(targetVarId)];
 
-                if (!audioUrl) {
-                    const taskIdsForSong = variationTaskIds[songIndex];
+                // Extract Task ID
+                let taskId: string | undefined;
+                const taskIdsForSong = variationTaskIds[songIndex];
+
+                if (!taskId) {
                     if (Array.isArray(taskIdsForSong)) {
                         const index = Number(targetVarId) - 1;
-                        const taskId = taskIdsForSong[index];
-                        if (taskId) audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                        taskId = taskIdsForSong[index];
+                        if (taskId && !audioUrl) audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
                     } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
-                        const taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
-                        if (taskId) audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
+                        taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
+                        if (taskId && !audioUrl) audioUrl = `https://cdn1.suno.ai/${taskId}.mp3`;
                     }
                 }
 
@@ -129,7 +130,8 @@ function SongPageContent() {
                     recipient: recipient,
                     relationship,
                     theme,
-                    lyrics
+                    lyrics,
+                    taskId
                 });
 
             } catch (err) {
@@ -142,44 +144,6 @@ function SongPageContent() {
 
         fetchSong();
     }, [id]);
-
-    const togglePlay = () => {
-        if (!song) return;
-
-        if (isPlaying && audioElement) {
-            audioElement.pause();
-            setIsPlaying(false);
-        } else {
-            if (!audioElement) {
-                const audio = new Audio(song.audioUrl);
-                audio.addEventListener('loadedmetadata', () => setDuration(audio.duration));
-                audio.addEventListener('timeupdate', () => setProgress(audio.currentTime));
-                audio.addEventListener('ended', () => {
-                    setIsPlaying(false);
-                    setProgress(0);
-                });
-                setAudioElement(audio);
-                audio.play();
-            } else {
-                audioElement.play();
-            }
-            setIsPlaying(true);
-        }
-    };
-
-    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (audioElement) {
-            const time = parseFloat(e.target.value);
-            audioElement.currentTime = time;
-            setProgress(time);
-        }
-    };
-
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    };
 
     const handleDownload = () => {
         if (!song) return;
@@ -205,7 +169,7 @@ function SongPageContent() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#0f2438] flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <LoadingSpinner size="lg" variant="dots" customColor="#F5E6B8" />
             </div>
         );
@@ -213,7 +177,7 @@ function SongPageContent() {
 
     if (error || !song) {
         return (
-            <div className="min-h-screen bg-[#0f2438] flex items-center justify-center text-white">
+            <div className="min-h-screen flex items-center justify-center text-white">
                 <div className="text-center">
                     <h1 className="text-2xl mb-4">Song Unavailable</h1>
                     <p>{error || "We couldn't find this song."}</p>
@@ -224,11 +188,8 @@ function SongPageContent() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0f2438] text-white overflow-x-hidden">
-            {/* Background elements similar to library */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1a3d5f]/20 via-[#0f1e30] to-[#0f2438]"></div>
-            </div>
+        <div className="min-h-screen text-white overflow-x-hidden">
+            {/* Background handled by layout */}
 
             <main className="relative z-10 max-w-4xl mx-auto px-4 py-12 md:py-20">
                 <div className="mb-10 text-center">
@@ -253,35 +214,29 @@ function SongPageContent() {
                         <div className="w-full max-w-2xl mb-8">
                             <div className="flex items-center justify-center mb-6">
                                 <button
-                                    onClick={togglePlay}
+                                    onClick={() => {
+                                        if (song.taskId) {
+                                            router.push(`/play/${song.taskId}`);
+                                        } else {
+                                            alert('Audio not ready yet');
+                                        }
+                                    }}
                                     className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F5E6B8] to-[#D4C89A] flex items-center justify-center shadow-[0_0_30px_rgba(245,230,184,0.3)] hover:scale-105 transition-transform"
                                 >
-                                    {isPlaying ? (
-                                        <Pause className="w-10 h-10 text-[#1a3d5f] fill-current" />
-                                    ) : (
-                                        <Play className="w-10 h-10 text-[#1a3d5f] fill-current ml-1" />
-                                    )}
+                                    <Play className="w-10 h-10 text-[#1a3d5f] fill-current ml-1" />
                                 </button>
-                            </div>
-
-                            <div className="space-y-2">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max={duration || 100}
-                                    value={progress}
-                                    onChange={handleSeek}
-                                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#F5E6B8] hover:accent-[#E8DCC0]"
-                                />
-                                <div className="flex justify-between text-xs text-[#E0F4FF]/60 font-mono">
-                                    <span>{formatTime(progress)}</span>
-                                    <span>{formatTime(duration)}</span>
-                                </div>
                             </div>
                         </div>
 
                         {/* Actions */}
                         <div className="flex flex-wrap justify-center gap-4 mb-10">
+                            <Link
+                                href="/compose/library"
+                                className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors border border-white/5"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                                <span>Library</span>
+                            </Link>
                             <button
                                 onClick={handleShare}
                                 className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 hover:bg-[#87CEEB]/20 text-[#87CEEB] transition-colors border border-white/5"

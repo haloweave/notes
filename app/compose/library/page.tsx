@@ -21,6 +21,7 @@ interface SongData {
     lyrics?: string;
     index?: number;
     uniqueKey?: string;
+    taskId?: string;
 }
 
 function LibraryContent() {
@@ -137,6 +138,17 @@ function LibraryContent() {
                                     if (t) title = t;
                                 }
 
+                                // Determine Task ID for immersive playback
+                                let taskId: string | undefined;
+                                const taskIdsForSong = variationTaskIds[songIndex];
+
+                                if (Array.isArray(taskIdsForSong)) {
+                                    const index = Number(targetVarId) - 1;
+                                    taskId = taskIdsForSong[index];
+                                } else if (taskIdsForSong && typeof taskIdsForSong === 'object') {
+                                    taskId = taskIdsForSong[varKey] || taskIdsForSong[Number(targetVarId)];
+                                }
+
                                 return {
                                     id: form.id,
                                     index: songIndex, // Store index to identify specific song in bundle
@@ -144,6 +156,7 @@ function LibraryContent() {
                                     title: title,
                                     description: `${theme || 'Special Song'} • ${relationship || 'Loved One'}`,
                                     audioUrl: audioUrl,
+                                    taskId: taskId, // Pass the task ID
                                     date: new Date(form.createdAt).toLocaleDateString(),
                                     recipient: recipient,
                                     relationship,
@@ -418,14 +431,16 @@ function LibraryContent() {
                                     <div className="flex flex-col md:flex-row items-center gap-6">
                                         {/* Play Button */}
                                         <button
-                                            onClick={() => togglePlay(song.id, song.audioUrl)}
+                                            onClick={() => {
+                                                if (song.taskId) {
+                                                    router.push(`/play/${song.taskId}`);
+                                                } else {
+                                                    alert('Audio not ready yet');
+                                                }
+                                            }}
                                             className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F5E6B8] to-[#D4C89A] flex items-center justify-center flex-shrink-0 shadow-lg hover:scale-105 transition-transform group-hover:shadow-[0_0_20px_rgba(245,230,184,0.4)]"
                                         >
-                                            {isPlaying ? (
-                                                <Pause className="w-8 h-8 text-[#1a3d5f] fill-current" />
-                                            ) : (
-                                                <Play className="w-8 h-8 text-[#1a3d5f] fill-current ml-1" />
-                                            )}
+                                            <Play className="w-8 h-8 text-[#1a3d5f] fill-current ml-1" />
                                         </button>
 
                                         {/* Info */}
@@ -436,84 +451,38 @@ function LibraryContent() {
                                             <p className="text-[#87CEEB] text-sm md:text-base mb-2 font-medium">
                                                 For {song.recipient}
                                             </p>
-                                            {!isPlaying && (
-                                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs md:text-sm text-[#E0F4FF]/50">
-                                                    <span>{song.date}</span>
-                                                    <span>•</span>
-                                                    <span>{song.description}</span>
-                                                </div>
-                                            )}
+                                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs md:text-sm text-[#E0F4FF]/50">
+                                                <span>{song.date}</span>
+                                                <span>•</span>
+                                                <span>{song.description}</span>
+                                            </div>
                                         </div>
 
-                                        {/* Actions (Hidden when playing on mobile to save space, shown otherwise) */}
-                                        {!isPlaying && (
-                                            <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
-                                                <button
-                                                    onClick={() => handleShare(song)}
-                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-[#87CEEB]/20 text-[#87CEEB] transition-colors"
-                                                >
-                                                    <Share2 className="w-4 h-4" />
-                                                    <span>Share</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDownload(song)}
-                                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-[#F5E6B8]/20 text-[#F5E6B8] transition-colors"
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                    <span>Download</span>
-                                                </button>
-                                            </div>
-                                        )}
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
+                                            <button
+                                                onClick={() => handleShare(song)}
+                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-[#87CEEB]/20 text-[#87CEEB] transition-colors"
+                                            >
+                                                <Share2 className="w-4 h-4" />
+                                                <span>Share</span>
+                                            </button>
+                                            <Link
+                                                href={`/compose/library/${song.id}?index=${song.index || 0}`}
+                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-white transition-colors"
+                                            >
+                                                <Music className="w-4 h-4" />
+                                                <span>View Page</span>
+                                            </Link>
+                                            <button
+                                                onClick={() => handleDownload(song)}
+                                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-[#F5E6B8]/20 text-[#F5E6B8] transition-colors"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span>Download</span>
+                                            </button>
+                                        </div>
                                     </div>
-
-                                    {/* Expanded Player & Lyrics */}
-                                    {isPlaying && (
-                                        <div className="mt-8 pt-6 border-t border-white/10 animate-fade-in">
-                                            {/* Progress Bar */}
-                                            <div className="mb-6">
-                                                <div className="flex items-center justify-between text-xs text-[#E0F4FF]/60 mb-2 font-mono">
-                                                    <span>{formatTime(progress)}</span>
-                                                    <span>{formatTime(duration)}</span>
-                                                </div>
-                                                <input
-                                                    type="range"
-                                                    min="0"
-                                                    max={duration || 100}
-                                                    value={progress}
-                                                    onChange={handleSeek}
-                                                    className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#F5E6B8] hover:accent-[#E8DCC0]"
-                                                />
-                                            </div>
-
-                                            {/* Lyrics */}
-                                            {song.lyrics && (
-                                                <div className="bg-black/20 rounded-xl p-6 max-h-[300px] overflow-y-auto custom-scrollbar">
-                                                    <h4 className={`text-[#F5E6B8] mb-4 text-center text-sm uppercase tracking-widest ${lora.className}`}>Lyrics</h4>
-                                                    <p className={`text-[#E0F4FF]/90 text-center whitespace-pre-wrap leading-relaxed ${lora.className}`}>
-                                                        {song.lyrics}
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            {/* Actions moved here when playing */}
-                                            <div className="flex items-center justify-center gap-4 mt-6">
-                                                <button
-                                                    onClick={() => handleShare(song)}
-                                                    className="flex items-center gap-2 px-6 py-2 rounded-full bg-white/5 hover:bg-[#87CEEB]/20 text-[#87CEEB] transition-colors border border-white/5"
-                                                >
-                                                    <Share2 className="w-4 h-4" />
-                                                    <span>Share Song</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDownload(song)}
-                                                    className="flex items-center gap-2 px-6 py-2 rounded-full bg-white/5 hover:bg-[#F5E6B8]/20 text-[#F5E6B8] transition-colors border border-white/5"
-                                                >
-                                                    <Download className="w-4 h-4" />
-                                                    <span>Download MP3</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
@@ -551,7 +520,7 @@ function LibraryContent() {
                     Created with ❤️ by Huggnote
                 </p>
             </footer>
-        </div>
+        </div >
     );
 }
 
