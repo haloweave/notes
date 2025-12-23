@@ -91,7 +91,7 @@ async function checkMusicGeneration() {
         const lyrics1 = (gen.lyrics1 || '').toLowerCase();
         const lyrics2 = (gen.lyrics2 || '').toLowerCase();
 
-        const checkKeyword = (lyrics, keyword, version) => {
+        const checkKeyword = (lyrics: string, keyword: string, version: number) => {
             const found = lyrics.includes(keyword.toLowerCase());
             console.log(`  ${found ? '✓' : '✗'} "${keyword}" in Version ${version}`);
             return found;
