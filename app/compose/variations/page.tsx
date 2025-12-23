@@ -1842,34 +1842,26 @@ function VariationsContent() {
                         </p>
                     </div>
                     <DialogFooter className="flex flex-col gap-3">
-                        <Button
-                            onClick={handleUpgradeConfirm}
-                            disabled={isLoadingSession}
-                            className="w-full bg-gradient-to-r from-[#F5E6B8] to-[#E8DCC0] text-[#1a3d5f] hover:shadow-[0_0_20px_rgba(245,230,184,0.3)] transition-all font-semibold rounded-lg py-6 text-lg"
-                        >
-                            {isLoadingSession ? (
-                                <>
-                                    <LoadingSpinner size="sm" variant="dots" color="primary" />
-                                    Updating...
-                                </>
-                            ) : "Upgrade & Save (€87)"}
-                        </Button>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-2">
-                            <Button
-                                variant="outline"
-                                onClick={handleSwitchSelection}
-                                className="!w-full border-[#87CEEB]/30 text-[#87CEEB] hover:bg-[#87CEEB]/10 hover:text-[#87CEEB]"
-                            >
-                                Switch Selection
-                            </Button>
-
+                        <div className="grid grid-cols-2 gap-3 w-full">
                             <Button
                                 variant="ghost"
                                 onClick={handleContinueSingle}
-                                className="!w-full text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
+                                className="!w-full text-white/70 hover:text-white hover:bg-white/10 border border-white/10 py-6"
                             >
                                 Purchase 2 Songs (€74)
+                            </Button>
+
+                            <Button
+                                onClick={handleUpgradeConfirm}
+                                disabled={isLoadingSession}
+                                className="!w-full bg-gradient-to-r from-[#F5E6B8] to-[#E8DCC0] text-[#1a3d5f] hover:shadow-[0_0_20px_rgba(245,230,184,0.3)] transition-all font-semibold rounded-lg py-6"
+                            >
+                                {isLoadingSession ? (
+                                    <>
+                                        <LoadingSpinner size="sm" variant="dots" color="primary" />
+                                        Updating...
+                                    </>
+                                ) : "Upgrade & Save (€87)"}
                             </Button>
                         </div>
                     </DialogFooter>
