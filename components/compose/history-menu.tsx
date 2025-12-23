@@ -228,14 +228,7 @@ export function HistoryMenu() {
 
     return (
         <div className="flex items-center gap-3">
-            {!session?.user && (
-                <Button
-                    onClick={openDialog}
-                    className="bg-[#1a3d5f]/80 backdrop-blur-sm hover:bg-[#1a3d5f]/90 text-[#E0F4FF] border-0 shadow-lg h-[48px] px-6 rounded-lg font-medium tracking-wide transition-all duration-200"
-                >
-                    Sign In
-                </Button>
-            )}
+            {/* Sign In button removed */}
 
             <div className="relative">
                 {/* Hamburger Button */}

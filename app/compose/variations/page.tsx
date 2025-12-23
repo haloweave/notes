@@ -1203,22 +1203,7 @@ function VariationsContent() {
                 </div>
             )}
 
-            {/* Persistent Login Button (Top Right) - Always visible when not logged in */}
-            {!session?.user && (
-                <div className="max-w-6xl mx-auto px-4 mb-4">
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={openDialog}
-                            className="bg-gradient-to-br from-[#87CEEB] to-[#5BA5D0] text-white hover:shadow-lg"
-                        >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            Sign In to Save
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* Top sign in button removed */}
 
             {/* Generation Progress Banner */}
             {
@@ -1232,20 +1217,7 @@ function VariationsContent() {
                             <p className="text-white/60 text-sm mt-2">
                                 This may take 2-3 minutes. You can listen to songs as they become ready.
                             </p>
-                            {!session?.user && (
-                                <div className="mt-4 pt-4 border-t border-[#87CEEB]/20">
-                                    <p className="text-white/80 text-sm mb-3">
-                                        💡 Sign in now to save your song to your dashboard!
-                                    </p>
-                                    <Button
-                                        onClick={openDialog}
-                                        variant="outline"
-                                        className="bg-white/10 hover:bg-white/20 border-[#87CEEB]/40 text-white"
-                                    >
-                                        Sign In to Save
-                                    </Button>
-                                </div>
-                            )}
+                            {/* Sign in prompt removed */}
                         </div>
                     </div>
                 )
@@ -1492,56 +1464,25 @@ function VariationsContent() {
                     ))}
                 </div>
 
-                {/* Login Required Prompt (if not logged in and songs are ready) */}
-                {!session?.user && generationStatus === 'ready' && (
-                    <div className="mt-6 mb-4 max-w-2xl mx-auto">
-                        <div className="bg-gradient-to-br from-[#87CEEB]/20 to-[#5BA5D0]/20 border-2 border-[#87CEEB]/40 rounded-xl p-6 text-center backdrop-blur-sm">
-                            <h3 className="text-xl font-semibold text-white mb-2">🎵 Love your song?</h3>
-                            <p className="text-white/80 mb-4">
-                                Sign in to save it to your dashboard and proceed to payment!
-                            </p>
-                            <p className="text-white/60 text-sm mb-4">
-                                Login is required to complete your purchase and access your songs.
-                            </p>
-                        </div>
-                    </div>
-                )}
+                {/* Login prompt removed */}
 
                 {/* Payment Button - Only show if logged in OR show Login button */}
                 <div className="mt-6 flex justify-center">
-                    {!session?.user ? (
-                        // Not logged in - Show Login button
-                        <PremiumButton
-                            onClick={openDialog}
-                            disabled={generationStatus !== 'ready'}
-                            className={generationStatus !== 'ready' ? "opacity-50 cursor-not-allowed" : ""}
-                        >
-                            {generationStatus !== 'ready' ? (
-                                <>
-                                    <LoadingSpinner size="md" variant="dots" color="primary" />
-                                    Generating Songs...
-                                </>
-                            ) : (
-                                "Login to Continue"
-                            )}
-                        </PremiumButton>
-                    ) : (
-                        // Logged in - Show Proceed to Payment button
-                        <button
-                            onClick={handleContinue}
-                            disabled={loading || (isBundle && completedCount < totalSongs)}
-                            className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
-                        >
-                            {loading ? (
-                                <>
-                                    <LoadingSpinner size="md" variant="dots" color="primary" />
-                                    Processing...
-                                </>
-                            ) : (
-                                isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
-                            )}
-                        </button>
-                    )}
+                    {/* Logged in - Show Proceed to Payment button */}
+                    <button
+                        onClick={handleContinue}
+                        disabled={loading || (isBundle && completedCount < totalSongs)}
+                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-primary/90 h-10 has-[>svg]:px-4 w-full bg-gradient-to-br from-[#F5E6B8] to-[#E8D89F] hover:from-[#F8F0DC] hover:to-[#E8DCC0] text-[#1a3d5f] shadow-[0_8px_30px_rgba(245,230,184,0.4)] hover:shadow-[0_12px_40px_rgba(245,230,184,0.6)] px-8 py-6 border-3 border-[#D4C5A0] rounded-xl transform hover:scale-105 transition-all duration-200 text-xl ${loading || (isBundle && completedCount < totalSongs) ? "opacity-50 cursor-not-allowed" : ""} ${lora.className}`}
+                    >
+                        {loading ? (
+                            <>
+                                <LoadingSpinner size="md" variant="dots" color="primary" />
+                                Processing...
+                            </>
+                        ) : (
+                            isBundle ? `Proceed to Payment (${completedCount}/${totalSongs} Selected)` : "Proceed to Payment"
+                        )}
+                    </button>
                 </div>
             </div>
 
