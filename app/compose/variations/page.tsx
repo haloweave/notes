@@ -106,6 +106,12 @@ function VariationsContent() {
 
     const formIdParam = searchParams.get('formId');
 
+    // Debug: Track lyrics state changes
+    useEffect(() => {
+        console.log('[VARIATIONS] 🎵 Lyrics state updated:', lyrics);
+        console.log('[VARIATIONS] 🎵 Lyrics for activeTab', activeTab, ':', lyrics[activeTab]);
+    }, [lyrics, activeTab]);
+
     // Associate form with logged-in user
     const associateFormWithUser = async () => {
         if (!session?.user?.id || !formIdParam) return;
@@ -193,15 +199,6 @@ function VariationsContent() {
             console.log('[VARIATIONS] Loading data for formId:', formIdParam);
             setIsLoadingSession(true);
 
-            // Clear old data first
-            setSongs([]);
-            setTaskIds({});
-            setAudioUrls({});
-            setLyrics({});
-            setTitles({});
-            setSelections({});
-            setActiveTab(0);
-
             let formData = null;
             let dbTaskIds = null;
             let dbAudioUrls = null;
@@ -225,11 +222,19 @@ function VariationsContent() {
                             // Load status and purchased variations
                             if (data.form.status) setFormStatus(data.form.status);
                             if (data.form.selectedVariations) {
-                                setPurchasedVariations(data.form.selectedVariations);
-                                // Only restore selections for checkout if NOT already purchased
+                                console.log('[VARIATIONS] Loading selectedVariations from DB:', data.form.selectedVariations);
+                                console.log('[VARIATIONS] Form status:', data.form.status);
+
                                 const isPurchased = ['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(data.form.status || '');
-                                if (!isPurchased) {
-                                    setSelections(data.form.selectedVariations);
+
+                                if (isPurchased) {
+                                    // Payment completed - these are PURCHASED variations
+                                    console.log('[VARIATIONS] Status is purchased - setting purchasedVariations');
+                                    setPurchasedVariations(data.form.selectedVariations);
+                                } else {
+                                    // Payment not completed - DON'T load selections, let user start fresh
+                                    console.log('[VARIATIONS] Status not purchased - NOT loading selections');
+                                    // setSelections(data.form.selectedVariations); // DISABLED: Let user start fresh
                                 }
                             }
                             if (data.form.variationStyles) setVariationStyles(data.form.variationStyles);
@@ -245,6 +250,23 @@ function VariationsContent() {
                 } catch (error) {
                     console.error('[VARIATIONS] Database fetch error:', error);
                 }
+            }
+
+            // 🔥 CRITICAL FIX: Only clear state if we DON'T have database data
+            // This prevents lyrics from being cleared when refreshing a page with existing data
+            const hasDbData = dbTaskIds && Object.keys(dbTaskIds).length > 0;
+
+            if (!hasDbData) {
+                console.log('[VARIATIONS] No database data found - clearing state');
+                setSongs([]);
+                setTaskIds({});
+                setAudioUrls({});
+                setLyrics({});
+                setTitles({});
+                setSelections({});
+                setActiveTab(0);
+            } else {
+                console.log('[VARIATIONS] Database data exists - preserving state');
             }
 
             // Fallback to sessionStorage (for new creations)
@@ -275,11 +297,18 @@ function VariationsContent() {
             // Restore existing variation data from database
             if (dbTaskIds && Object.keys(dbTaskIds).length > 0) {
                 console.log('[VARIATIONS] Restoring existing variations from database');
+                console.log('[VARIATIONS] dbTaskIds:', dbTaskIds);
+                console.log('[VARIATIONS] dbAudioUrls:', dbAudioUrls);
+                console.log('[VARIATIONS] dbLyrics:', dbLyrics);
+                console.log('[VARIATIONS] dbTitles:', dbTitles);
+
                 setTaskIds(dbTaskIds);
                 setAudioUrls(dbAudioUrls || {});
                 setLyrics(dbLyrics || {});
                 if (dbTitles) setTitles(dbTitles);
                 setGenerationStatus('ready'); // Mark as ready since we have existing data
+
+                console.log('[VARIATIONS] ✅ State updated with database data');
             }
 
             // Clear loading state
@@ -1193,13 +1222,35 @@ function VariationsContent() {
 
                 // 2. Filter out purchased items for the "limit" check
                 const purchasedId = purchasedVariations[activeTab];
-                const activeNewSelections = currentList.filter(id => id !== purchasedId);
 
-                if (activeNewSelections.length > 0) {
-                    // If existing NEW selection exists and user clicks DIFFERENT one
+                // Handle both single purchased item and array of purchased items
+                const isPurchasedItem = (id: number) => {
+                    if (Array.isArray(purchasedId)) {
+                        return purchasedId.includes(id);
+                    }
+                    return purchasedId === id;
+                };
+
+                const activeNewSelections = currentList.filter(id => !isPurchasedItem(id));
+
+                console.log('[VARIATIONS] Selection state:', {
+                    currentList,
+                    purchasedId,
+                    activeNewSelections,
+                    clickedVariation: variationId,
+                    allowMultiSolo
+                });
+
+                // 🔥 FIX: Only show upgrade dialog if:
+                // - There's already 1 NEW selection
+                // - AND user is clicking a DIFFERENT song (not the same one)
+                // - AND multi-solo is not already allowed
+                if (activeNewSelections.length >= 1 && !activeNewSelections.includes(variationId)) {
+                    // User is trying to select a SECOND different song
 
                     // If user has NOT explicitly allowed multi-solo, prompt them
                     if (!allowMultiSolo) {
+                        console.log('[VARIATIONS] User trying to select 2nd song - showing upgrade dialog');
                         setPendingUpgradeVariation(variationId);
                         setShowUpgradeDialog(true);
                         return prev; // No change yet
@@ -1207,7 +1258,7 @@ function VariationsContent() {
                     // If allowed, fall through to add to list
                 }
 
-                // If 0 active new selections (or same selected), allow adding.
+                // If 0 active new selections (first selection), allow adding.
                 // We append to ensure we don't remove purchased item if it's there.
                 return { ...prev, [activeTab]: [...currentList, variationId] };
             }
@@ -1637,6 +1688,16 @@ function VariationsContent() {
                                         )}
                                     </div>
 
+                                    {/* Lyrics Preview - Show even if audio isn't ready */}
+                                    {lyrics[activeTab]?.[variation.id] && (
+                                        <div className="mb-4 bg-[#0f1e30]/60 rounded-xl p-4 border border-[#87CEEB]/20">
+                                            <h4 className="text-[#87CEEB] text-sm font-medium mb-2">📝 Full Lyrics</h4>
+                                            <div className="text-white/80 text-sm leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-[#87CEEB]/30 scrollbar-track-transparent hover:scrollbar-thumb-[#87CEEB]/50">
+                                                {lyrics[activeTab][variation.id]}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Play Button */}
                                     <div className="mt-4 mb-6">
                                         <Button
@@ -1699,7 +1760,8 @@ function VariationsContent() {
                                         </button>
                                     ) : isSelected ? (
                                         <button
-                                            className="w-full py-3 rounded-xl font-medium transition-all duration-200 shadow-lg border-0 pointer-events-none font-semibold bg-[#F5E6B8] text-[#1a3d5f]"
+                                            onClick={() => handleSelectVariation(variation.id)}
+                                            className="w-full py-3 rounded-xl font-medium transition-all duration-200 shadow-lg border-0 font-semibold bg-[#F5E6B8] text-[#1a3d5f] hover:opacity-80 cursor-pointer"
                                         >
                                             Selected ✓
                                         </button>
@@ -1797,7 +1859,7 @@ function VariationsContent() {
                             <Button
                                 variant="outline"
                                 onClick={handleSwitchSelection}
-                                className="border-[#87CEEB]/30 text-[#87CEEB] hover:bg-[#87CEEB]/10 hover:text-[#87CEEB]"
+                                className="!w-full border-[#87CEEB]/30 text-[#87CEEB] hover:bg-[#87CEEB]/10 hover:text-[#87CEEB]"
                             >
                                 Switch Selection
                             </Button>
@@ -1805,7 +1867,7 @@ function VariationsContent() {
                             <Button
                                 variant="ghost"
                                 onClick={handleContinueSingle}
-                                className="text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
+                                className="!w-full text-white/70 hover:text-white hover:bg-white/10 border border-white/10"
                             >
                                 Purchase 2 Songs (€74)
                             </Button>
