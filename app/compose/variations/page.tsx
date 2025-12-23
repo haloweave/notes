@@ -53,6 +53,8 @@ function VariationsContent() {
     const [isBundle, setIsBundle] = useState(false);
     const [isLoadingSession, setIsLoadingSession] = useState(false);
     const [showSnowGlobeLoading, setShowSnowGlobeLoading] = useState(true); // Show snow globe for 8 seconds
+    const [formStatus, setFormStatus] = useState<string | null>(null);
+    const [purchasedVariations, setPurchasedVariations] = useState<Record<number, number>>({});
 
     // Music Generation State
     const [taskIds, setTaskIds] = useState<Record<number, (string | null)[]>>({}); // { songIndex: [taskId1, taskId2, taskId3] }
@@ -113,8 +115,7 @@ function VariationsContent() {
         }
     }, [session]);
 
-    // Hide snow globe loading screen after 8 seconds
-    // Only show on fresh submissions (when coming from the form)
+    // Manage snow globe loading state based on generation status
     useEffect(() => {
         // Check if we're coming from a fresh form submission
         // If there's existing data in the database, don't show the snow globe
@@ -138,18 +139,17 @@ function VariationsContent() {
                     console.error('[VARIATIONS] Error checking for existing data:', error);
                 }
             }
-
-            // Fresh submission - show snow globe for 8 seconds
-            const timer = setTimeout(() => {
-                setShowSnowGlobeLoading(false);
-                console.log('[VARIATIONS] Snow globe loading screen hidden after 8 seconds');
-            }, 8000); // 8 seconds
-
-            return () => clearTimeout(timer);
         };
 
         checkIfFreshSubmission();
-    }, [formIdParam]); // Run when formId changes
+    }, [formIdParam]);
+
+    // Hide snow globe when generation is ready or error
+    useEffect(() => {
+        if (generationStatus === 'ready' || generationStatus === 'error') {
+            setShowSnowGlobeLoading(false);
+        }
+    }, [generationStatus]);
 
 
     // Load Data
@@ -186,6 +186,11 @@ function VariationsContent() {
                             dbAudioUrls = data.form.variationAudioUrls || {};
                             dbLyrics = data.form.variationLyrics || {};
                             dbTitles = data.form.variationTitles || {};
+
+                            // Load status and purchased variations
+                            if (data.form.status) setFormStatus(data.form.status);
+                            if (data.form.selectedVariations) setPurchasedVariations(data.form.selectedVariations);
+
                             console.log('[VARIATIONS] ✅ Loaded from database');
                             console.log('[VARIATIONS] Existing taskIds:', dbTaskIds);
                             console.log('[VARIATIONS] Existing audioUrls:', dbAudioUrls);
@@ -1066,7 +1071,7 @@ function VariationsContent() {
         try {
             const formDataStr = sessionStorage.getItem('songFormData');
             const generatedPrompt = sessionStorage.getItem('generatedPrompt');
-            const formId = sessionStorage.getItem('currentFormId');
+            const formId = formIdParam || sessionStorage.getItem('currentFormId');
 
             // Save selections to localStorage
             if (formId) {
@@ -1169,26 +1174,36 @@ function VariationsContent() {
 
     return (
         <div className="w-full relative">
-            {/* Snow Globe Loading Screen - Shows for 8 seconds */}
+            {/* Snow Globe Loading Screen - Shows until generation is complete */}
             {showSnowGlobeLoading && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a1628] animate-in fade-in duration-500">
+                <div className="w-full min-h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500 py-8">
                     {/* Desktop Snow Globe */}
-                    <div className="hidden md:flex items-center justify-center w-full h-full p-8">
+                    <div className="hidden md:flex flex-col items-center justify-center w-full max-w-2xl p-8">
                         <img
                             src="/snowGlobeDesktop.gif"
                             alt="Loading your magical song..."
-                            className="max-w-full max-h-full object-contain"
+                            className="w-full h-auto object-contain mb-8"
                             style={{ imageRendering: 'auto' }}
                         />
+                        <div className="text-center space-y-4">
+                             <h3 className={`text-[#F5E6B8] text-3xl ${lora.className}`}>Creating your masterpiece...</h3>
+                             <p className="text-[#87CEEB] text-lg animate-pulse">{generationProgress || "Generating your song..."}</p>
+                             <p className="text-white/60 text-sm">This typically takes 2-3 minutes. We're crafting 3 unique variations for you.</p>
+                        </div>
                     </div>
                     {/* Mobile Snow Globe */}
-                    <div className="flex md:hidden items-center justify-center w-full h-full p-4">
+                    <div className="flex flex-col md:hidden items-center justify-center w-full p-4">
                         <img
                             src="/snowglobeMobile.gif"
                             alt="Loading your magical song..."
-                            className="max-w-full max-h-full object-contain"
+                            className="w-full h-auto object-contain mb-6"
                             style={{ imageRendering: 'auto' }}
                         />
+                         <div className="text-center space-y-3">
+                             <h3 className={`text-[#F5E6B8] text-2xl ${lora.className}`}>Creating your masterpiece...</h3>
+                             <p className="text-[#87CEEB] animate-pulse">{generationProgress || "Generating your song..."}</p>
+                             <p className="text-white/60 text-xs">This typically takes 2-3 minutes.</p>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1207,7 +1222,7 @@ function VariationsContent() {
 
             {/* Generation Progress Banner */}
             {
-                generationStatus !== 'idle' && generationStatus !== 'ready' && (
+                !showSnowGlobeLoading && generationStatus !== 'idle' && generationStatus !== 'ready' && (
                     <div className="max-w-6xl mx-auto px-4 mb-6">
                         <div className="bg-[#1e293b]/80 border-2 border-[#87CEEB]/40 rounded-xl p-4 text-center backdrop-blur-sm">
                             <div className="flex items-center justify-center gap-3">
@@ -1256,7 +1271,7 @@ function VariationsContent() {
                 )
             }
 
-            <div className="text-center mb-8">
+            <div className={showSnowGlobeLoading ? "hidden" : "text-center mb-8"}>
                 <h1 className={`text-[#E8DCC0] text-2xl md:text-3xl lg:text-4xl mb-2 flex flex-col md:flex-row items-center justify-center gap-3 drop-shadow-xl ${lora.className}`} style={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
                     <span>{isBundle ? "Select a style for each song" : "Your Songs are Ready"}</span>
                     <Music className="hidden md:block w-10 lg:w-12 h-10 lg:h-12 text-[#87CEEB]" />
@@ -1271,7 +1286,7 @@ function VariationsContent() {
 
             {/* Tabs for Bundle */}
             {
-                isBundle && (
+                !showSnowGlobeLoading && isBundle && (
                     <div className="max-w-6xl mx-auto px-4 mb-6">
                         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                             {songs.map((song, index) => (
@@ -1298,7 +1313,7 @@ function VariationsContent() {
             }
 
             {/* Variations Grid */}
-            <div className="max-w-6xl mx-auto px-4 pb-8">
+            <div className={showSnowGlobeLoading ? "hidden" : "max-w-6xl mx-auto px-4 pb-8"}>
                 {/* Header for current tab info */}
                 {isBundle && (
                     <div className="mb-6 text-[#E8DCC0] text-lg font-medium border-b border-[#87CEEB]/30 pb-2">
@@ -1316,6 +1331,13 @@ function VariationsContent() {
                                 }`}
                         >
                             <CardContent className="p-6">
+                                {/* Purchased Badge */}
+                                {['payment_completed', 'payment_successful', 'completed', 'delivered'].includes(formStatus || '') && purchasedVariations[activeTab] === variation.id && (
+                                    <div className="absolute top-0 right-0 z-20 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-lg flex items-center gap-1">
+                                        <CheckmarkCircle01Icon className="w-3 h-3" />
+                                        PURCHASED
+                                    </div>
+                                )}
                                 {/* Variation Header */}
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2 min-w-0 flex-1">

@@ -235,8 +235,8 @@ function SuccessContent() {
                                             {/* Icon Circle */}
                                             <div
                                                 className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${isActive
-                                                        ? 'bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] shadow-[0_0_30px_rgba(135,206,235,0.4)]'
-                                                        : 'bg-gradient-to-br from-[#87CEEB]/60 to-[#4A90E2]/60 shadow-[0_0_20px_rgba(135,206,235,0.3)]'
+                                                    ? 'bg-gradient-to-br from-[#87CEEB] to-[#4A90E2] shadow-[0_0_30px_rgba(135,206,235,0.4)]'
+                                                    : 'bg-gradient-to-br from-[#87CEEB]/60 to-[#4A90E2]/60 shadow-[0_0_20px_rgba(135,206,235,0.3)]'
                                                     } ${!isActive && step.id === 4 ? 'animate-pulse' : ''}`}
                                                 style={{
                                                     borderColor: step.color,
@@ -275,7 +275,7 @@ function SuccessContent() {
                 {/* Action Buttons */}
                 <div className="mt-8 space-y-3">
                     <button
-                        onClick={() => router.push(`/share?session_id=${sessionId}`)}
+                        onClick={() => router.push('/compose/library')}
                         className="w-full py-4 px-6 bg-gradient-to-br from-[#F5E6B8] to-[#D4C89A] text-[#1a3d5f] rounded-xl font-semibold text-lg shadow-[0_4px_20px_rgba(245,230,184,0.3)] hover:shadow-[0_6px_25px_rgba(245,230,184,0.4)] transition-all duration-200"
                     >
                         View & Share Your Song

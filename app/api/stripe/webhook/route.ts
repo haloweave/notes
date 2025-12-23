@@ -158,13 +158,15 @@ export async function POST(req: NextRequest) {
                         console.log('[EMAIL] Variation task IDs:', JSON.stringify(variationTaskIds));
 
                         // Update compose form with Stripe session ID for resend functionality
+                        // AND update status to payment_successful immediately so UI reflects purchase
                         await db.update(composeForms)
                             .set({
                                 stripeSessionId: session.id,
+                                status: 'payment_successful',
                                 updatedAt: new Date(),
                             })
                             .where(eq(composeForms.id, formId));
-                        console.log('[EMAIL] ✅ Updated form with Stripe session ID');
+                        console.log('[EMAIL] ✅ Updated form with Stripe session ID and status=payment_successful');
 
                         // Build song links array
                         const songLinks = [];

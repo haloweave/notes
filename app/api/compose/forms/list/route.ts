@@ -5,6 +5,8 @@ import { eq, desc } from 'drizzle-orm';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/compose/forms/list - Get all compose forms for the logged-in user
 export async function GET(request: NextRequest) {
     try {
