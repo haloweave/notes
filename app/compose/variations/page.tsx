@@ -1841,8 +1841,21 @@ function VariationsContent() {
                                         {audioUrls[activeTab]?.[variation.id] && audioProgress[variation.id] && (
                                             <div className="mt-3 px-2">
                                                 {/* Slider Container with Section Markers */}
-                                                <div className="relative w-full">
-                                                    {/* Section Markers - Render behind the slider */}
+                                                <div className="relative w-full h-6 flex items-center">
+                                                    {/* Progress Bar Input */}
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max={audioProgress[variation.id]?.duration || 0}
+                                                        value={audioProgress[variation.id]?.currentTime || 0}
+                                                        onChange={(e) => handleSeek(variation.id, parseFloat(e.target.value))}
+                                                        className={`w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer relative ${isPurchased ? 'accent-emerald-500 hover:accent-emerald-400' : 'accent-[#87CEEB] hover:accent-[#5BA5D0]'}`}
+                                                        style={{
+                                                            background: `linear-gradient(to right, ${isPurchased ? '#10B981' : '#87CEEB'} 0%, ${isPurchased ? '#10B981' : '#87CEEB'} ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
+                                                        }}
+                                                    />
+
+                                                    {/* Section Markers - Overlaid on the slider */}
                                                     {(() => {
                                                         const sections = parseLyricsSections(
                                                             lyrics[activeTab]?.[variation.id] || '',
@@ -1855,18 +1868,16 @@ function VariationsContent() {
                                                             return (
                                                                 <div
                                                                     key={idx}
-                                                                    className="absolute top-1/2 -translate-y-1/2 group cursor-pointer z-30"
-                                                                    style={{ left: `${position}%`, transform: 'translate(-50%, -50%)' }}
+                                                                    className="absolute group cursor-pointer pointer-events-auto"
+                                                                    style={{ left: `${position}%`, top: '50%', transform: 'translate(-50%, -50%)' }}
                                                                     onClick={() => handleSeek(variation.id, section.estimatedTime)}
                                                                     title={`${section.type} at ${formatTime(section.estimatedTime)}`}
                                                                 >
                                                                     {/* Glassmorphism Circle Marker */}
-                                                                    <div
-                                                                        className="w-3 h-3 rounded-full backdrop-blur-md bg-white/20 border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.3)] transition-all duration-200 group-hover:w-4 group-hover:h-4 group-hover:bg-white/30 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] group-hover:border-white/60"
-                                                                    />
+                                                                    <div className="w-3 h-3 rounded-full backdrop-blur-md bg-white/20 border border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.3)] transition-all duration-200 group-hover:w-4 group-hover:h-4 group-hover:bg-white/30 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.5)] group-hover:border-white/60" />
 
                                                                     {/* Glassmorphism Tooltip on hover */}
-                                                                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-40">
+                                                                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
                                                                         <div className="px-3 py-1.5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                                                                             <span className="text-white text-xs font-medium">
                                                                                 {section.type}
@@ -1881,19 +1892,6 @@ function VariationsContent() {
                                                             );
                                                         });
                                                     })()}
-
-                                                    {/* Progress Bar Input */}
-                                                    <input
-                                                        type="range"
-                                                        min="0"
-                                                        max={audioProgress[variation.id]?.duration || 0}
-                                                        value={audioProgress[variation.id]?.currentTime || 0}
-                                                        onChange={(e) => handleSeek(variation.id, parseFloat(e.target.value))}
-                                                        className={`w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer relative z-10 ${isPurchased ? 'accent-emerald-500 hover:accent-emerald-400' : 'accent-[#87CEEB] hover:accent-[#5BA5D0]'}`}
-                                                        style={{
-                                                            background: `linear-gradient(to right, ${isPurchased ? '#10B981' : '#87CEEB'} 0%, ${isPurchased ? '#10B981' : '#87CEEB'} ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) ${((audioProgress[variation.id]?.currentTime || 0) / (audioProgress[variation.id]?.duration || 1)) * 100}%, rgba(255,255,255,0.2) 100%)`
-                                                        }}
-                                                    />
                                                 </div>
 
                                                 {/* Time Display */}
