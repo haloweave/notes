@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PremiumButton } from '@/components/ui/premium-button';
 import { Lora } from 'next/font/google';
-import { Play, Pause, Music } from 'lucide-react';
+import { Play, Pause, Music, Download } from 'lucide-react';
 import { CheckmarkCircle01Icon } from 'hugeicons-react';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { LoginDialog } from '@/components/auth/login-dialog';
@@ -1030,9 +1030,6 @@ function VariationsContent() {
             setPlayingId(id);
             const audio = new Audio(audioUrl);
 
-            // 🎵 PREVIEW MODE: Play 20 seconds from start initially
-            const INITIAL_PREVIEW_DURATION = 20; // 20 seconds for first play
-
             audio.play();
 
             // Store reference
@@ -1041,25 +1038,8 @@ function VariationsContent() {
                 [id]: audio
             }));
 
-            // 🎵 Store preview settings on audio element (before setting up handlers)
-            (audio as any).previewStartTime = 0;
-            (audio as any).previewDuration = INITIAL_PREVIEW_DURATION;
-
             // Track progress for seek slider
             audio.ontimeupdate = () => {
-                // 🎵 Auto-stop after preview duration - read from audio element properties
-                const previewStart = (audio as any).previewStartTime || 0;
-                const previewDur = (audio as any).previewDuration || INITIAL_PREVIEW_DURATION;
-
-                if (audio.currentTime >= previewStart + previewDur) {
-                    audio.pause();
-                    setPlayingId(null);
-                    setAudioRefs(prev => ({
-                        ...prev,
-                        [id]: null
-                    }));
-                }
-
                 setAudioProgress(prev => ({
                     ...prev,
                     [id]: {
@@ -1184,14 +1164,6 @@ function VariationsContent() {
             };
 
             audio.ontimeupdate = () => {
-                const previewStart = (audio as any).previewStartTime || 0;
-                const previewDur = (audio as any).previewDuration || 10;
-
-                if (audio!.currentTime >= previewStart + previewDur) {
-                    audio!.pause();
-                    setPlayingId(null);
-                }
-
                 setAudioProgress(prev => ({
                     ...prev,
                     [id]: { currentTime: audio!.currentTime, duration: audio!.duration || 0 }
@@ -1204,9 +1176,6 @@ function VariationsContent() {
             };
         }
 
-        // Set preview settings and seek
-        (audio as any).previewStartTime = newTime;
-        (audio as any).previewDuration = 10; // Always 10 seconds for section previews
         audio.currentTime = newTime;
 
         // Start playing if paused
@@ -1929,6 +1898,22 @@ function VariationsContent() {
                                         >
                                             Select This Version
                                         </button>
+                                    )}
+
+                                    {/* Download Option */}
+                                    {audioUrls[activeTab]?.[variation.id] && (
+                                        <div className="mt-4 flex justify-center">
+                                            <a
+                                                href={audioUrls[activeTab]?.[variation.id]}
+                                                download={`Huggnote_${recipientName}_Option${variation.id}.mp3`}
+                                                className="flex items-center gap-2 text-sm text-[#87CEEB]/70 hover:text-[#F5E6B8] transition-colors duration-200"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span>Download MP3</span>
+                                            </a>
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>
