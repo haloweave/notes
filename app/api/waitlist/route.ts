@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json(
-            { message: 'We will get back to you soon. Thanks for joining us!' },
+            { message: 'Thanks for signing up for VIP access to Huggnote Bespoke! We will be in touch close to launch with something special for you!' },
             { status: 201 }
         );
     } catch (error) {
