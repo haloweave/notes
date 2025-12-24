@@ -165,7 +165,7 @@ export default function ComingSoonPage() {
                 {/* Back to Huggnote Button */}
                 <div className="mt-8 flex justify-center">
                   <a
-                    href="https://huggnote.com"
+                    href="https://www.huggnote.com"
                     className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-[#87CEEB]/30 text-[#87CEEB] hover:bg-[#87CEEB]/10 hover:border-[#F5E6B8]/50 hover:text-[#F5E6B8] transition-all duration-300 ${lora.className}`}
                   >
                     <span>←</span>
